@@ -7,31 +7,24 @@ import (
 	"fmt"
 )
 
-type ApplyOptFunc func(c *Flag) error
+type Opt func(f *Flag) error
 
-func (f ApplyOptFunc) apply(c *Flag) error {
-	return f(c)
-}
-
-func applyFlagOptions(c *Flag, options ...Opt) error {
-	for _, o := range options {
-		if err := o.apply(c); err != nil {
+func applyFlagOptions(f *Flag, options ...Opt) error {
+	for _, option := range options {
+		if err := option(f); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-type Opt interface {
-	apply(*Flag) error
-}
-
-type optShorthandImpl struct{ shorthand rune }
-
-func (o optShorthandImpl) apply(c *Flag) error { c.Shorthand = o.shorthand; return nil }
-
 // OptShorthand one-letter abbreviated flag
-func OptShorthand(o rune) Opt { return optShorthandImpl{shorthand: o} }
+func OptShorthand(shorthand rune) Opt {
+	return func(f *Flag) error {
+		f.Shorthand = shorthand
+		return nil
+	}
+}
 
 // OptShorthandStr one-letter abbreviated flag
 func OptShorthandStr(shorthand string) Opt {
@@ -40,108 +33,103 @@ func OptShorthandStr(shorthand string) Opt {
 		panic(err)
 	}
 
-	return optShorthandImpl{shorthand: r}
+	return OptShorthand(r)
 }
 
-type optShorthandOnlyImpl struct{}
-
-func (o optShorthandOnlyImpl) apply(c *Flag) error { c.ShorthandOnly = true; return nil }
-
 // OptShorthandOnly If the user set only the shorthand
-func OptShorthandOnly() Opt { return optShorthandOnlyImpl{} }
-
-type optUsageTypeImpl struct{ usageType string }
-
-func (o optUsageTypeImpl) apply(c *Flag) error { c.UsageType = o.usageType; return nil }
+func OptShorthandOnly() Opt {
+	return func(f *Flag) error {
+		f.ShorthandOnly = true
+		return nil
+	}
+}
 
 // OptUsageType flag type displayed in the help message
-func OptUsageType(usageType string) Opt { return optUsageTypeImpl{usageType: usageType} }
-
-type optDisableUnquoteUsageImpl struct{}
-
-func (o optDisableUnquoteUsageImpl) apply(c *Flag) error { c.DisableUnquoteUsage = true; return nil }
+func OptUsageType(usageType string) Opt {
+	return func(f *Flag) error {
+		f.UsageType = usageType
+		return nil
+	}
+}
 
 // OptDisableUnquoteUsage disable unquoting and extraction of type from usage
-func OptDisableUnquoteUsage() Opt { return optDisableUnquoteUsageImpl{} }
-
-type optDisablePrintDefaultImpl struct{}
-
-func (o optDisablePrintDefaultImpl) apply(c *Flag) error { c.DisablePrintDefault = true; return nil }
+func OptDisableUnquoteUsage() Opt {
+	return func(f *Flag) error {
+		f.DisableUnquoteUsage = true
+		return nil
+	}
+}
 
 // OptDisablePrintDefault toggle printing of the default value in usage message
-func OptDisablePrintDefault(o bool) Opt { return optDisablePrintDefaultImpl{} }
-
-type optDefValueImpl struct{ defValue string }
-
-func (o optDefValueImpl) apply(c *Flag) error { c.DefValue = o.defValue; return nil }
+func OptDisablePrintDefault() Opt {
+	return func(f *Flag) error {
+		f.DisablePrintDefault = true
+		return nil
+	}
+}
 
 // OptDefValue default value (as text); for usage message
-func OptDefValue(defValue string) Opt { return optDefValueImpl{defValue: defValue} }
-
-type optNoOptDefValImpl struct{ noOptDefVal string }
-
-func (o optNoOptDefValImpl) apply(c *Flag) error { c.NoOptDefVal = o.noOptDefVal; return nil }
+func OptDefValue(defValue string) Opt {
+	return func(f *Flag) error {
+		f.DefValue = defValue
+		return nil
+	}
+}
 
 // OptNoOptDefVal default value (as text); if the flag is on the command line without any options
-func OptNoOptDefVal(noOptDefVal string) Opt { return optNoOptDefValImpl{noOptDefVal: noOptDefVal} }
-
-type optDeprecatedImpl struct{ msg string }
-
-func (o optDeprecatedImpl) apply(c *Flag) error {
-	if o.msg == "" {
-		return fmt.Errorf("deprecated message for flag %q must be set", c.Name)
+func OptNoOptDefVal(noOptDefVal string) Opt {
+	return func(f *Flag) error {
+		f.NoOptDefVal = noOptDefVal
+		return nil
 	}
-
-	c.Deprecated = o.msg
-	return OptHidden().apply(c)
 }
 
 // OptDeprecated indicated that a flag is deprecated in your program. It will
 // continue to function but will not show up in help or usage messages. Using
 // this flag will also print the given usageMessage.
-func OptDeprecated(msg string) Opt { return optDeprecatedImpl{msg: msg} }
+func OptDeprecated(msg string) Opt {
+	return func(f *Flag) error {
+		if msg == "" {
+			return fmt.Errorf("deprecated message for flag %q must be set", f.Name)
+		}
 
-type optHiddenImpl struct{}
-
-func (o optHiddenImpl) apply(c *Flag) error { c.Hidden = true; return nil }
+		f.Deprecated = msg
+		return OptHidden()(f)
+	}
+}
 
 // OptHidden used by zulu.Command to allow flags to be hidden from help/usage text
-func OptHidden() Opt { return optHiddenImpl{} }
-
-type optShorthandDeprecatedImpl struct{ msg string }
-
-func (o optShorthandDeprecatedImpl) apply(c *Flag) error {
-	if o.msg == "" {
-		return fmt.Errorf("shorthand deprecated message for flag %q must be set", c.Name)
+func OptHidden() Opt {
+	return func(f *Flag) error {
+		f.Hidden = true
+		return nil
 	}
-
-	c.ShorthandDeprecated = o.msg
-	return nil
 }
 
 // OptShorthandDeprecated If the shorthand of this flag is deprecated, this string is the new or now thing to use
-func OptShorthandDeprecated(msg string) Opt { return optShorthandDeprecatedImpl{msg: msg} }
+func OptShorthandDeprecated(msg string) Opt {
+	return func(f *Flag) error {
+		if msg == "" {
+			return fmt.Errorf("shorthand deprecated message for flag %q must be set", f.Name)
+		}
 
-type optGroupImpl struct{ group string }
+		f.ShorthandDeprecated = msg
+		return nil
+	}
 
-func (o optGroupImpl) apply(c *Flag) error { c.Group = o.group; return nil }
-
-// OptGroup flag group
-func OptGroup(group string) Opt { return optGroupImpl{group: group} }
-
-type optAnnotationImpl struct {
-	key   string
-	value []string
 }
 
-func (o optAnnotationImpl) apply(c *Flag) error {
-	return c.SetAnnotation(o.key, o.value)
+// OptGroup flag group
+func OptGroup(group string) Opt {
+	return func(f *Flag) error {
+		f.Group = group
+		return nil
+	}
 }
 
 // OptAnnotation Use it to annotate this specific flag for your application
 func OptAnnotation(key string, value []string) Opt {
-	return optAnnotationImpl{
-		key:   key,
-		value: value,
+	return func(f *Flag) error {
+		return f.SetAnnotation(key, value)
 	}
 }

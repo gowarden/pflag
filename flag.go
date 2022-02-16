@@ -881,8 +881,7 @@ func (f *FlagSet) Var(value Value, name, usage string, opts ...Opt) *Flag {
 		DefValue: value.String(),
 	}
 
-	err := applyFlagOptions(flag, opts...)
-	if err != nil {
+	if err := applyFlagOptions(flag, opts...); err != nil {
 		panic(err)
 	}
 
