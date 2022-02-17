@@ -14,10 +14,5 @@ func NewUnknownFlagError(name string) error {
 }
 
 func (e errUnknownFlag) Error() string {
-	dash := "--"
-	if len(e.name) == 1 {
-		dash = "-"
-	}
-
-	return fmt.Sprintf("unknown flag: %s", dash+e.name)
+	return fmt.Sprintf("unknown flag: %s", getFlagWithDashes(e.name))
 }

@@ -441,7 +441,7 @@ func (f *FlagSet) Set(name, value string) error {
 				flagName = fmt.Sprintf("%s, --%s", flagName, flag.Name)
 			}
 		} else {
-			flagName = fmt.Sprintf("--%s", flag.Name)
+			flagName = getFlagWithDashes(flag.Name)
 		}
 		return fmt.Errorf("invalid argument %q for %q flag: %v", value, flagName, err)
 	}
@@ -1072,8 +1072,12 @@ func (f *FlagSet) parseSingleShortArg(shorthands string, args []string, fn parse
 			}
 			return
 		default:
-			err = f.failf("unknown shorthand flag: %q in -%s", char, shorthands)
-			return
+			// fallback to a normal flag look up without any shorthand opts
+			flag = f.Lookup(string(char))
+			if flag == nil || (flag.Shorthand > 0 && flag.Shorthand != char) {
+				err = f.failf("unknown shorthand flag: %q in -%s", char, shorthands)
+				return
+			}
 		}
 	}
 
@@ -1269,4 +1273,13 @@ func (f *FlagSet) Init(name string, errorHandling ErrorHandling) {
 	f.name = name
 	f.errorHandling = errorHandling
 	f.argsLenAtDash = -1
+}
+
+func getFlagWithDashes(name string) string {
+	dash := "--"
+	if len(name) == 1 {
+		dash = "-"
+	}
+
+	return dash + name
 }
