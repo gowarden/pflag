@@ -1,7 +1,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"fmt"
@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
 // Helper function to set static slices
@@ -20,14 +22,14 @@ func equalCIDR(c1 net.IPNet, c2 net.IPNet) bool {
 	return c1.String() == c2.String()
 }
 
-func setUpIPNetFlagSet(ipsp *[]net.IPNet) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpIPNetFlagSet(ipsp *[]net.IPNet) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.IPNetSliceVar(ipsp, "cidrs", []net.IPNet{}, "Command separated list!")
 	return f
 }
 
-func setUpIPNetFlagSetWithDefault(ipsp *[]net.IPNet) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpIPNetFlagSetWithDefault(ipsp *[]net.IPNet) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.IPNetSliceVar(ipsp, "cidrs",
 		[]net.IPNet{
 			getCIDR(net.ParseCIDR("192.168.1.1/16")),
@@ -38,9 +40,11 @@ func setUpIPNetFlagSetWithDefault(ipsp *[]net.IPNet) *FlagSet {
 }
 
 func TestIPNetsValueImplementsGetter(t *testing.T) {
-	var v Value = new(ipNetSliceValue)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.IPNetSlice("cidrs", []net.IPNet{}, "Command separated list!")
+	v := f.Lookup("cidrs").Value
 
-	if _, ok := v.(Getter); !ok {
+	if _, ok := v.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v)
 	}
 }

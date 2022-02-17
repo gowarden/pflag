@@ -1,31 +1,35 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"fmt"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
-func setUpSSFlagSet(ssp *[]string) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpSSFlagSet(ssp *[]string) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.StringSliceVar(ssp, "ss", []string{}, "Command separated list!")
 	return f
 }
 
-func setUpSSFlagSetWithDefault(ssp *[]string) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpSSFlagSetWithDefault(ssp *[]string) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.StringSliceVar(ssp, "ss", []string{"default", "values"}, "Command separated list!")
 	return f
 }
 
 func TestSSValueImplementsGetter(t *testing.T) {
-	var v Value = new(stringSliceValue)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.StringSlice("ss", []string{"default", "values"}, "Command separated list!")
+	v := f.Lookup("ss").Value
 
-	if _, ok := v.(Getter); !ok {
+	if _, ok := v.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v)
 	}
 }
@@ -329,8 +333,8 @@ func TestSSAsSliceValue(t *testing.T) {
 		t.Fatal("expected no error; got", err)
 	}
 
-	f.VisitAll(func(f *Flag) {
-		if val, ok := f.Value.(SliceValue); ok {
+	f.VisitAll(func(f *zflag.Flag) {
+		if val, ok := f.Value.(zflag.SliceValue); ok {
 			_ = val.Replace([]string{"three"})
 		}
 	})

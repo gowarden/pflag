@@ -1,7 +1,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"encoding/base64"
@@ -9,25 +9,31 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
-func setUpBytesHex(bytesHex *[]byte) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpBytesHex(bytesHex *[]byte) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.BytesHexVar(bytesHex, "bytes", []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}, "Some bytes in HEX")
-	f.BytesHexVar(bytesHex, "bytes2", []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}, "Some bytes in HEX", OptShorthand('B'))
+	f.BytesHexVar(bytesHex, "bytes2", []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}, "Some bytes in HEX", zflag.OptShorthand('B'))
 	return f
 }
 
 func TestBytesValueImplementsGetter(t *testing.T) {
-	var v Value = new(bytesBase64Value)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.BytesBase64("b64", []byte{}, "b64")
+	f.BytesHex("hex", []byte{}, "hex")
 
-	if _, ok := v.(Getter); !ok {
+	v := f.Lookup("b64").Value
+
+	if _, ok := v.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v)
 	}
 
-	var v2 Value = new(bytesHexValue)
+	v2 := f.Lookup("b64").Value
 
-	if _, ok := v2.(Getter); !ok {
+	if _, ok := v2.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v2)
 	}
 }
@@ -97,10 +103,10 @@ func TestBytesHex(t *testing.T) {
 	}
 }
 
-func setUpBytesBase64(bytesBase64 *[]byte) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpBytesBase64(bytesBase64 *[]byte) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.BytesBase64Var(bytesBase64, "bytes", []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}, "Some bytes in Base64")
-	f.BytesBase64Var(bytesBase64, "bytes2", []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}, "Some bytes in Base64", OptShorthand('B'))
+	f.BytesBase64Var(bytesBase64, "bytes2", []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}, "Some bytes in Base64", zflag.OptShorthand('B'))
 	return f
 }
 

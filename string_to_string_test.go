@@ -1,7 +1,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"bytes"
@@ -10,16 +10,18 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
-func setUpS2SFlagSet(s2sp *map[string]string) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpS2SFlagSet(s2sp *map[string]string) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.StringToStringVar(s2sp, "s2s", map[string]string{}, "Command separated ls2st!")
 	return f
 }
 
-func setUpS2SFlagSetWithDefault(s2sp *map[string]string) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpS2SFlagSetWithDefault(s2sp *map[string]string) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.StringToStringVar(s2sp, "s2s", map[string]string{"da": "1", "db": "2", "de": "5,6"}, "Command separated ls2st!")
 	return f
 }
@@ -40,9 +42,11 @@ func createS2SFlag(vals map[string]string) string {
 }
 
 func TestS2SValueImplementsGetter(t *testing.T) {
-	var v Value = new(stringToStringValue)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.StringToString("s2s", map[string]string{}, "Command separated ls2st!")
+	v := f.Lookup("s2s").Value
 
-	if _, ok := v.(Getter); !ok {
+	if _, ok := v.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v)
 	}
 }

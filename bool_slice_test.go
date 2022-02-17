@@ -1,31 +1,35 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
-func setUpBSFlagSet(bsp *[]bool) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpBSFlagSet(bsp *[]bool) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.BoolSliceVar(bsp, "bs", []bool{}, "Command separated list!")
 	return f
 }
 
-func setUpBSFlagSetWithDefault(bsp *[]bool) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpBSFlagSetWithDefault(bsp *[]bool) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.BoolSliceVar(bsp, "bs", []bool{false, true}, "Command separated list!")
 	return f
 }
 
 func TestBoolSliceValueImplementsGetter(t *testing.T) {
-	var v Value = new(boolSliceValue)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.BoolSlice("bs", []bool{false, true}, "Command separated list!")
+	var v = f.Lookup("bs").Value
 
-	if _, ok := v.(Getter); !ok {
+	if _, ok := v.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v)
 	}
 }
@@ -191,8 +195,8 @@ func TestBSAsSliceValue(t *testing.T) {
 		t.Fatal("expected no error; got", err)
 	}
 
-	f.VisitAll(func(f *Flag) {
-		if val, ok := f.Value.(SliceValue); ok {
+	f.VisitAll(func(f *zflag.Flag) {
+		if val, ok := f.Value.(zflag.SliceValue); ok {
 			_ = val.Replace([]string{"false"})
 		}
 	})

@@ -1,18 +1,20 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	goflag "flag"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
 func TestGoflags(t *testing.T) {
 	goflag.String("stringFlag", "stringFlag", "stringFlag")
 	goflag.Bool("boolFlag", false, "boolFlag")
 
-	f := NewFlagSet("test", ContinueOnError)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 
 	f.AddGoFlagSet(goflag.CommandLine)
 	err := f.Parse([]string{"--stringFlag=bob", "--boolFlag"})

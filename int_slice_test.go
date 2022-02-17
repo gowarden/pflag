@@ -1,7 +1,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"fmt"
@@ -9,24 +9,28 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
-func setUpISFlagSet(isp *[]int) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpISFlagSet(isp *[]int) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.IntSliceVar(isp, "is", []int{}, "Command separated list!")
 	return f
 }
 
-func setUpISFlagSetWithDefault(isp *[]int) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpISFlagSetWithDefault(isp *[]int) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.IntSliceVar(isp, "is", []int{0, 1}, "Command separated list!")
 	return f
 }
 
 func TestISValueImplementsGetter(t *testing.T) {
-	var v Value = new(intSliceValue)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.IntSlice("is", []int{0, 1}, "Command separated list!")
+	v := f.Lookup("is").Value
 
-	if _, ok := v.(Getter); !ok {
+	if _, ok := v.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v)
 	}
 }

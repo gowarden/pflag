@@ -1,18 +1,20 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
 // Copyright 2009 The Go Authors. All rights reserved.
 func TestUserDefinedFunc(t *testing.T) {
-	var flags FlagSet
-	flags.Init("test", ContinueOnError)
+	var flags zflag.FlagSet
+	flags.Init("test", zflag.ContinueOnError)
 	var ss []string
 	flags.Func("v", "usage", func(s string) error {
 		ss = append(ss, s)
@@ -36,7 +38,7 @@ func TestUserDefinedFunc(t *testing.T) {
 		t.Errorf("usage string not included: %q", usage)
 	}
 	// test Func error
-	flags = *NewFlagSet("test", ContinueOnError)
+	flags = *zflag.NewFlagSet("test", zflag.ContinueOnError)
 	flags.Func("v", "usage", func(s string) error {
 		return fmt.Errorf("test error")
 	})

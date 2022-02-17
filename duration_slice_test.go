@@ -1,7 +1,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"fmt"
@@ -9,24 +9,28 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gowarden/zflag"
 )
 
-func setUpDSFlagSet(dsp *[]time.Duration) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpDSFlagSet(dsp *[]time.Duration) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.DurationSliceVar(dsp, "ds", []time.Duration{}, "Command separated list!")
 	return f
 }
 
-func setUpDSFlagSetWithDefault(dsp *[]time.Duration) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpDSFlagSetWithDefault(dsp *[]time.Duration) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.DurationSliceVar(dsp, "ds", []time.Duration{0, 1}, "Command separated list!")
 	return f
 }
 
 func TestDSValueImplementsGetter(t *testing.T) {
-	var v Value = new(durationSliceValue)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.DurationSlice("ds", []time.Duration{0, 1}, "Command separated list!")
+	v := f.Lookup("ds").Value
 
-	if _, ok := v.(Getter); !ok {
+	if _, ok := v.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v)
 	}
 }
@@ -184,8 +188,8 @@ func TestDSAsSliceValue(t *testing.T) {
 		t.Fatal("expected no error; got", err)
 	}
 
-	f.VisitAll(func(f *Flag) {
-		if val, ok := f.Value.(SliceValue); ok {
+	f.VisitAll(func(f *zflag.Flag) {
+		if val, ok := f.Value.(zflag.SliceValue); ok {
 			_ = val.Replace([]string{"3ns"})
 		}
 	})

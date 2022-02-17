@@ -1,7 +1,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"bytes"
@@ -17,18 +17,20 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/gowarden/zflag"
 )
 
 var (
-	testBool                     = Bool("test_bool", false, "bool value")
-	testInt                      = Int("test_int", 0, "int value")
-	testInt64                    = Int64("test_int64", 0, "int64 value")
-	testUint                     = Uint("test_uint", 0, "uint value")
-	testUint64                   = Uint64("test_uint64", 0, "uint64 value")
-	testString                   = String("test_string", "0", "string value")
-	testFloat                    = Float64("test_float64", 0, "float64 value")
-	testDuration                 = Duration("test_duration", 0, "time.Duration value")
-	testOptionalInt              = Int("test_optional_int", 0, "optional int value")
+	testBool                     = zflag.Bool("test_bool", false, "bool value")
+	testInt                      = zflag.Int("test_int", 0, "int value")
+	testInt64                    = zflag.Int64("test_int64", 0, "int64 value")
+	testUint                     = zflag.Uint("test_uint", 0, "uint value")
+	testUint64                   = zflag.Uint64("test_uint64", 0, "uint64 value")
+	testString                   = zflag.String("test_string", "0", "string value")
+	testFloat                    = zflag.Float64("test_float64", 0, "float64 value")
+	testDuration                 = zflag.Duration("test_duration", 0, "time.Duration value")
+	testOptionalInt              = zflag.Int("test_optional_int", 0, "optional int value")
 	normalizeFlagNameInvocations = 0
 )
 
@@ -40,9 +42,9 @@ func boolString(s string) string {
 }
 
 func TestEverything(t *testing.T) {
-	m := make(map[string]*Flag)
+	m := make(map[string]*zflag.Flag)
 	desired := "0"
-	visitor := func(f *Flag) {
+	visitor := func(f *zflag.Flag) {
 		if len(f.Name) > 5 && f.Name[0:5] == "test_" {
 			m[f.Name] = f
 			ok := false
@@ -59,15 +61,15 @@ func TestEverything(t *testing.T) {
 			}
 		}
 	}
-	VisitAll(visitor)
+	zflag.VisitAll(visitor)
 	if len(m) != 9 {
 		t.Error("VisitAll misses some flags")
 		for k, v := range m {
 			t.Log(k, *v)
 		}
 	}
-	m = make(map[string]*Flag)
-	Visit(visitor)
+	m = make(map[string]*zflag.Flag)
+	zflag.Visit(visitor)
 	if len(m) != 0 {
 		t.Errorf("Visit sees unset flags")
 		for k, v := range m {
@@ -75,17 +77,17 @@ func TestEverything(t *testing.T) {
 		}
 	}
 	// Now set all flags
-	Set("test_bool", "true")
-	Set("test_int", "1")
-	Set("test_int64", "1")
-	Set("test_uint", "1")
-	Set("test_uint64", "1")
-	Set("test_string", "1")
-	Set("test_float64", "1")
-	Set("test_duration", "1s")
-	Set("test_optional_int", "1")
+	zflag.Set("test_bool", "true")
+	zflag.Set("test_int", "1")
+	zflag.Set("test_int64", "1")
+	zflag.Set("test_uint", "1")
+	zflag.Set("test_uint64", "1")
+	zflag.Set("test_string", "1")
+	zflag.Set("test_float64", "1")
+	zflag.Set("test_duration", "1s")
+	zflag.Set("test_optional_int", "1")
 	desired = "1"
-	Visit(visitor)
+	zflag.Visit(visitor)
 	if len(m) != 9 {
 		t.Error("Visit fails after set")
 		for k, v := range m {
@@ -94,7 +96,7 @@ func TestEverything(t *testing.T) {
 	}
 	// Now test they're visited in sort order.
 	var flagNames []string
-	Visit(func(f *Flag) { flagNames = append(flagNames, f.Name) })
+	zflag.Visit(func(f *zflag.Flag) { flagNames = append(flagNames, f.Name) })
 	if !sort.StringsAreSorted(flagNames) {
 		t.Errorf("flag names not sorted: %v", flagNames)
 	}
@@ -102,8 +104,8 @@ func TestEverything(t *testing.T) {
 
 func TestUsage(t *testing.T) {
 	called := false
-	ResetForTesting(func() { called = true })
-	if CommandLine.Parse([]string{"--x"}) == nil {
+	zflag.ResetForTesting(func() { called = true })
+	if zflag.CommandLine.Parse([]string{"--x"}) == nil {
 		t.Error("parse did not fail for unknown flag")
 	}
 	if !called {
@@ -112,8 +114,8 @@ func TestUsage(t *testing.T) {
 }
 
 func TestAddFlagSet(t *testing.T) {
-	oldSet := NewFlagSet("old", ContinueOnError)
-	newSet := NewFlagSet("new", ContinueOnError)
+	oldSet := zflag.NewFlagSet("old", zflag.ContinueOnError)
+	newSet := zflag.NewFlagSet("new", zflag.ContinueOnError)
 
 	oldSet.String("flag1", "flag1", "flag1")
 	oldSet.String("flag2", "flag2", "flag2")
@@ -123,19 +125,19 @@ func TestAddFlagSet(t *testing.T) {
 
 	oldSet.AddFlagSet(newSet)
 
-	if len(oldSet.formal) != 3 {
+	if len(zflag.GetFlagFormalField(oldSet)) != 3 {
 		t.Errorf("Unexpected result adding a FlagSet to a FlagSet %v", oldSet)
 	}
 }
 
 func TestAnnotation(t *testing.T) {
-	f := NewFlagSet("shorthand", ContinueOnError)
+	f := zflag.NewFlagSet("shorthand", zflag.ContinueOnError)
 
 	if err := f.SetAnnotation("missing-flag", "key", nil); err == nil {
 		t.Errorf("Expected error setting annotation on non-existent flag")
 	}
 
-	f.String("stringa", "", "string value", OptShorthand('a'))
+	f.String("stringa", "", "string value", zflag.OptShorthand('a'))
 	if err := f.SetAnnotation("stringa", "key", nil); err != nil {
 		t.Errorf("Unexpected error setting new nil annotation: %v", err)
 	}
@@ -143,7 +145,7 @@ func TestAnnotation(t *testing.T) {
 		t.Errorf("Unexpected annotation: %v", annotation)
 	}
 
-	f.String("stringb", "", "string2 value", OptShorthand('b'))
+	f.String("stringb", "", "string2 value", zflag.OptShorthand('b'))
 	if err := f.SetAnnotation("stringb", "key", []string{"value1"}); err != nil {
 		t.Errorf("Unexpected error setting new annotation: %v", err)
 	}
@@ -161,7 +163,7 @@ func TestAnnotation(t *testing.T) {
 
 func TestName(t *testing.T) {
 	flagSetName := "bob"
-	f := NewFlagSet(flagSetName, ContinueOnError)
+	f := zflag.NewFlagSet(flagSetName, zflag.ContinueOnError)
 
 	givenName := f.Name()
 	if givenName != flagSetName {
@@ -169,7 +171,7 @@ func TestName(t *testing.T) {
 	}
 }
 
-func testParse(f *FlagSet, t *testing.T) {
+func testParse(f *zflag.FlagSet, t *testing.T) {
 	if f.Parsed() {
 		t.Error("f.Parse() = true before Parse")
 	}
@@ -190,7 +192,7 @@ func testParse(f *FlagSet, t *testing.T) {
 	float32Flag := f.Float32("float32", 0, "float32 value")
 	float64Flag := f.Float64("float64", 0, "float64 value")
 	ipFlag := f.IP("ip", net.ParseIP("127.0.0.1"), "ip value")
-	maskFlag := f.IPMask("mask", ParseIPv4Mask("0.0.0.0"), "mask value")
+	maskFlag := f.IPMask("mask", zflag.ParseIPv4Mask("0.0.0.0"), "mask value")
 	durationFlag := f.Duration("duration", 5*time.Second, "time.Duration value")
 	optionalIntNoValueFlag := f.Int("optional-int-no-value", 0, "int value")
 	f.Lookup("optional-int-no-value").NoOptDefVal = "9"
@@ -368,7 +370,7 @@ func testParse(f *FlagSet, t *testing.T) {
 	if v, err := f.Get("ip"); err != nil || !v.(net.IP).Equal(*ipFlag) {
 		t.Errorf("GetIP returned %v but ipFlag was %v", v, *ipFlag)
 	}
-	if (*maskFlag).String() != ParseIPv4Mask("255.255.255.0").String() {
+	if (*maskFlag).String() != zflag.ParseIPv4Mask("255.255.255.0").String() {
 		t.Error("mask flag should be 255.255.255.0, is ", (*maskFlag).String())
 	}
 	if v, err := f.GetIPv4Mask("mask"); err != nil || v.String() != (*maskFlag).String() {
@@ -402,18 +404,18 @@ func testParse(f *FlagSet, t *testing.T) {
 	}
 }
 
-func testParseAll(f *FlagSet, t *testing.T) {
+func testParseAll(f *zflag.FlagSet, t *testing.T) {
 	if f.Parsed() {
 		t.Error("f.Parse() = true before Parse")
 	}
-	f.Bool("boola", false, "bool value", OptShorthand('a'))
-	f.Bool("boolb", false, "bool2 value", OptShorthand('b'))
-	f.Bool("boolc", false, "bool3 value", OptShorthand('c'))
-	f.Bool("boold", false, "bool4 value", OptShorthand('d'))
-	f.String("stringa", "0", "string value", OptShorthand('s'))
-	f.String("stringz", "0", "string value", OptShorthand('z'))
-	f.String("stringx", "0", "string value", OptShorthand('x'))
-	f.String("stringy", "0", "string value", OptShorthand('y'))
+	f.Bool("boola", false, "bool value", zflag.OptShorthand('a'))
+	f.Bool("boolb", false, "bool2 value", zflag.OptShorthand('b'))
+	f.Bool("boolc", false, "bool3 value", zflag.OptShorthand('c'))
+	f.Bool("boold", false, "bool4 value", zflag.OptShorthand('d'))
+	f.String("stringa", "0", "string value", zflag.OptShorthand('s'))
+	f.String("stringz", "0", "string value", zflag.OptShorthand('z'))
+	f.String("stringx", "0", "string value", zflag.OptShorthand('x'))
+	f.String("stringy", "0", "string value", zflag.OptShorthand('y'))
 	f.Lookup("stringx").NoOptDefVal = "1"
 	args := []string{
 		"-ab",
@@ -435,7 +437,7 @@ func testParseAll(f *FlagSet, t *testing.T) {
 		"stringy", "ee",
 	}
 	got := []string{}
-	store := func(flag *Flag, value string) error {
+	store := func(flag *zflag.Flag, value string) error {
 		got = append(got, flag.Name)
 		if len(value) > 0 {
 			got = append(got, value)
@@ -455,22 +457,22 @@ func testParseAll(f *FlagSet, t *testing.T) {
 	}
 }
 
-func testParseWithUnknownFlags(f *FlagSet, t *testing.T) {
+func testParseWithUnknownFlags(f *zflag.FlagSet, t *testing.T) {
 	if f.Parsed() {
 		t.Error("f.Parse() = true before Parse")
 	}
 	f.ParseErrorsAllowlist.UnknownFlags = true
 
-	f.Bool("boola", false, "bool value", OptShorthand('a'))
-	f.Bool("boolb", false, "bool2 value", OptShorthand('b'))
-	f.Bool("boolc", false, "bool3 value", OptShorthand('c'))
-	f.Bool("boold", false, "bool4 value", OptShorthand('d'))
-	f.Bool("boole", false, "bool4 value", OptShorthand('e'))
-	f.String("stringa", "0", "string value", OptShorthand('s'))
-	f.String("stringz", "0", "string value", OptShorthand('z'))
-	f.String("stringx", "0", "string value", OptShorthand('x'))
-	f.String("stringy", "0", "string value", OptShorthand('y'))
-	f.String("stringo", "0", "string value", OptShorthand('o'))
+	f.Bool("boola", false, "bool value", zflag.OptShorthand('a'))
+	f.Bool("boolb", false, "bool2 value", zflag.OptShorthand('b'))
+	f.Bool("boolc", false, "bool3 value", zflag.OptShorthand('c'))
+	f.Bool("boold", false, "bool4 value", zflag.OptShorthand('d'))
+	f.Bool("boole", false, "bool4 value", zflag.OptShorthand('e'))
+	f.String("stringa", "0", "string value", zflag.OptShorthand('s'))
+	f.String("stringz", "0", "string value", zflag.OptShorthand('z'))
+	f.String("stringx", "0", "string value", zflag.OptShorthand('x'))
+	f.String("stringy", "0", "string value", zflag.OptShorthand('y'))
+	f.String("stringo", "0", "string value", zflag.OptShorthand('o'))
 	f.Lookup("stringx").NoOptDefVal = "1"
 	args := []string{
 		"-ab",
@@ -524,7 +526,7 @@ func testParseWithUnknownFlags(f *FlagSet, t *testing.T) {
 		"--unknown11",
 	}
 	got := []string{}
-	store := func(flag *Flag, value string) error {
+	store := func(flag *zflag.Flag, value string) error {
 		got = append(got, flag.Name)
 		if len(value) > 0 {
 			got = append(got, value)
@@ -551,17 +553,17 @@ func testParseWithUnknownFlags(f *FlagSet, t *testing.T) {
 }
 
 func TestShorthand(t *testing.T) {
-	f := NewFlagSet("shorthand", ContinueOnError)
+	f := zflag.NewFlagSet("shorthand", zflag.ContinueOnError)
 	if f.Parsed() {
 		t.Error("f.Parse() = true before Parse")
 	}
-	boolaFlag := f.Bool("boola", false, "bool value", OptShorthand('a'))
-	boolbFlag := f.Bool("boolb", false, "bool2 value", OptShorthand('b'))
-	boolcFlag := f.Bool("boolc", false, "bool3 value", OptShorthand('c'))
-	booldFlag := f.Bool("boold", false, "bool4 value", OptShorthand('d'))
-	booleFlag := f.Bool("boole", false, "bool5 value", OptShorthand('e'))
-	stringaFlag := f.String("stringa", "0", "string value", OptShorthand('s'))
-	stringzFlag := f.String("stringz", "0", "string value", OptShorthand('z'))
+	boolaFlag := f.Bool("boola", false, "bool value", zflag.OptShorthand('a'))
+	boolbFlag := f.Bool("boolb", false, "bool2 value", zflag.OptShorthand('b'))
+	boolcFlag := f.Bool("boolc", false, "bool3 value", zflag.OptShorthand('c'))
+	booldFlag := f.Bool("boold", false, "bool4 value", zflag.OptShorthand('d'))
+	booleFlag := f.Bool("boole", false, "bool5 value", zflag.OptShorthand('e'))
+	stringaFlag := f.String("stringa", "0", "string value", zflag.OptShorthand('s'))
+	stringzFlag := f.String("stringz", "0", "string value", zflag.OptShorthand('z'))
 	extra := "interspersed-argument"
 	notaflag := "--i-look-like-a-flag"
 	args := []string{
@@ -615,12 +617,12 @@ func TestShorthand(t *testing.T) {
 }
 
 func TestShorthandOnly(t *testing.T) {
-	f := NewFlagSet("shorthand", ContinueOnError)
+	f := zflag.NewFlagSet("shorthand", zflag.ContinueOnError)
 	f.SetOutput(ioutil.Discard)
 	if f.Parsed() {
 		t.Error("f.Parse() = true before Parse")
 	}
-	boolFlag := f.Bool("bool", false, "bool value", OptShorthandOnly(), OptShorthand('1'))
+	boolFlag := f.Bool("bool", false, "bool value", zflag.OptShorthandOnly(), zflag.OptShorthand('1'))
 	args := []string{
 		"--bool",
 	}
@@ -636,13 +638,13 @@ func TestShorthandOnly(t *testing.T) {
 }
 
 func TestShorthandLookup(t *testing.T) {
-	f := NewFlagSet("shorthand", ContinueOnError)
+	f := zflag.NewFlagSet("shorthand", zflag.ContinueOnError)
 	if f.Parsed() {
 		t.Error("f.Parse() = true before Parse")
 	}
-	f.Bool("boola", false, "bool value", OptShorthand('a'))
-	f.Bool("boolb", false, "bool2 value", OptShorthand('b'))
-	f.Bool("boolö", false, "bool2 value", OptShorthand('ö'))
+	f.Bool("boola", false, "bool value", zflag.OptShorthand('a'))
+	f.Bool("boolb", false, "bool2 value", zflag.OptShorthand('b'))
+	f.Bool("boolö", false, "bool2 value", zflag.OptShorthand('ö'))
 	args := []string{
 		"-ab",
 	}
@@ -671,26 +673,26 @@ func TestShorthandLookup(t *testing.T) {
 }
 
 func TestParse(t *testing.T) {
-	ResetForTesting(func() { t.Error("bad parse") })
-	testParse(CommandLine, t)
+	zflag.ResetForTesting(func() { t.Error("bad parse") })
+	testParse(zflag.CommandLine, t)
 }
 
 func TestParseAll(t *testing.T) {
-	ResetForTesting(func() { t.Error("bad parse") })
-	testParseAll(CommandLine, t)
+	zflag.ResetForTesting(func() { t.Error("bad parse") })
+	testParseAll(zflag.CommandLine, t)
 }
 
 func TestIgnoreUnknownFlags(t *testing.T) {
-	ResetForTesting(func() { t.Error("bad parse") })
-	testParseWithUnknownFlags(CommandLine, t)
+	zflag.ResetForTesting(func() { t.Error("bad parse") })
+	testParseWithUnknownFlags(zflag.CommandLine, t)
 }
 
 func TestFlagSetParse(t *testing.T) {
-	testParse(NewFlagSet("test", ContinueOnError), t)
+	testParse(zflag.NewFlagSet("test", zflag.ContinueOnError), t)
 }
 
 func TestChangedHelper(t *testing.T) {
-	f := NewFlagSet("changedtest", ContinueOnError)
+	f := zflag.NewFlagSet("changedtest", zflag.ContinueOnError)
 	f.Bool("changed", false, "changed bool")
 	f.Bool("settrue", true, "true to true")
 	f.Bool("setfalse", false, "false to false")
@@ -729,16 +731,16 @@ func replaceSeparators(name string, from []string, to string) string {
 	return result
 }
 
-func wordSepNormalizeFunc(f *FlagSet, name string) NormalizedName {
+func wordSepNormalizeFunc(f *zflag.FlagSet, name string) zflag.NormalizedName {
 	seps := []string{"-", "_"}
 	name = replaceSeparators(name, seps, ".")
 	normalizeFlagNameInvocations++
 
-	return NormalizedName(name)
+	return zflag.NormalizedName(name)
 }
 
 func testWordSepNormalizedNames(args []string, t *testing.T) {
-	f := NewFlagSet("normalized", ContinueOnError)
+	f := zflag.NewFlagSet("normalized", zflag.ContinueOnError)
 	if f.Parsed() {
 		t.Error("f.Parse() = true before Parse")
 	}
@@ -787,7 +789,7 @@ func TestWordSepNormalizedNames(t *testing.T) {
 	testWordSepNormalizedNames(args, t)
 }
 
-func aliasAndWordSepFlagNames(f *FlagSet, name string) NormalizedName {
+func aliasAndWordSepFlagNames(f *zflag.FlagSet, name string) zflag.NormalizedName {
 	seps := []string{"-", "_"}
 
 	oldName := replaceSeparators("old-valid_flag", seps, ".")
@@ -799,11 +801,11 @@ func aliasAndWordSepFlagNames(f *FlagSet, name string) NormalizedName {
 		name = newName
 	}
 
-	return NormalizedName(name)
+	return zflag.NormalizedName(name)
 }
 
 func TestCustomNormalizedNames(t *testing.T) {
-	f := NewFlagSet("normalized", ContinueOnError)
+	f := zflag.NewFlagSet("normalized", zflag.ContinueOnError)
 	if f.Parsed() {
 		t.Error("f.Parse() = true before Parse")
 	}
@@ -828,7 +830,7 @@ func TestCustomNormalizedNames(t *testing.T) {
 // Every flag we add, the name (displayed also in usage) should normalized
 func TestNormalizationFuncShouldChangeFlagName(t *testing.T) {
 	// Test normalization after addition
-	f := NewFlagSet("normalized", ContinueOnError)
+	f := zflag.NewFlagSet("normalized", zflag.ContinueOnError)
 
 	f.Bool("valid_flag", false, "bool value")
 	if f.Lookup("valid_flag").Name != "valid_flag" {
@@ -841,7 +843,7 @@ func TestNormalizationFuncShouldChangeFlagName(t *testing.T) {
 	}
 
 	// Test normalization before addition
-	f = NewFlagSet("normalized", ContinueOnError)
+	f = zflag.NewFlagSet("normalized", zflag.ContinueOnError)
 	f.SetNormalizeFunc(wordSepNormalizeFunc)
 
 	f.Bool("valid_flag", false, "bool value")
@@ -852,8 +854,8 @@ func TestNormalizationFuncShouldChangeFlagName(t *testing.T) {
 
 // Related to https://github.com/spf13/cobra/issues/521.
 func TestNormalizationSharedFlags(t *testing.T) {
-	f := NewFlagSet("set f", ContinueOnError)
-	g := NewFlagSet("set g", ContinueOnError)
+	f := zflag.NewFlagSet("set f", zflag.ContinueOnError)
+	g := zflag.NewFlagSet("set g", zflag.ContinueOnError)
 	nfunc := wordSepNormalizeFunc
 	testName := "valid_flag"
 	normName := nfunc(nil, testName)
@@ -867,25 +869,25 @@ func TestNormalizationSharedFlags(t *testing.T) {
 	f.SetNormalizeFunc(nfunc)
 	g.SetNormalizeFunc(nfunc)
 
-	if len(f.formal) != 1 {
-		t.Error("Normalizing flags should not result in duplications in the flag set:", f.formal)
+	if len(zflag.GetFlagFormalField(f)) != 1 {
+		t.Error("Normalizing flags should not result in duplications in the flag set:", zflag.GetFlagFormalField(f))
 	}
-	if f.orderedFormal[0].Name != string(normName) {
+	if zflag.GetFlagOrderedFormalField(f)[0].Name != string(normName) {
 		t.Error("Flag name not normalized")
 	}
-	for k := range f.formal {
+	for k := range zflag.GetFlagFormalField(f) {
 		if k != "valid.flag" {
 			t.Errorf("The key in the flag map should have been normalized: wanted \"%s\", got \"%s\" instead", normName, k)
 		}
 	}
 
-	if !reflect.DeepEqual(f.formal, g.formal) || !reflect.DeepEqual(f.orderedFormal, g.orderedFormal) {
-		t.Error("Two flag sets sharing the same flags should stay consistent after being normalized. Original set:", f.formal, "Duplicate set:", g.formal)
+	if !reflect.DeepEqual(zflag.GetFlagFormalField(f), zflag.GetFlagFormalField(g)) || !reflect.DeepEqual(zflag.GetFlagOrderedFormalField(f), zflag.GetFlagOrderedFormalField(g)) {
+		t.Error("Two flag sets sharing the same flags should stay consistent after being normalized. Original set:", zflag.GetFlagFormalField(f), "Duplicate set:", zflag.GetFlagFormalField(g))
 	}
 }
 
 func TestNormalizationSetFlags(t *testing.T) {
-	f := NewFlagSet("normalized", ContinueOnError)
+	f := zflag.NewFlagSet("normalized", zflag.ContinueOnError)
 	nfunc := wordSepNormalizeFunc
 	testName := "valid_flag"
 	normName := nfunc(nil, testName)
@@ -897,20 +899,20 @@ func TestNormalizationSetFlags(t *testing.T) {
 	f.Set(testName, "true")
 	f.SetNormalizeFunc(nfunc)
 
-	if len(f.formal) != 1 {
-		t.Error("Normalizing flags should not result in duplications in the flag set:", f.formal)
+	if len(zflag.GetFlagFormalField(f)) != 1 {
+		t.Error("Normalizing flags should not result in duplications in the flag set:", zflag.GetFlagFormalField(f))
 	}
-	if f.orderedFormal[0].Name != string(normName) {
+	if zflag.GetFlagOrderedFormalField(f)[0].Name != string(normName) {
 		t.Error("Flag name not normalized")
 	}
-	for k := range f.formal {
+	for k := range zflag.GetFlagFormalField(f) {
 		if k != "valid.flag" {
 			t.Errorf("The key in the flag map should have been normalized: wanted \"%s\", got \"%s\" instead", normName, k)
 		}
 	}
 
-	if !reflect.DeepEqual(f.formal, f.actual) {
-		t.Error("The map of set flags should get normalized. Formal:", f.formal, "Actual:", f.actual)
+	if !reflect.DeepEqual(zflag.GetFlagFormalField(f), zflag.GetActual(f)) {
+		t.Error("The map of set flags should get normalized. Formal:", zflag.GetFlagFormalField(f), "Actual:", zflag.GetActual(f))
 	}
 }
 
@@ -931,10 +933,10 @@ func (f *flagVar) Type() string {
 }
 
 func TestGroups(t *testing.T) {
-	var fs FlagSet
-	fs.Init("test", ContinueOnError)
-	fs.String("string1", "some", "string1 usage", OptShorthand('s'))
-	fs.Bool("bool1", false, "bool1 usage", OptShorthand('b'))
+	var fs zflag.FlagSet
+	fs.Init("test", zflag.ContinueOnError)
+	fs.String("string1", "some", "string1 usage", zflag.OptShorthand('s'))
+	fs.Bool("bool1", false, "bool1 usage", zflag.OptShorthand('b'))
 
 	fs.String("string2", "some", "string2 usage in group1")
 	fs.Lookup("string2").Group = "group1"
@@ -968,8 +970,8 @@ func TestGroups(t *testing.T) {
 }
 
 func TestEmptyUngrouped(t *testing.T) {
-	var fs FlagSet
-	fs.Init("test", ContinueOnError)
+	var fs zflag.FlagSet
+	fs.Init("test", zflag.ContinueOnError)
 
 	fs.String("string2", "some", "string2 usage in group1")
 	fs.Lookup("string2").Group = "group1"
@@ -998,10 +1000,10 @@ func TestEmptyUngrouped(t *testing.T) {
 }
 
 func TestUserDefined(t *testing.T) {
-	var flags FlagSet
-	flags.Init("test", ContinueOnError)
+	var flags zflag.FlagSet
+	flags.Init("test", zflag.ContinueOnError)
 	var v flagVar
-	flags.Var(&v, "v", "usage", OptShorthand('v'))
+	flags.Var(&v, "v", "usage", zflag.OptShorthand('v'))
 	if err := flags.Parse([]string{"--v=1", "-v2", "-v", "3"}); err != nil {
 		t.Error(err)
 	}
@@ -1015,10 +1017,10 @@ func TestUserDefined(t *testing.T) {
 }
 
 func TestSetOutput(t *testing.T) {
-	var flags FlagSet
+	var flags zflag.FlagSet
 	var buf bytes.Buffer
 	flags.SetOutput(&buf)
-	flags.Init("test", ContinueOnError)
+	flags.Init("test", zflag.ContinueOnError)
 	flags.Parse([]string{"--unknown"})
 	if out := buf.String(); !strings.Contains(out, "--unknown") {
 		t.Fatalf("expected output mentioning unknown; got %q", out)
@@ -1026,7 +1028,7 @@ func TestSetOutput(t *testing.T) {
 }
 
 func TestOutput(t *testing.T) {
-	var flags FlagSet
+	var flags zflag.FlagSet
 	var buf bytes.Buffer
 	expect := "an example string"
 	flags.SetOutput(&buf)
@@ -1038,9 +1040,9 @@ func TestOutput(t *testing.T) {
 
 func TestOutputExitOnError(t *testing.T) {
 	if os.Getenv("ZFLAG_CRASH_TEST") == "1" {
-		CommandLine = NewFlagSet(t.Name(), ExitOnError)
+		zflag.CommandLine = zflag.NewFlagSet(t.Name(), zflag.ExitOnError)
 		os.Args = []string{t.Name(), "--unknown"}
-		Parse()
+		zflag.Parse()
 		t.Fatal("this error should not be triggered")
 		return
 	}
@@ -1067,19 +1069,19 @@ func TestOutputExitOnError(t *testing.T) {
 // This tests that one can reset the flags. This still works but not well, and is
 // superseded by FlagSet.
 func TestChangingArgs(t *testing.T) {
-	ResetForTesting(func() { t.Fatal("bad parse") })
+	zflag.ResetForTesting(func() { t.Fatal("bad parse") })
 	oldArgs := os.Args
 	defer func() { os.Args = oldArgs }()
 	os.Args = []string{"cmd", "--before", "subcmd"}
-	before := Bool("before", false, "")
-	if err := CommandLine.Parse(os.Args[1:]); err != nil {
+	before := zflag.Bool("before", false, "")
+	if err := zflag.CommandLine.Parse(os.Args[1:]); err != nil {
 		t.Fatal(err)
 	}
-	cmd := Arg(0)
+	cmd := zflag.Arg(0)
 	os.Args = []string{"subcmd", "--after", "args"}
-	after := Bool("after", false, "")
-	Parse()
-	args := Args()
+	after := zflag.Bool("after", false, "")
+	zflag.Parse()
+	args := zflag.Args()
 
 	if !*before || cmd != "subcmd" || !*after || len(args) != 1 || args[0] != "args" {
 		t.Fatalf("expected true subcmd true [args] got %v %v %v %v", *before, cmd, *after, args)
@@ -1090,7 +1092,7 @@ func TestChangingArgs(t *testing.T) {
 func TestHelp(t *testing.T) {
 
 	var helpCalled = false
-	fs := NewFlagSet("help test", ContinueOnError)
+	fs := zflag.NewFlagSet("help test", zflag.ContinueOnError)
 	fs.Usage = func() { helpCalled = true }
 
 	var flag bool
@@ -1115,7 +1117,7 @@ func TestHelp(t *testing.T) {
 		if err == nil {
 			t.Fatalf("while passing %s, error expected\n", f)
 		}
-		if err != ErrHelp {
+		if err != zflag.ErrHelp {
 			t.Fatalf("while passing %s, expected ErrHelp; got %s\n", f, err)
 		}
 		if !helpCalled {
@@ -1166,7 +1168,7 @@ func TestHelp(t *testing.T) {
 
 	// If we define a help flag, that should override.
 	var help bool
-	fs.BoolVar(&help, "help", false, "help flag", OptShorthand('h'))
+	fs.BoolVar(&help, "help", false, "help flag", zflag.OptShorthand('h'))
 	err = fs.Parse([]string{"--help"})
 	if err != nil {
 		t.Fatal("expected no error for defined --help; got ", err)
@@ -1218,7 +1220,7 @@ func TestHelp(t *testing.T) {
 }
 
 func TestNoInterspersed(t *testing.T) {
-	f := NewFlagSet("test", ContinueOnError)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.SetInterspersed(false)
 	f.Bool("true", true, "always true")
 	f.Bool("false", false, "always false")
@@ -1233,8 +1235,8 @@ func TestNoInterspersed(t *testing.T) {
 }
 
 func TestTermination(t *testing.T) {
-	f := NewFlagSet("termination", ContinueOnError)
-	boolFlag := f.Bool("bool", false, "bool value", OptShorthand('l'))
+	f := zflag.NewFlagSet("termination", zflag.ContinueOnError)
+	boolFlag := f.Bool("bool", false, "bool value", zflag.OptShorthand('l'))
 	if f.Parsed() {
 		t.Error("f.Parse() = true before Parse")
 	}
@@ -1269,9 +1271,9 @@ func TestTermination(t *testing.T) {
 	}
 }
 
-func getDeprecatedFlagSet() *FlagSet {
-	f := NewFlagSet("bob", ContinueOnError)
-	f.Bool("badflag", true, "always true", OptDeprecated("use --good-flag instead"))
+func getDeprecatedFlagSet() *zflag.FlagSet {
+	f := zflag.NewFlagSet("bob", zflag.ContinueOnError)
+	f.Bool("badflag", true, "always true", zflag.OptDeprecated("use --good-flag instead"))
 	return f
 }
 func TestDeprecatedFlagInDocs(t *testing.T) {
@@ -1308,9 +1310,9 @@ func TestUnHiddenDeprecatedFlagInDocs(t *testing.T) {
 }
 
 func TestDeprecatedFlagShorthandInDocs(t *testing.T) {
-	f := NewFlagSet("bob", ContinueOnError)
+	f := zflag.NewFlagSet("bob", zflag.ContinueOnError)
 	name := "noshorthandflag"
-	f.Bool(name, true, "always true", OptShorthand('n'), OptShorthandDeprecated(fmt.Sprintf("use --%s instead", name)))
+	f.Bool(name, true, "always true", zflag.OptShorthand('n'), zflag.OptShorthandDeprecated(fmt.Sprintf("use --%s instead", name)))
 
 	out := new(bytes.Buffer)
 	f.SetOutput(out)
@@ -1321,7 +1323,7 @@ func TestDeprecatedFlagShorthandInDocs(t *testing.T) {
 	}
 }
 
-func parseReturnStderr(t *testing.T, f *FlagSet, args []string) (string, error) {
+func parseReturnStderr(t *testing.T, f *zflag.FlagSet, args []string) (string, error) {
 	oldStderr := os.Stderr
 	r, w, _ := os.Pipe()
 	os.Stderr = w
@@ -1344,9 +1346,9 @@ func parseReturnStderr(t *testing.T, f *FlagSet, args []string) (string, error) 
 }
 
 func TestDeprecatedFlagUsage(t *testing.T) {
-	f := NewFlagSet("bob", ContinueOnError)
+	f := zflag.NewFlagSet("bob", zflag.ContinueOnError)
 	usageMsg := "use --good-flag instead"
-	f.Bool("badflag", true, "always true", OptDeprecated(usageMsg))
+	f.Bool("badflag", true, "always true", zflag.OptDeprecated(usageMsg))
 
 	args := []string{"--badflag"}
 	out, err := parseReturnStderr(t, f, args)
@@ -1360,10 +1362,10 @@ func TestDeprecatedFlagUsage(t *testing.T) {
 }
 
 func TestDeprecatedFlagShorthandUsage(t *testing.T) {
-	f := NewFlagSet("bob", ContinueOnError)
+	f := zflag.NewFlagSet("bob", zflag.ContinueOnError)
 	name := "noshorthandflag"
 	usageMsg := fmt.Sprintf("use --%s instead", name)
-	f.Bool(name, true, "always true", OptShorthand('n'), OptShorthandDeprecated(usageMsg))
+	f.Bool(name, true, "always true", zflag.OptShorthand('n'), zflag.OptShorthandDeprecated(usageMsg))
 
 	args := []string{"-n"}
 	out, err := parseReturnStderr(t, f, args)
@@ -1377,9 +1379,9 @@ func TestDeprecatedFlagShorthandUsage(t *testing.T) {
 }
 
 func TestDeprecatedFlagUsageNormalized(t *testing.T) {
-	f := NewFlagSet("bob", ContinueOnError)
+	f := zflag.NewFlagSet("bob", zflag.ContinueOnError)
 	usageMsg := "use --good-flag instead"
-	f.Bool("bad-double_flag", true, "always true", OptDeprecated(usageMsg))
+	f.Bool("bad-double_flag", true, "always true", zflag.OptDeprecated(usageMsg))
 	f.SetNormalizeFunc(wordSepNormalizeFunc)
 
 	args := []string{"--bad_double_flag"}
@@ -1397,7 +1399,7 @@ func TestDeprecatedFlagUsageNormalized(t *testing.T) {
 func TestMultipleNormalizeFlagNameInvocations(t *testing.T) {
 	normalizeFlagNameInvocations = 0
 
-	f := NewFlagSet("normalized", ContinueOnError)
+	f := zflag.NewFlagSet("normalized", zflag.ContinueOnError)
 	f.SetNormalizeFunc(wordSepNormalizeFunc)
 	f.Bool("with_under_flag", false, "bool value")
 
@@ -1408,8 +1410,8 @@ func TestMultipleNormalizeFlagNameInvocations(t *testing.T) {
 
 //
 func TestHiddenFlagInUsage(t *testing.T) {
-	f := NewFlagSet("bob", ContinueOnError)
-	f.Bool("secretFlag", true, "shhh", OptHidden())
+	f := zflag.NewFlagSet("bob", zflag.ContinueOnError)
+	f.Bool("secretFlag", true, "shhh", zflag.OptHidden())
 
 	out := new(bytes.Buffer)
 	f.SetOutput(out)
@@ -1422,8 +1424,8 @@ func TestHiddenFlagInUsage(t *testing.T) {
 
 //
 func TestHiddenFlagUsage(t *testing.T) {
-	f := NewFlagSet("bob", ContinueOnError)
-	f.Bool("secretFlag", true, "shhh", OptHidden())
+	f := zflag.NewFlagSet("bob", zflag.ContinueOnError)
+	f.Bool("secretFlag", true, "shhh", zflag.OptHidden())
 
 	args := []string{"--secretFlag"}
 	out, err := parseReturnStderr(t, f, args)
@@ -1474,12 +1476,12 @@ func (cv *customValue) Set(s string) error {
 func (cv *customValue) Type() string { return "custom" }
 
 func TestPrintDefaults(t *testing.T) {
-	fs := NewFlagSet("print defaults test", ContinueOnError)
+	fs := zflag.NewFlagSet("print defaults test", zflag.ContinueOnError)
 	var buf bytes.Buffer
 	fs.SetOutput(&buf)
 	fs.Bool("A", false, "for bootstrapping, allow 'any' type")
 	fs.Bool("Alongflagname", false, "disable bounds checking")
-	fs.Bool("CCC", true, "a boolean defaulting to true", OptShorthand('C'))
+	fs.Bool("CCC", true, "a boolean defaulting to true", zflag.OptShorthand('C'))
 	fs.String("D", "", "set relative `path` for local imports")
 	fs.Float64("F", 2.7, "a non-zero `number`")
 	fs.Float64("G", 0, "a float that defaults to zero")
@@ -1494,11 +1496,11 @@ func TestPrintDefaults(t *testing.T) {
 	fs.Lookup("ND1").NoOptDefVal = "bar"
 	fs.Int("ND2", 1234, "a `num` with NoOptDefVal")
 	fs.Lookup("ND2").NoOptDefVal = "4321"
-	fs.Int("EEE", 4321, "a `num` with NoOptDefVal", OptShorthand('E'))
+	fs.Int("EEE", 4321, "a `num` with NoOptDefVal", zflag.OptShorthand('E'))
 	fs.ShorthandLookup('E').NoOptDefVal = "1234"
 	fs.StringSlice("StringSlice", []string{}, "string slice with zero default")
 	fs.StringArray("StringArray", []string{}, "string array with zero default")
-	fs.Count("verbose", "verbosity", OptShorthand('v'))
+	fs.Count("verbose", "verbosity", zflag.OptShorthand('v'))
 	fs.Int("disableDefault", -1, "A non-zero int with DisablePrintDefault")
 	fs.Lookup("disableDefault").DisablePrintDefault = true
 
@@ -1518,11 +1520,11 @@ func TestPrintDefaults(t *testing.T) {
 }
 
 func TestVisitAllFlagOrder(t *testing.T) {
-	fs := NewFlagSet("TestVisitAllFlagOrder", ContinueOnError)
+	fs := zflag.NewFlagSet("TestVisitAllFlagOrder", zflag.ContinueOnError)
 	fs.SortFlags = false
 	// https://github.com/spf13/zflag/issues/120
-	fs.SetNormalizeFunc(func(f *FlagSet, name string) NormalizedName {
-		return NormalizedName(name)
+	fs.SetNormalizeFunc(func(f *zflag.FlagSet, name string) zflag.NormalizedName {
+		return zflag.NormalizedName(name)
 	})
 
 	names := []string{"C", "B", "A", "D"}
@@ -1531,7 +1533,7 @@ func TestVisitAllFlagOrder(t *testing.T) {
 	}
 
 	i := 0
-	fs.VisitAll(func(f *Flag) {
+	fs.VisitAll(func(f *zflag.Flag) {
 		if names[i] != f.Name {
 			t.Errorf("Incorrect order. Expected %v, got %v", names[i], f.Name)
 		}
@@ -1540,7 +1542,7 @@ func TestVisitAllFlagOrder(t *testing.T) {
 }
 
 func TestVisitFlagOrder(t *testing.T) {
-	fs := NewFlagSet("TestVisitFlagOrder", ContinueOnError)
+	fs := zflag.NewFlagSet("TestVisitFlagOrder", zflag.ContinueOnError)
 	fs.SortFlags = false
 	names := []string{"C", "B", "A", "D"}
 	for _, name := range names {
@@ -1549,7 +1551,7 @@ func TestVisitFlagOrder(t *testing.T) {
 	}
 
 	i := 0
-	fs.Visit(func(f *Flag) {
+	fs.Visit(func(f *zflag.Flag) {
 		if names[i] != f.Name {
 			t.Errorf("Incorrect order. Expected %v, got %v", names[i], f.Name)
 		}
@@ -1558,14 +1560,13 @@ func TestVisitFlagOrder(t *testing.T) {
 }
 
 func TestUnquoteUsage(t *testing.T) {
-
 	var buf bytes.Buffer
-	var fs = NewFlagSet(t.Name(), ContinueOnError)
+	var fs = zflag.NewFlagSet(t.Name(), zflag.ContinueOnError)
 	fs.SetOutput(&buf)
 	want := "Usage of TestUnquoteUsage:\n"
 
 	var check = func(want string) {
-		fs.defaultUsage()
+		zflag.CallDefaultUsage(fs)
 		if want != buf.String() {
 			t.Fatalf("\nexpected:\n%s\n\ngot:\n%s", want, buf.String())
 		}
@@ -1587,7 +1588,7 @@ func TestUnquoteUsage(t *testing.T) {
 	fs.String("flagC", "", "flagC: `ctype3`")
 	fs.Lookup("flagC").DisableUnquoteUsage = true
 	want += "      --flagC string   flagC: `ctype3`\n"
-	fs.defaultUsage()
+	zflag.CallDefaultUsage(fs)
 	if want != buf.String() {
 		t.Fatalf("\nexpected:\n%s\n\ngot:\n%s", want, buf.String())
 	}
@@ -1598,7 +1599,7 @@ func TestUnquoteUsage(t *testing.T) {
 	fs.Lookup("flagD").UsageType = "bar"
 	fs.Lookup("flagD").DisableUnquoteUsage = true
 	want += "      --flagD bar      flagD: `ctype4`\n"
-	fs.defaultUsage()
+	zflag.CallDefaultUsage(fs)
 	if want != buf.String() {
 		t.Fatalf("\nexpected:\n%s\n\ngot:\n%s", want, buf.String())
 	}
@@ -1607,7 +1608,7 @@ func TestUnquoteUsage(t *testing.T) {
 
 // TestCustomFlagValue verifies that custom flag usage string doesn't change its "default" section after parsing
 func TestCustomFlagDefValue(t *testing.T) {
-	fs := NewFlagSet("TestCustomFlagDefValue", ContinueOnError)
+	fs := zflag.NewFlagSet("TestCustomFlagDefValue", zflag.ContinueOnError)
 	var buf bytes.Buffer
 	fs.SetOutput(&buf)
 

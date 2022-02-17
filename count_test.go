@@ -1,24 +1,28 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
-func setUpCount(c *int) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
-	f.CountVar(c, "verbose", "a counter", OptShorthand('v'))
+func setUpCount(c *int) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.CountVar(c, "verbose", "a counter", zflag.OptShorthand('v'))
 	return f
 }
 
 func TestCountValueImplementsGetter(t *testing.T) {
-	var v Value = new(countValue)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.Count("verbose", "a counter")
+	v := f.Lookup("verbose").Value
 
-	if _, ok := v.(Getter); !ok {
+	if _, ok := v.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v)
 	}
 }

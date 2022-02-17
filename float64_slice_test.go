@@ -1,7 +1,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"fmt"
@@ -9,24 +9,28 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
-func setUpF64SFlagSet(f64sp *[]float64) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpF64SFlagSet(f64sp *[]float64) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.Float64SliceVar(f64sp, "f64s", []float64{}, "Command separated list!")
 	return f
 }
 
-func setUpF64SFlagSetWithDefault(f64sp *[]float64) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpF64SFlagSetWithDefault(f64sp *[]float64) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.Float64SliceVar(f64sp, "f64s", []float64{0.0, 1.0}, "Command separated list!")
 	return f
 }
 
 func TestF64SValueImplementsGetter(t *testing.T) {
-	var v Value = new(float64SliceValue)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.Float64Slice("f64s", []float64{0.0, 1.0}, "Command separated list!")
+	v := f.Lookup("f64s").Value
 
-	if _, ok := v.(Getter); !ok {
+	if _, ok := v.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v)
 	}
 }
@@ -181,8 +185,8 @@ func TestF64SAsSliceValue(t *testing.T) {
 		t.Fatal("expected no error; got", err)
 	}
 
-	f.VisitAll(func(f *Flag) {
-		if val, ok := f.Value.(SliceValue); ok {
+	f.VisitAll(func(f *zflag.Flag) {
+		if val, ok := f.Value.(zflag.SliceValue); ok {
 			_ = val.Replace([]string{"3.1"})
 		}
 	})

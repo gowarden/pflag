@@ -1,12 +1,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"bytes"
 	"strconv"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
 // This value can be a boolean ("true", "false") or "maybe"
@@ -54,17 +56,19 @@ func (v *triStateValue) Type() string {
 	return "version"
 }
 
-func setUpFlagSet(tristate *triStateValue) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpFlagSet(tristate *triStateValue) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	*tristate = triStateFalse
-	f.Var(tristate, "tristate", "tristate value (true, maybe or false)", OptShorthand('t'), OptNoOptDefVal("true"))
+	f.Var(tristate, "tristate", "tristate value (true, maybe or false)", zflag.OptShorthand('t'), zflag.OptNoOptDefVal("true"))
 	return f
 }
 
 func TestBoolValueImplementsGetter(t *testing.T) {
-	var v Value = new(boolValue)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.Bool("bool", false, "bool")
+	v := f.Lookup("bool").Value
 
-	if _, ok := v.(Getter); !ok {
+	if _, ok := v.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v)
 	}
 }
@@ -170,10 +174,10 @@ func TestInvalidValue(t *testing.T) {
 }
 
 func TestBoolP(t *testing.T) {
-	b := Bool("bool", false, "bool value in CommandLine", OptShorthand('b'))
-	c := Bool("c", false, "other bool value", OptShorthand('c'))
+	b := zflag.Bool("bool", false, "bool value in CommandLine", zflag.OptShorthand('b'))
+	c := zflag.Bool("c", false, "other bool value", zflag.OptShorthand('c'))
 	args := []string{"--bool"}
-	if err := CommandLine.Parse(args); err != nil {
+	if err := zflag.CommandLine.Parse(args); err != nil {
 		t.Error("expected no error, got ", err)
 	}
 	if *b != true {

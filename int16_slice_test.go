@@ -1,31 +1,35 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
-func setUpI16SFlagSet(isp *[]int16) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpI16SFlagSet(isp *[]int16) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.Int16SliceVar(isp, "is", []int16{}, "Command separated list!")
 	return f
 }
 
-func setUpI16SFlagSetWithDefault(isp *[]int16) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpI16SFlagSetWithDefault(isp *[]int16) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.Int16SliceVar(isp, "is", []int16{0, 1}, "Command separated list!")
 	return f
 }
 
 func TestI16SliceValueImplementsGetter(t *testing.T) {
-	var v Value = new(int16SliceValue)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.Int16Slice("is", []int16{0, 1}, "Command separated list!")
+	v := f.Lookup("is").Value
 
-	if _, ok := v.(Getter); !ok {
+	if _, ok := v.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v)
 	}
 }
@@ -177,8 +181,8 @@ func TestI16SAsSliceValue(t *testing.T) {
 		t.Fatal("expected no error; got", err)
 	}
 
-	f.VisitAll(func(f *Flag) {
-		if val, ok := f.Value.(SliceValue); ok {
+	f.VisitAll(func(f *zflag.Flag) {
+		if val, ok := f.Value.(zflag.SliceValue); ok {
 			_ = val.Replace([]string{"3"})
 		}
 	})

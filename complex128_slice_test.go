@@ -4,31 +4,35 @@
 //go:build go1.15
 // +build go1.15
 
-package zflag
+package zflag_test
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
-func setUpC128SFlagSet(c128sp *[]complex128) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpC128SFlagSet(c128sp *[]complex128) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.Complex128SliceVar(c128sp, "c128s", []complex128{}, "Command separated list!")
 	return f
 }
 
-func setUpC128SFlagSetWithDefault(c128sp *[]complex128) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpC128SFlagSetWithDefault(c128sp *[]complex128) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.Complex128SliceVar(c128sp, "c128s", []complex128{0.0, 1.0}, "Command separated list!")
 	return f
 }
 
 func TestC128SliceValueImplementsGetter(t *testing.T) {
-	var v Value = new(complex128SliceValue)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.Complex128Slice("c128s", []complex128{0.0, 1.0}, "Command separated list!")
+	v := f.Lookup("c128s").Value
 
-	if _, ok := v.(Getter); !ok {
+	if _, ok := v.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v)
 	}
 }
@@ -174,8 +178,8 @@ func TestC128SAsSliceValue(t *testing.T) {
 		t.Fatal("expected no error; got", err)
 	}
 
-	f.VisitAll(func(f *Flag) {
-		if val, ok := f.Value.(SliceValue); ok {
+	f.VisitAll(func(f *zflag.Flag) {
+		if val, ok := f.Value.(zflag.SliceValue); ok {
 			_ = val.Replace([]string{"3.1"})
 		}
 	})

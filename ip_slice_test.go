@@ -1,7 +1,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"fmt"
@@ -9,16 +9,18 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
-func setUpIPSFlagSet(ipsp *[]net.IP) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpIPSFlagSet(ipsp *[]net.IP) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.IPSliceVar(ipsp, "ips", []net.IP{}, "Command separated list!")
 	return f
 }
 
-func setUpIPSFlagSetWithDefault(ipsp *[]net.IP) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpIPSFlagSetWithDefault(ipsp *[]net.IP) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.IPSliceVar(ipsp, "ips",
 		[]net.IP{
 			net.ParseIP("192.168.1.1"),
@@ -29,9 +31,11 @@ func setUpIPSFlagSetWithDefault(ipsp *[]net.IP) *FlagSet {
 }
 
 func TestIPSValueImplementsGetter(t *testing.T) {
-	var v Value = new(ipSliceValue)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.IPSlice("ips", []net.IP{}, "Command separated list!")
+	v := f.Lookup("ips").Value
 
-	if _, ok := v.(Getter); !ok {
+	if _, ok := v.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v)
 	}
 }
@@ -229,8 +233,8 @@ func TestIPSAsSliceValue(t *testing.T) {
 		t.Fatal("expected no error; got", err)
 	}
 
-	f.VisitAll(func(f *Flag) {
-		if val, ok := f.Value.(SliceValue); ok {
+	f.VisitAll(func(f *zflag.Flag) {
+		if val, ok := f.Value.(zflag.SliceValue); ok {
 			_ = val.Replace([]string{"192.168.1.2"})
 		}
 	})

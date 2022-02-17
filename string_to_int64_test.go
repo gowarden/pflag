@@ -1,7 +1,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"bytes"
@@ -9,16 +9,18 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
-func setUpS2I64FlagSet(s2ip *map[string]int64) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpS2I64FlagSet(s2ip *map[string]int64) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.StringToInt64Var(s2ip, "s2i", map[string]int64{}, "Command separated ls2it!")
 	return f
 }
 
-func setUpS2I64FlagSetWithDefault(s2ip *map[string]int64) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpS2I64FlagSetWithDefault(s2ip *map[string]int64) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.StringToInt64Var(s2ip, "s2i", map[string]int64{"a": 1, "b": 2}, "Command separated ls2it!")
 	return f
 }
@@ -39,9 +41,11 @@ func createS2I64Flag(vals map[string]int64) string {
 }
 
 func TestS2I64ValueImplementsGetter(t *testing.T) {
-	var v Value = new(stringToInt64Value)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.StringToInt64("s2i", map[string]int64{}, "Command separated ls2it!")
+	v := f.Lookup("s2i").Value
 
-	if _, ok := v.(Getter); !ok {
+	if _, ok := v.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v)
 	}
 }

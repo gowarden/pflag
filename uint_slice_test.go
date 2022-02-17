@@ -1,7 +1,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"fmt"
@@ -9,24 +9,28 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
-func setUpUISFlagSet(uisp *[]uint) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpUISFlagSet(uisp *[]uint) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.UintSliceVar(uisp, "uis", []uint{}, "Command separated list!")
 	return f
 }
 
-func setUpUISFlagSetWithDefault(uisp *[]uint) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpUISFlagSetWithDefault(uisp *[]uint) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.UintSliceVar(uisp, "uis", []uint{0, 1}, "Command separated list!")
 	return f
 }
 
 func TestUISValueImplementsGetter(t *testing.T) {
-	var v Value = new(uintSliceValue)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.UintSlice("uis", []uint{}, "Command separated list!")
+	v := f.Lookup("uis").Value
 
-	if _, ok := v.(Getter); !ok {
+	if _, ok := v.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v)
 	}
 }
@@ -193,8 +197,8 @@ func TestUISAsSliceValue(t *testing.T) {
 		t.Fatal("expected no error; got", err)
 	}
 
-	f.VisitAll(func(f *Flag) {
-		if val, ok := f.Value.(SliceValue); ok {
+	f.VisitAll(func(f *zflag.Flag) {
+		if val, ok := f.Value.(zflag.SliceValue); ok {
 			_ = val.Replace([]string{"3"})
 		}
 	})

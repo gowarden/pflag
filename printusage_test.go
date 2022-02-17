@@ -1,12 +1,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"bytes"
 	"io"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
 const expectedOutput = `      --long-form    Some description
@@ -17,12 +19,12 @@ const expectedOutput = `      --long-form    Some description
                        multiline
 `
 
-func setUpZFlagSet(buf io.Writer) *FlagSet {
-	f := NewFlagSet("test", ExitOnError)
+func setUpZFlagSet(buf io.Writer) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ExitOnError)
 	f.Bool("long-form", false, "Some description")
 	f.Bool("long-form2", false, "Some description\n  with multiline")
-	f.Bool("long-name", false, "Some description", OptShorthand('s'))
-	f.Bool("long-name2", false, "Some description with\n  multiline", OptShorthand('t'))
+	f.Bool("long-name", false, "Some description", zflag.OptShorthand('s'))
+	f.Bool("long-name2", false, "Some description with\n  multiline", zflag.OptShorthand('t'))
 	f.SetOutput(buf)
 	return f
 }
@@ -37,14 +39,14 @@ func TestPrintUsage(t *testing.T) {
 	}
 }
 
-func setUpZFlagSet2(buf io.Writer) *FlagSet {
-	f := NewFlagSet("test", ExitOnError)
+func setUpZFlagSet2(buf io.Writer) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ExitOnError)
 	f.Bool("long-form", false, "Some description")
 	f.Bool("long-form2", false, "Some description\n  with multiline")
-	f.Bool("long-name", false, "Some description", OptShorthand('s'))
-	f.Bool("long-name2", false, "Some description with\n  multiline", OptShorthand('t'))
-	f.String("some-very-long-arg", "test", "Some very long description having break the limit", OptShorthand('l'))
-	f.String("other-very-long-arg", "long-default-value", "Some very long description having break the limit", OptShorthand('o'))
+	f.Bool("long-name", false, "Some description", zflag.OptShorthand('s'))
+	f.Bool("long-name2", false, "Some description with\n  multiline", zflag.OptShorthand('t'))
+	f.String("some-very-long-arg", "test", "Some very long description having break the limit", zflag.OptShorthand('l'))
+	f.String("other-very-long-arg", "long-default-value", "Some very long description having break the limit", zflag.OptShorthand('o'))
 	f.String("some-very-long-arg2", "very long default value", "Some very long description\nwith line break\nmultiple")
 	f.SetOutput(buf)
 	return f

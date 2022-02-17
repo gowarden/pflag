@@ -17,3 +17,19 @@ func ResetForTesting(usage func()) {
 	CommandLine.Usage = DefaultUsage
 	Usage = usage
 }
+
+func GetFlagOrderedFormalField(f *FlagSet) []*Flag {
+	return f.orderedFormal
+}
+
+func GetActual(f *FlagSet) map[NormalizedName]*Flag {
+	return f.actual
+}
+
+func GetFlagFormalField(f *FlagSet) map[NormalizedName]*Flag {
+	return f.formal
+}
+
+func CallDefaultUsage(f *FlagSet) {
+	f.defaultUsage()
+}

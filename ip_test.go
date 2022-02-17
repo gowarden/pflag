@@ -1,7 +1,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package zflag
+package zflag_test
 
 import (
 	"fmt"
@@ -9,18 +9,22 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
-func setUpIP(ip *net.IP) *FlagSet {
-	f := NewFlagSet("test", ContinueOnError)
+func setUpIP(ip *net.IP) *zflag.FlagSet {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.IPVar(ip, "address", net.ParseIP("0.0.0.0"), "IP Address")
 	return f
 }
 
 func TestIPValueImplementsGetter(t *testing.T) {
-	var v Value = new(ipValue)
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.IP("address", net.ParseIP("0.0.0.0"), "IP Address")
+	v := f.Lookup("address").Value
 
-	if _, ok := v.(Getter); !ok {
+	if _, ok := v.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v)
 	}
 }
