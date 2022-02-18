@@ -4,10 +4,8 @@
 package zflag_test
 
 import (
-	"fmt"
 	"net"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
@@ -68,23 +66,8 @@ func TestEmptyIPValue(t *testing.T) {
 	var ips []net.IP
 	f := setUpIPSFlagSet(&ips)
 	err := f.Parse([]string{"--ips="})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-
-	getIPS, err := f.GetIPSlice("ips")
-	if err != nil {
-		t.Fatal("got an error from GetIPSlice():", err)
-	}
-	if len(getIPS) != 0 {
-		t.Fatalf("got ips %v with len=%d but expected length=0", getIPS, len(getIPS))
-	}
-	getIPS_2, err := f.Get("ips")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getIPS_2, getIPS) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getIPS, getIPS, getIPS_2, getIPS_2)
+	if err == nil {
+		t.Fatal("expected an error; got none")
 	}
 }
 
@@ -93,8 +76,7 @@ func TestIPS(t *testing.T) {
 	f := setUpIPSFlagSet(&ips)
 
 	vals := []string{"192.168.1.1", "10.0.0.1", "0:0:0:0:0:0:0:2"}
-	arg := fmt.Sprintf("--ips=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--ips", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -167,8 +149,7 @@ func TestIPSWithDefault(t *testing.T) {
 	f := setUpIPSFlagSetWithDefault(&ips)
 
 	vals := []string{"192.168.1.1", "0:0:0:0:0:0:0:1"}
-	arg := fmt.Sprintf("--ips=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--ips", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -200,35 +181,12 @@ func TestIPSWithDefault(t *testing.T) {
 	}
 }
 
-func TestIPSCalledTwice(t *testing.T) {
-	var ips []net.IP
-	f := setUpIPSFlagSet(&ips)
-
-	in := []string{"192.168.1.2,0:0:0:0:0:0:0:1", "10.0.0.1"}
-	expected := []net.IP{net.ParseIP("192.168.1.2"), net.ParseIP("0:0:0:0:0:0:0:1"), net.ParseIP("10.0.0.1")}
-	argfmt := "ips=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range ips {
-		if !expected[i].Equal(v) {
-			t.Fatalf("expected ips[%d] to be %s but got: %s", i, expected[i], v)
-		}
-	}
-}
-
 func TestIPSAsSliceValue(t *testing.T) {
 	var ips []net.IP
 	f := setUpIPSFlagSet(&ips)
 
 	in := []string{"192.168.1.1", "0:0:0:0:0:0:0:1"}
-	argfmt := "--ips=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
+	err := f.Parse(repeatFlag("--ips", in...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -243,7 +201,7 @@ func TestIPSAsSliceValue(t *testing.T) {
 	}
 }
 
-func TestIPSBadQuoting(t *testing.T) {
+func TestIPSBadSpacing(t *testing.T) {
 
 	tests := []struct {
 		Want    []net.IP
@@ -288,7 +246,8 @@ func TestIPSBadQuoting(t *testing.T) {
 				net.ParseIP("2cac:61d3:c5ff:6caf:73e0:1b1a:c336:c1ca"),
 			},
 			FlagArg: []string{
-				" 5170:f971:cfac:7be3:512a:af37:952c:bc33  , 93.21.145.140     ",
+				" 5170:f971:cfac:7be3:512a:af37:952c:bc33  ",
+				" 93.21.145.140     ",
 				"2cac:61d3:c5ff:6caf:73e0:1b1a:c336:c1ca",
 			},
 		},
@@ -300,19 +259,19 @@ func TestIPSBadQuoting(t *testing.T) {
 				net.ParseIP("2e5e:66b2:6441:848:5b74:76ea:574c:3a7b"),
 			},
 			FlagArg: []string{
-				`"2e5e:66b2:6441:848:5b74:76ea:574c:3a7b,        2e5e:66b2:6441:848:5b74:76ea:574c:3a7b,2e5e:66b2:6441:848:5b74:76ea:574c:3a7b     "`,
+				"2e5e:66b2:6441:848:5b74:76ea:574c:3a7b",
+				"        2e5e:66b2:6441:848:5b74:76ea:574c:3a7b",
+				"2e5e:66b2:6441:848:5b74:76ea:574c:3a7b     ",
 				" 2e5e:66b2:6441:848:5b74:76ea:574c:3a7b"},
 		},
 	}
 
 	for i, test := range tests {
-
 		var ips []net.IP
 		f := setUpIPSFlagSet(&ips)
 
-		if err := f.Parse([]string{fmt.Sprintf("--ips=%s", strings.Join(test.FlagArg, ","))}); err != nil {
-			t.Fatalf("flag parsing failed with error: %s\nparsing:\t%#v\nwant:\t\t%s",
-				err, test.FlagArg, test.Want[i])
+		if err := f.Parse(repeatFlag("--ips", test.FlagArg...)); err != nil {
+			t.Fatalf("flag parsing failed with error: %s\nparsing:\t%#v\nwant:\t\t%s", err, test.FlagArg, test.Want[i])
 		}
 
 		for j, b := range ips {

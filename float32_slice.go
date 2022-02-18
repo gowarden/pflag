@@ -6,7 +6,6 @@ package zflag
 import (
 	"fmt"
 	"strconv"
-	"strings"
 )
 
 // -- float32Slice Value
@@ -23,24 +22,17 @@ func newFloat32SliceValue(val []float32, p *[]float32) *float32SliceValue {
 }
 
 func (s *float32SliceValue) Set(val string) error {
-	ss := strings.Split(val, ",")
-	out := make([]float32, len(ss))
-	for i, d := range ss {
-		var err error
-		var temp64 float64
-		temp64, err = strconv.ParseFloat(d, 32)
-		if err != nil {
-			return err
-		}
-		out[i] = float32(temp64)
+	temp64, err := strconv.ParseFloat(val, 32)
+	if err != nil {
+		return err
+	}
 
-	}
 	if !s.changed {
-		*s.value = out
-	} else {
-		*s.value = append(*s.value, out...)
+		*s.value = []float32{}
 	}
+	*s.value = append(*s.value, float32(temp64))
 	s.changed = true
+
 	return nil
 }
 
@@ -53,11 +45,11 @@ func (s *float32SliceValue) Type() string {
 }
 
 func (s *float32SliceValue) String() string {
-	out := make([]string, len(*s.value))
-	for i, d := range *s.value {
-		out[i] = fmt.Sprintf("%f", d)
+	if s.value == nil {
+		return "[]"
 	}
-	return "[" + strings.Join(out, ",") + "]"
+
+	return fmt.Sprintf("%f", *s.value)
 }
 
 func (s *float32SliceValue) fromString(val string) (float32, error) {

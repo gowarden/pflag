@@ -6,7 +6,6 @@ package zflag
 import (
 	"fmt"
 	"strconv"
-	"strings"
 )
 
 // -- intSlice Value
@@ -23,22 +22,17 @@ func newIntSliceValue(val []int, p *[]int) *intSliceValue {
 }
 
 func (s *intSliceValue) Set(val string) error {
-	ss := strings.Split(val, ",")
-	out := make([]int, len(ss))
-	for i, d := range ss {
-		var err error
-		out[i], err = strconv.Atoi(d)
-		if err != nil {
-			return err
-		}
+	out, err := strconv.Atoi(val)
+	if err != nil {
+		return err
+	}
 
-	}
 	if !s.changed {
-		*s.value = out
-	} else {
-		*s.value = append(*s.value, out...)
+		*s.value = []int{}
 	}
+	*s.value = append(*s.value, out)
 	s.changed = true
+
 	return nil
 }
 
@@ -51,11 +45,11 @@ func (s *intSliceValue) Type() string {
 }
 
 func (s *intSliceValue) String() string {
-	out := make([]string, len(*s.value))
-	for i, d := range *s.value {
-		out[i] = fmt.Sprintf("%d", d)
+	if s.value == nil {
+		return "[]"
 	}
-	return "[" + strings.Join(out, ",") + "]"
+
+	return fmt.Sprintf("%d", *s.value)
 }
 
 func (s *intSliceValue) Append(val string) error {

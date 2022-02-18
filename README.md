@@ -65,11 +65,10 @@ but
 -abcs1234
 ```
 
-Slice flags can be specified multiple times, or specified with an equal sign and csv.
+Slice flags can be specified multiple times.
 
 ```plain
 --sliceVal one --sliceVal=two
---sliceVal=one,two
 ```
 
 Integer flags accept 1234, 0664, 0x1234 and may be negative.

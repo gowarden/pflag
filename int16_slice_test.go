@@ -6,7 +6,6 @@ package zflag_test
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
@@ -63,8 +62,7 @@ func TestI16S(t *testing.T) {
 	f := setUpI16SFlagSet(&is)
 
 	vals := []string{"1", "2", "4", "3"}
-	arg := fmt.Sprintf("--is=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--is", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -136,8 +134,7 @@ func TestI16SWithDefault(t *testing.T) {
 	f := setUpI16SFlagSetWithDefault(&is)
 
 	vals := []string{"1", "2"}
-	arg := fmt.Sprintf("--is=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--is", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -188,25 +185,5 @@ func TestI16SAsSliceValue(t *testing.T) {
 	})
 	if len(i16s) != 1 || i16s[0] != 3 {
 		t.Fatalf("Expected ss to be overwritten with '3.1', but got: %v", i16s)
-	}
-}
-
-func TestI16SCalledTwice(t *testing.T) {
-	var is []int16
-	f := setUpI16SFlagSet(&is)
-
-	in := []string{"1,2", "3"}
-	expected := []int16{1, 2, 3}
-	argfmt := "--is=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		if expected[i] != v {
-			t.Fatalf("expected is[%d] to be %d but got: %d", i, expected[i], v)
-		}
 	}
 }

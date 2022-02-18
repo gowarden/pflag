@@ -6,7 +6,6 @@ package zflag_test
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
@@ -63,8 +62,7 @@ func TestI8S(t *testing.T) {
 	f := setUpI8SFlagSet(&is)
 
 	vals := []string{"1", "2", "4", "3"}
-	arg := fmt.Sprintf("--is=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--is", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -136,8 +134,7 @@ func TestI8SWithDefault(t *testing.T) {
 	f := setUpI8SFlagSetWithDefault(&is)
 
 	vals := []string{"1", "2"}
-	arg := fmt.Sprintf("--is=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--is", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -195,12 +192,9 @@ func TestI8SCalledTwice(t *testing.T) {
 	var is []int8
 	f := setUpI8SFlagSet(&is)
 
-	in := []string{"1,2", "3"}
+	in := []string{"1", "2", "3"}
 	expected := []int8{1, 2, 3}
-	argfmt := "--is=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
+	err := f.Parse(repeatFlag("--is", in...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}

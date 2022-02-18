@@ -1452,7 +1452,6 @@ const defaultOutput = `      --A                     for bootstrapping, allow 'a
       --N int                 a non-zero int (default 27)
       --ND1 string[="bar"]    a string with NoOptDefVal (default "foo")
       --ND2 num[=4321]        a num with NoOptDefVal (default 1234)
-      --StringArray strings   string array with zero default
       --StringSlice strings   string slice with zero default
       --Z int                 an int that defaults to zero
       --custom custom         custom Value implementation
@@ -1499,7 +1498,6 @@ func TestPrintDefaults(t *testing.T) {
 	fs.Int("EEE", 4321, "a `num` with NoOptDefVal", zflag.OptShorthand('E'))
 	fs.ShorthandLookup('E').NoOptDefVal = "1234"
 	fs.StringSlice("StringSlice", []string{}, "string slice with zero default")
-	fs.StringArray("StringArray", []string{}, "string array with zero default")
 	fs.Count("verbose", "verbosity", zflag.OptShorthand('v'))
 	fs.Int("disableDefault", -1, "A non-zero int with DisablePrintDefault")
 	fs.Lookup("disableDefault").DisablePrintDefault = true

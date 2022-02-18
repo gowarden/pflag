@@ -9,7 +9,6 @@ package zflag_test
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
@@ -66,8 +65,7 @@ func TestC128S(t *testing.T) {
 	f := setUpC128SFlagSet(&c128s)
 
 	vals := []string{"1.0", "2.0", "4.0", "3.0"}
-	arg := fmt.Sprintf("--c128s=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--c128s", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -135,8 +133,7 @@ func TestC128SWithDefault(t *testing.T) {
 	f := setUpC128SFlagSetWithDefault(&c128s)
 
 	vals := []string{"1.0", "2.0"}
-	arg := fmt.Sprintf("--c128s=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--c128s", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -192,12 +189,9 @@ func TestC128SCalledTwice(t *testing.T) {
 	var c128s []complex128
 	f := setUpC128SFlagSet(&c128s)
 
-	in := []string{"1.0,2.0", "3.0", "0+2i", "1,2i,2.5+3.1i"}
+	in := []string{"1.0", "2.0", "3.0", "0+2i", "1", "2i", "2.5+3.1i"}
 	expected := []complex128{1.0, 2.0, 3.0, complex(0, 2), complex(1, 0), complex(0, 2), complex(2.5, 3.1)}
-	argfmt := "--c128s=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
+	err := f.Parse(repeatFlag("--c128s", in...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}

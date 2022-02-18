@@ -4,7 +4,6 @@
 package zflag_test
 
 import (
-	"bytes"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -25,19 +24,12 @@ func setUpS2I64FlagSetWithDefault(s2ip *map[string]int64) *zflag.FlagSet {
 	return f
 }
 
-func createS2I64Flag(vals map[string]int64) string {
-	var buf bytes.Buffer
-	i := 0
+func createS2I64Flag(vals map[string]int64) []string {
+	var r []string
 	for k, v := range vals {
-		if i > 0 {
-			buf.WriteRune(',')
-		}
-		buf.WriteString(k)
-		buf.WriteRune('=')
-		buf.WriteString(strconv.FormatInt(v, 10))
-		i++
+		r = append(r, fmt.Sprintf("%s=%s", k, strconv.FormatInt(v, 10)))
 	}
-	return buf.String()
+	return r
 }
 
 func TestS2I64ValueImplementsGetter(t *testing.T) {
@@ -79,8 +71,7 @@ func TestS2I64(t *testing.T) {
 	f := setUpS2I64FlagSet(&s2i)
 
 	vals := map[string]int64{"a": 1, "b": 2, "d": 4, "c": 3}
-	arg := fmt.Sprintf("--s2i=%s", createS2I64Flag(vals))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--s2i", createS2I64Flag(vals)...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -146,8 +137,7 @@ func TestS2I64WithDefault(t *testing.T) {
 	f := setUpS2I64FlagSetWithDefault(&s2i)
 
 	vals := map[string]int64{"a": 1, "b": 2}
-	arg := fmt.Sprintf("--s2i=%s", createS2I64Flag(vals))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--s2i", createS2I64Flag(vals)...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -179,12 +169,9 @@ func TestS2I64CalledTwice(t *testing.T) {
 	var s2i map[string]int64
 	f := setUpS2I64FlagSet(&s2i)
 
-	in := []string{"a=1,b=2", "b=3"}
+	in := []string{"a=1", "b=2", "b=3"}
 	expected := map[string]int64{"a": 1, "b": 3}
-	argfmt := "--s2i=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
+	err := f.Parse(repeatFlag("--s2i", in...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}

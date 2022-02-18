@@ -5,7 +5,6 @@ package zflag
 
 import (
 	"fmt"
-	"io"
 	"net"
 	"strings"
 )
@@ -27,33 +26,21 @@ func (s *ipNetSliceValue) Get() interface{} {
 	return *s.value
 }
 
-// Set converts, and assigns, the comma-separated IPNet argument string representation as the []net.IPNet value of this flag.
+// Set converts, and assigns, the IPNet argument string representation as the []net.IPNet value of this flag.
 // If Set is called on a flag that already has a []net.IPNet assigned, the newly converted values will be appended.
 func (s *ipNetSliceValue) Set(val string) error {
-
-	// remove all quote characters
-	rmQuote := strings.NewReplacer(`"`, "", `'`, "", "`", "")
-
-	// read flag arguments with CSV parser
-	ipNetStrSlice, err := readAsCSV(rmQuote.Replace(val))
-	if err != nil && err != io.EOF {
+	_, n, err := net.ParseCIDR(strings.TrimSpace(val))
+	if err != nil {
 		return err
 	}
-
-	// parse ip values into slice
-	out := make([]net.IPNet, 0, len(ipNetStrSlice))
-	for _, ipNetStr := range ipNetStrSlice {
-		_, n, err := net.ParseCIDR(strings.TrimSpace(ipNetStr))
-		if err != nil {
-			return fmt.Errorf("invalid string being converted to CIDR: %s", ipNetStr)
-		}
-		out = append(out, *n)
+	if n == nil {
+		return fmt.Errorf("invalid string being converted to CIDR: %s", val)
 	}
 
 	if !s.changed {
-		*s.value = out
+		*s.value = []net.IPNet{*n}
 	} else {
-		*s.value = append(*s.value, out...)
+		*s.value = append(*s.value, *n)
 	}
 
 	s.changed = true
@@ -68,14 +55,11 @@ func (s *ipNetSliceValue) Type() string {
 
 // String defines a "native" format for this net.IPNet slice flag value.
 func (s *ipNetSliceValue) String() string {
-
-	ipNetStrSlice := make([]string, len(*s.value))
-	for i, n := range *s.value {
-		ipNetStrSlice[i] = n.String()
+	if s.value == nil {
+		return "[]"
 	}
 
-	out, _ := writeAsCSV(ipNetStrSlice)
-	return "[" + out + "]"
+	return fmt.Sprintf("%s", *s.value)
 }
 
 // GetIPNetSlice returns the []net.IPNet value of a flag with the given name

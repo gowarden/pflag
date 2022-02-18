@@ -9,7 +9,6 @@ package zflag
 import (
 	"fmt"
 	"strconv"
-	"strings"
 )
 
 // -- complex128Slice Value
@@ -30,21 +29,14 @@ func (s *complex128SliceValue) Get() interface{} {
 }
 
 func (s *complex128SliceValue) Set(val string) error {
-	ss := strings.Split(val, ",")
-	out := make([]complex128, len(ss))
-	for i, d := range ss {
-		var err error
-		out[i], err = strconv.ParseComplex(d, 128)
-		if err != nil {
-			return err
-		}
-
+	out, err := strconv.ParseComplex(val, 128)
+	if err != nil {
+		return err
 	}
 	if !s.changed {
-		*s.value = out
-	} else {
-		*s.value = append(*s.value, out...)
+		*s.value = []complex128{}
 	}
+	*s.value = append(*s.value, out)
 	s.changed = true
 	return nil
 }
@@ -54,11 +46,11 @@ func (s *complex128SliceValue) Type() string {
 }
 
 func (s *complex128SliceValue) String() string {
-	out := make([]string, len(*s.value))
-	for i, d := range *s.value {
-		out[i] = fmt.Sprintf("%f", d)
+	if s.value == nil {
+		return "[]"
 	}
-	return "[" + strings.Join(out, ",") + "]"
+
+	return fmt.Sprintf("%f", *s.value)
 }
 
 func (s *complex128SliceValue) fromString(val string) (complex128, error) {

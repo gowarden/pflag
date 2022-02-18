@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
@@ -65,8 +64,7 @@ func TestF64S(t *testing.T) {
 	f := setUpF64SFlagSet(&f64s)
 
 	vals := []string{"1.0", "2.0", "4.0", "3.0"}
-	arg := fmt.Sprintf("--f64s=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--f64s", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -142,8 +140,7 @@ func TestF64SWithDefault(t *testing.T) {
 	f := setUpF64SFlagSetWithDefault(&f64s)
 
 	vals := []string{"1.0", "2.0"}
-	arg := fmt.Sprintf("--f64s=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--f64s", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -192,25 +189,5 @@ func TestF64SAsSliceValue(t *testing.T) {
 	})
 	if len(f64s) != 1 || f64s[0] != 3.1 {
 		t.Fatalf("Expected ss to be overwritten with '3.1', but got: %v", f64s)
-	}
-}
-
-func TestF64SCalledTwice(t *testing.T) {
-	var f64s []float64
-	f := setUpF64SFlagSet(&f64s)
-
-	in := []string{"1.0,2.0", "3.0"}
-	expected := []float64{1.0, 2.0, 3.0}
-	argfmt := "--f64s=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range f64s {
-		if expected[i] != v {
-			t.Fatalf("expected f64s[%d] to be %f but got: %f", i, expected[i], v)
-		}
 	}
 }

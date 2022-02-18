@@ -4,10 +4,8 @@
 package zflag_test
 
 import (
-	"fmt"
 	"net"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
@@ -78,8 +76,7 @@ func TestIPNets(t *testing.T) {
 	f := setUpIPNetFlagSet(&ips)
 
 	vals := []string{"192.168.1.1/24", "10.0.0.1/16", "fd00:0:0:0:0:0:0:2/64"}
-	arg := fmt.Sprintf("--cidrs=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--cidrs", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -134,8 +131,7 @@ func TestIPNetWithDefault(t *testing.T) {
 	f := setUpIPNetFlagSetWithDefault(&cidrs)
 
 	vals := []string{"192.168.1.1/16", "fd00::/64"}
-	arg := fmt.Sprintf("--cidrs=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--cidrs", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -171,17 +167,14 @@ func TestIPNetCalledTwice(t *testing.T) {
 	var cidrs []net.IPNet
 	f := setUpIPNetFlagSet(&cidrs)
 
-	in := []string{"192.168.1.2/16,fd00::/64", "10.0.0.1/24"}
+	in := []string{"192.168.1.2/16", "fd00::/64", "10.0.0.1/24"}
 
 	expected := []net.IPNet{
 		getCIDR(net.ParseCIDR("192.168.1.2/16")),
 		getCIDR(net.ParseCIDR("fd00::/64")),
 		getCIDR(net.ParseCIDR("10.0.0.1/24")),
 	}
-	argfmt := "--cidrs=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
+	err := f.Parse(repeatFlag("--cidrs", in...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -192,7 +185,7 @@ func TestIPNetCalledTwice(t *testing.T) {
 	}
 }
 
-func TestIPNetBadQuoting(t *testing.T) {
+func TestIPNetBadSpacing(t *testing.T) {
 
 	tests := []struct {
 		Want    []net.IPNet
@@ -237,7 +230,8 @@ func TestIPNetBadQuoting(t *testing.T) {
 				getCIDR(net.ParseCIDR("2cac:61d3:c5ff:6caf:73e0:1b1a:c336:c1ca/128")),
 			},
 			FlagArg: []string{
-				" 5170:f971:cfac:7be3:512a:af37:952c:bc33/128  , 93.21.145.140/32     ",
+				" 5170:f971:cfac:7be3:512a:af37:952c:bc33/128",
+				"93.21.145.140/32     ",
 				"2cac:61d3:c5ff:6caf:73e0:1b1a:c336:c1ca/128",
 			},
 		},
@@ -249,7 +243,9 @@ func TestIPNetBadQuoting(t *testing.T) {
 				getCIDR(net.ParseCIDR("2e5e:66b2:6441:848:5b74:76ea:574c:3a7b/128")),
 			},
 			FlagArg: []string{
-				`"2e5e:66b2:6441:848:5b74:76ea:574c:3a7b/128,        2e5e:66b2:6441:848:5b74:76ea:574c:3a7b/128,2e5e:66b2:6441:848:5b74:76ea:574c:3a7b/128     "`,
+				"2e5e:66b2:6441:848:5b74:76ea:574c:3a7b/128",
+				"        2e5e:66b2:6441:848:5b74:76ea:574c:3a7b/128",
+				"2e5e:66b2:6441:848:5b74:76ea:574c:3a7b/128     ",
 				" 2e5e:66b2:6441:848:5b74:76ea:574c:3a7b/128"},
 		},
 	}
@@ -259,9 +255,8 @@ func TestIPNetBadQuoting(t *testing.T) {
 		var cidrs []net.IPNet
 		f := setUpIPNetFlagSet(&cidrs)
 
-		if err := f.Parse([]string{fmt.Sprintf("--cidrs=%s", strings.Join(test.FlagArg, ","))}); err != nil {
-			t.Fatalf("flag parsing failed with error: %s\nparsing:\t%#v\nwant:\t\t%s",
-				err, test.FlagArg, test.Want[i])
+		if err := f.Parse(repeatFlag("--cidrs", test.FlagArg...)); err != nil {
+			t.Fatalf("flag parsing failed with error: %s\nparsing:\t%#v\nwant:\t\t%s", err, test.FlagArg, test.Want[i])
 		}
 
 		for j, b := range cidrs {

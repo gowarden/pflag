@@ -6,7 +6,6 @@ package zflag_test
 import (
 	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -67,8 +66,7 @@ func TestDS(t *testing.T) {
 	f := setUpDSFlagSet(&ds)
 
 	vals := []string{"1ns", "2ms", "3m", "4h"}
-	arg := fmt.Sprintf("--ds=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--ds", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -145,8 +143,7 @@ func TestDSWithDefault(t *testing.T) {
 	f := setUpDSFlagSetWithDefault(&ds)
 
 	vals := []string{"1ns", "2ns"}
-	arg := fmt.Sprintf("--ds=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--ds", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -202,12 +199,9 @@ func TestDSCalledTwice(t *testing.T) {
 	var ds []time.Duration
 	f := setUpDSFlagSet(&ds)
 
-	in := []string{"1ns,2ns", "3ns"}
+	in := []string{"1ns", "2ns", "3ns"}
 	expected := []time.Duration{1, 2, 3}
-	argfmt := "--ds=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
+	err := f.Parse(repeatFlag("--ds", in...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}

@@ -6,7 +6,6 @@ package zflag
 import (
 	"fmt"
 	"strconv"
-	"strings"
 )
 
 // -- int16Slice Value
@@ -27,24 +26,17 @@ func (s *int16SliceValue) Get() interface{} {
 }
 
 func (s *int16SliceValue) Set(val string) error {
-	ss := strings.Split(val, ",")
-	out := make([]int16, len(ss))
-	for i, d := range ss {
-		var err error
-		var temp64 int64
-		temp64, err = strconv.ParseInt(d, 0, 16)
-		if err != nil {
-			return err
-		}
-		out[i] = int16(temp64)
+	temp64, err := strconv.ParseInt(val, 0, 16)
+	if err != nil {
+		return err
+	}
 
-	}
 	if !s.changed {
-		*s.value = out
-	} else {
-		*s.value = append(*s.value, out...)
+		*s.value = []int16{}
 	}
+	*s.value = append(*s.value, int16(temp64))
 	s.changed = true
+
 	return nil
 }
 
@@ -53,11 +45,11 @@ func (s *int16SliceValue) Type() string {
 }
 
 func (s *int16SliceValue) String() string {
-	out := make([]string, len(*s.value))
-	for i, d := range *s.value {
-		out[i] = fmt.Sprintf("%d", d)
+	if s.value == nil {
+		return "[]"
 	}
-	return "[" + strings.Join(out, ",") + "]"
+
+	return fmt.Sprintf("%d", s.value)
 }
 
 func (s *int16SliceValue) fromString(val string) (int16, error) {

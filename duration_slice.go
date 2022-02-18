@@ -4,7 +4,7 @@
 package zflag
 
 import (
-	"strings"
+	"fmt"
 	"time"
 )
 
@@ -22,22 +22,17 @@ func newDurationSliceValue(val []time.Duration, p *[]time.Duration) *durationSli
 }
 
 func (s *durationSliceValue) Set(val string) error {
-	ss := strings.Split(val, ",")
-	out := make([]time.Duration, len(ss))
-	for i, d := range ss {
-		var err error
-		out[i], err = time.ParseDuration(d)
-		if err != nil {
-			return err
-		}
+	out, err := time.ParseDuration(val)
+	if err != nil {
+		return err
+	}
 
-	}
 	if !s.changed {
-		*s.value = out
-	} else {
-		*s.value = append(*s.value, out...)
+		*s.value = []time.Duration{}
 	}
+	*s.value = append(*s.value, out)
 	s.changed = true
+
 	return nil
 }
 
@@ -50,11 +45,11 @@ func (s *durationSliceValue) Type() string {
 }
 
 func (s *durationSliceValue) String() string {
-	out := make([]string, len(*s.value))
-	for i, d := range *s.value {
-		out[i] = d.String()
+	if s.value == nil {
+		return "[]"
 	}
-	return "[" + strings.Join(out, ",") + "]"
+
+	return fmt.Sprintf("%s", *s.value)
 }
 
 func (s *durationSliceValue) fromString(val string) (time.Duration, error) {

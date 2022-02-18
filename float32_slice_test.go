@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
@@ -64,8 +63,7 @@ func TestF32S(t *testing.T) {
 	f := setUpF32SFlagSet(&f32s)
 
 	vals := []string{"1.0", "2.0", "4.0", "3.0"}
-	arg := fmt.Sprintf("--f32s=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--f32s", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -149,8 +147,7 @@ func TestF32SWithDefault(t *testing.T) {
 	f := setUpF32SFlagSetWithDefault(&f32s)
 
 	vals := []string{"1.0", "2.0"}
-	arg := fmt.Sprintf("--f32s=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--f32s", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -210,12 +207,9 @@ func TestF32SCalledTwice(t *testing.T) {
 	var f32s []float32
 	f := setUpF32SFlagSet(&f32s)
 
-	in := []string{"1.0,2.0", "3.0"}
+	in := []string{"1.0", "2.0", "3.0"}
 	expected := []float32{1.0, 2.0, 3.0}
-	argfmt := "--f32s=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
+	err := f.Parse(repeatFlag("--f32s", in...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}

@@ -6,7 +6,6 @@ package zflag_test
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
@@ -58,13 +57,21 @@ func TestEmptyBS(t *testing.T) {
 	}
 }
 
+func repeatFlag(flag string, values ...string) (res []string) {
+	res = make([]string, 0, len(values))
+	for _, val := range values {
+		res = append(res, fmt.Sprintf("%s=%s", flag, val))
+	}
+
+	return
+}
+
 func TestBS(t *testing.T) {
 	var bs []bool
 	f := setUpBSFlagSet(&bs)
 
 	vals := []string{"1", "F", "TRUE", "0"}
-	arg := fmt.Sprintf("--bs=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--bs", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -97,7 +104,6 @@ func TestBSDefault(t *testing.T) {
 	f := setUpBSFlagSetWithDefault(&bs)
 
 	vals := []string{"false", "T"}
-
 	err := f.Parse([]string{})
 	if err != nil {
 		t.Fatal("expected no error; got", err)
@@ -132,8 +138,7 @@ func TestBSWithDefault(t *testing.T) {
 	f := setUpBSFlagSetWithDefault(&bs)
 
 	vals := []string{"FALSE", "1"}
-	arg := fmt.Sprintf("--bs=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--bs", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -162,35 +167,12 @@ func TestBSWithDefault(t *testing.T) {
 	}
 }
 
-func TestBSCalledTwice(t *testing.T) {
-	var bs []bool
-	f := setUpBSFlagSet(&bs)
-
-	in := []string{"T,F", "T"}
-	expected := []bool{true, false, true}
-	argfmt := "--bs=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range bs {
-		if expected[i] != v {
-			t.Fatalf("expected bs[%d] to be %t but got %t", i, expected[i], v)
-		}
-	}
-}
-
 func TestBSAsSliceValue(t *testing.T) {
 	var bs []bool
 	f := setUpBSFlagSet(&bs)
 
 	in := []string{"true", "false"}
-	argfmt := "--bs=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
+	err := f.Parse(repeatFlag("--bs", in...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -205,8 +187,7 @@ func TestBSAsSliceValue(t *testing.T) {
 	}
 }
 
-func TestBSBadQuoting(t *testing.T) {
-
+func TestBSBadSpacing(t *testing.T) {
 	tests := []struct {
 		Want    []bool
 		FlagArg []string
@@ -229,15 +210,15 @@ func TestBSBadQuoting(t *testing.T) {
 		},
 		{
 			Want:    []bool{true, false, false},
-			FlagArg: []string{"true,false", "false"},
+			FlagArg: []string{"true", "false", "false"},
 		},
 		{
 			Want:    []bool{true, false, false, true, false, true, false},
-			FlagArg: []string{`"true,false,false,1,0,     T"`, " false "},
+			FlagArg: []string{"true", "false", "false", "1", "0", "     T", " false "},
 		},
 		{
 			Want:    []bool{false, false, true, false, true, false, true},
-			FlagArg: []string{`"0, False,  T,false  , true,F"`, "true"},
+			FlagArg: []string{"0", " False", "  T", "false  ", " true", "F", "true"},
 		},
 	}
 
@@ -246,7 +227,7 @@ func TestBSBadQuoting(t *testing.T) {
 		var bs []bool
 		f := setUpBSFlagSet(&bs)
 
-		if err := f.Parse([]string{fmt.Sprintf("--bs=%s", strings.Join(test.FlagArg, ","))}); err != nil {
+		if err := f.Parse(repeatFlag("--bs", test.FlagArg...)); err != nil {
 			t.Fatalf("flag parsing failed with error: %s\nparsing:\t%#v\nwant:\t\t%#v",
 				err, test.FlagArg, test.Want[i])
 		}

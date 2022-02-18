@@ -6,7 +6,6 @@ package zflag_test
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
@@ -63,8 +62,7 @@ func TestUI64S(t *testing.T) {
 	f := setUpUI64SFlagSet(&is)
 
 	vals := []string{"1", "2", "4", "3"}
-	arg := fmt.Sprintf("--is=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--is", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -132,8 +130,7 @@ func TestIU64SWithDefault(t *testing.T) {
 	f := setUpUI64SFlagSetWithDefault(&is)
 
 	vals := []string{"1", "2"}
-	arg := fmt.Sprintf("--is=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--is", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -189,12 +186,9 @@ func TestUI64SCalledTwice(t *testing.T) {
 	var is []uint64
 	f := setUpUI64SFlagSet(&is)
 
-	in := []string{"1,2", "3"}
+	in := []string{"1", "2", "3"}
 	expected := []uint64{1, 2, 3}
-	argfmt := "--is=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
+	err := f.Parse(repeatFlag("--is", in...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}

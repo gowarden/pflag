@@ -526,7 +526,7 @@ func (f *Flag) defaultIsZeroValue() bool {
 		return f.DefValue == ""
 	case *ipValue, *ipMaskValue, *ipNetValue:
 		return f.DefValue == "<nil>"
-	case *intSliceValue, *stringSliceValue, *stringArrayValue:
+	case *intSliceValue, *stringSliceValue:
 		return f.DefValue == "[]"
 	default:
 		switch f.DefValue {
@@ -594,7 +594,7 @@ func UnquoteUsage(flag *Flag) (name string, usage string) {
 				name = "int"
 			case "intSlice", "int8Slice", "int16Slice", "int32Slice", "int64Slice":
 				name = "ints"
-			case "stringSlice", "stringArray":
+			case "stringSlice":
 				name = "strings"
 			case "uint8", "uint16", "uint32", "uint64":
 				name = "uint"
@@ -870,9 +870,9 @@ func Args() []string { return CommandLine.args }
 // Var defines a flag with the specified name and usage string. The type and
 // value of the flag are represented by the first argument, of type Value, which
 // typically holds a user-defined implementation of Value. For instance, the
-// caller could create a flag that turns a comma-separated string into a slice
-// of strings by giving the slice the methods of Value; in particular, Set would
-// decompose the comma-separated string into the slice.
+// caller could create a flag that turns a string into a slice of strings by
+// giving the slice the methods of Value; in particular, Set would decompose
+// the string into the slice.
 func (f *FlagSet) Var(value Value, name, usage string, opts ...Opt) *Flag {
 	flag := &Flag{
 		Name:     name,
@@ -938,9 +938,9 @@ func (f *FlagSet) AddFlagSet(newSet *FlagSet) {
 // Var defines a flag with the specified name and usage string. The type and
 // value of the flag are represented by the first argument, of type Value, which
 // typically holds a user-defined implementation of Value. For instance, the
-// caller could create a flag that turns a comma-separated string into a slice
-// of strings by giving the slice the methods of Value; in particular, Set would
-// decompose the comma-separated string into the slice.
+// caller could create a flag that turns a string into a slice of strings by
+// giving the slice the methods of Value; in particular, Set would decompose
+// the string into the slice.
 func Var(value Value, name, usage string, opts ...Opt) *Flag {
 	return CommandLine.Var(value, name, usage, opts...)
 }

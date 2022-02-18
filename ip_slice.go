@@ -4,8 +4,8 @@
 package zflag
 
 import (
+	"errors"
 	"fmt"
-	"io"
 	"net"
 	"strings"
 )
@@ -23,34 +23,18 @@ func newIPSliceValue(val []net.IP, p *[]net.IP) *ipSliceValue {
 	return ipsv
 }
 
-// Set converts, and assigns, the comma-separated IP argument string representation as the []net.IP value of this flag.
+// Set converts, and assigns, the IP argument string representation as the []net.IP value of this flag.
 // If Set is called on a flag that already has a []net.IP assigned, the newly converted values will be appended.
 func (s *ipSliceValue) Set(val string) error {
-
-	// remove all quote characters
-	rmQuote := strings.NewReplacer(`"`, "", `'`, "", "`", "")
-
-	// read flag arguments with CSV parser
-	ipStrSlice, err := readAsCSV(rmQuote.Replace(val))
-	if err != nil && err != io.EOF {
-		return err
-	}
-
-	// parse ip values into slice
-	out := make([]net.IP, 0, len(ipStrSlice))
-	for _, ipStr := range ipStrSlice {
-		ip := net.ParseIP(strings.TrimSpace(ipStr))
-		if ip == nil {
-			return fmt.Errorf("invalid string being converted to IP address: %s", ipStr)
-		}
-		out = append(out, ip)
+	ip := net.ParseIP(strings.TrimSpace(val))
+	if ip == nil {
+		return errors.New("invalid string being converted to IP address")
 	}
 
 	if !s.changed {
-		*s.value = out
-	} else {
-		*s.value = append(*s.value, out...)
+		*s.value = []net.IP{}
 	}
+	*s.value = append(*s.value, ip)
 
 	s.changed = true
 
@@ -68,15 +52,11 @@ func (s *ipSliceValue) Type() string {
 
 // String defines a "native" format for this net.IP slice flag value.
 func (s *ipSliceValue) String() string {
-
-	ipStrSlice := make([]string, len(*s.value))
-	for i, ip := range *s.value {
-		ipStrSlice[i] = ip.String()
+	if s.value == nil {
+		return "[]"
 	}
 
-	out, _ := writeAsCSV(ipStrSlice)
-
-	return "[" + out + "]"
+	return fmt.Sprintf("%s", *s.value)
 }
 
 func (s *ipSliceValue) fromString(val string) (net.IP, error) {

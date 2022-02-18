@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
@@ -64,8 +63,7 @@ func TestUIS(t *testing.T) {
 	f := setUpUISFlagSet(&uis)
 
 	vals := []string{"1", "2", "4", "3"}
-	arg := fmt.Sprintf("--uis=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--uis", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -147,8 +145,7 @@ func TestUISWithDefault(t *testing.T) {
 	f := setUpUISFlagSetWithDefault(&uis)
 
 	vals := []string{"1", "2"}
-	arg := fmt.Sprintf("--uis=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--uis", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -211,12 +208,9 @@ func TestUISCalledTwice(t *testing.T) {
 	var uis []uint
 	f := setUpUISFlagSet(&uis)
 
-	in := []string{"1,2", "3"}
+	in := []string{"1", "2", "3"}
 	expected := []int{1, 2, 3}
-	argfmt := "--uis=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
+	err := f.Parse(repeatFlag("--uis", in...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}

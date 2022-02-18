@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
@@ -64,8 +63,7 @@ func TestI64S(t *testing.T) {
 	f := setUpI64SFlagSet(&is)
 
 	vals := []string{"1", "2", "4", "3"}
-	arg := fmt.Sprintf("--is=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--is", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -140,8 +138,7 @@ func TestI64SWithDefault(t *testing.T) {
 	f := setUpI64SFlagSetWithDefault(&is)
 
 	vals := []string{"1", "2"}
-	arg := fmt.Sprintf("--is=%s", strings.Join(vals, ","))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--is", vals...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -190,25 +187,5 @@ func TestI64SAsSliceValue(t *testing.T) {
 	})
 	if len(i64s) != 1 || i64s[0] != 3 {
 		t.Fatalf("Expected ss to be overwritten with '3.1', but got: %v", i64s)
-	}
-}
-
-func TestI64SCalledTwice(t *testing.T) {
-	var is []int64
-	f := setUpI64SFlagSet(&is)
-
-	in := []string{"1,2", "3"}
-	expected := []int64{1, 2, 3}
-	argfmt := "--is=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		if expected[i] != v {
-			t.Fatalf("expected is[%d] to be %d but got: %d", i, expected[i], v)
-		}
 	}
 }

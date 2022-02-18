@@ -4,7 +4,7 @@
 package zflag
 
 import (
-	"io"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -22,35 +22,18 @@ func newBoolSliceValue(val []bool, p *[]bool) *boolSliceValue {
 	return bsv
 }
 
-// Set converts, and assigns, the comma-separated boolean argument string representation as the []bool value of this flag.
+// Set converts, and assigns, the boolean argument string representation as the []bool value of this flag.
 // If Set is called on a flag that already has a []bool assigned, the newly converted values will be appended.
 func (s *boolSliceValue) Set(val string) error {
-
-	// remove all quote characters
-	rmQuote := strings.NewReplacer(`"`, "", `'`, "", "`", "")
-
-	// read flag arguments with CSV parser
-	boolStrSlice, err := readAsCSV(rmQuote.Replace(val))
-	if err != nil && err != io.EOF {
+	b, err := strconv.ParseBool(strings.TrimSpace(val))
+	if err != nil {
 		return err
 	}
 
-	// parse boolean values into slice
-	out := make([]bool, 0, len(boolStrSlice))
-	for _, boolStr := range boolStrSlice {
-		b, err := strconv.ParseBool(strings.TrimSpace(boolStr))
-		if err != nil {
-			return err
-		}
-		out = append(out, b)
-	}
-
 	if !s.changed {
-		*s.value = out
-	} else {
-		*s.value = append(*s.value, out...)
+		*s.value = []bool{}
 	}
-
+	*s.value = append(*s.value, b)
 	s.changed = true
 
 	return nil
@@ -67,15 +50,11 @@ func (s *boolSliceValue) Type() string {
 
 // String defines a "native" format for this boolean slice flag value.
 func (s *boolSliceValue) String() string {
-
-	boolStrSlice := make([]string, len(*s.value))
-	for i, b := range *s.value {
-		boolStrSlice[i] = strconv.FormatBool(b)
+	if s.value == nil {
+		return "[]"
 	}
 
-	out, _ := writeAsCSV(boolStrSlice)
-
-	return "[" + out + "]"
+	return fmt.Sprintf("%t", *s.value)
 }
 
 func (s *boolSliceValue) fromString(val string) (bool, error) {

@@ -4,11 +4,7 @@
 package zflag_test
 
 import (
-	"bytes"
-	"encoding/csv"
-	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
@@ -26,19 +22,13 @@ func setUpS2SFlagSetWithDefault(s2sp *map[string]string) *zflag.FlagSet {
 	return f
 }
 
-func createS2SFlag(vals map[string]string) string {
+func createS2SFlag(vals map[string]string) []string {
 	records := make([]string, 0, len(vals)>>1)
 	for k, v := range vals {
 		records = append(records, k+"="+v)
 	}
 
-	var buf bytes.Buffer
-	w := csv.NewWriter(&buf)
-	if err := w.Write(records); err != nil {
-		panic(err)
-	}
-	w.Flush()
-	return strings.TrimSpace(buf.String())
+	return records
 }
 
 func TestS2SValueImplementsGetter(t *testing.T) {
@@ -80,8 +70,7 @@ func TestS2S(t *testing.T) {
 	f := setUpS2SFlagSet(&s2s)
 
 	vals := map[string]string{"a": "1", "b": "2", "d": "4", "c": "3", "e": "5,6"}
-	arg := fmt.Sprintf("--s2s=%s", createS2SFlag(vals))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--s2s", createS2SFlag(vals)...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -147,8 +136,7 @@ func TestS2SWithDefault(t *testing.T) {
 	f := setUpS2SFlagSetWithDefault(&s2s)
 
 	vals := map[string]string{"a": "1", "b": "2", "e": "5,6"}
-	arg := fmt.Sprintf("--s2s=%s", createS2SFlag(vals))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--s2s", createS2SFlag(vals)...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -180,14 +168,9 @@ func TestS2SCalledTwice(t *testing.T) {
 	var s2s map[string]string
 	f := setUpS2SFlagSet(&s2s)
 
-	in := []string{"a=1,b=2", "b=3", `"e=5,6"`, `f=7,8`}
-	expected := map[string]string{"a": "1", "b": "3", "e": "5,6", "f": "7,8"}
-	argfmt := "--s2s=%s"
-	arg0 := fmt.Sprintf(argfmt, in[0])
-	arg1 := fmt.Sprintf(argfmt, in[1])
-	arg2 := fmt.Sprintf(argfmt, in[2])
-	arg3 := fmt.Sprintf(argfmt, in[3])
-	err := f.Parse([]string{arg0, arg1, arg2, arg3})
+	in := []string{"a=1,b=2", "b=3", `e=5,6`}
+	expected := map[string]string{"a": "1,b=2", "b": "3", "e": "5,6"}
+	err := f.Parse(repeatFlag("--s2s", in...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}

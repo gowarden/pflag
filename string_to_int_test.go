@@ -4,7 +4,6 @@
 package zflag_test
 
 import (
-	"bytes"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -25,19 +24,11 @@ func setUpS2IFlagSetWithDefault(s2ip *map[string]int) *zflag.FlagSet {
 	return f
 }
 
-func createS2IFlag(vals map[string]int) string {
-	var buf bytes.Buffer
-	i := 0
+func createS2IFlag(vals map[string]int) (r []string) {
 	for k, v := range vals {
-		if i > 0 {
-			buf.WriteRune(',')
-		}
-		buf.WriteString(k)
-		buf.WriteRune('=')
-		buf.WriteString(strconv.Itoa(v))
-		i++
+		r = append(r, fmt.Sprintf("%s=%s", k, strconv.Itoa(v)))
 	}
-	return buf.String()
+	return
 }
 
 func TestS2IValueImplementsGetter(t *testing.T) {
@@ -79,8 +70,7 @@ func TestS2I(t *testing.T) {
 	f := setUpS2IFlagSet(&s2i)
 
 	vals := map[string]int{"a": 1, "b": 2, "d": 4, "c": 3}
-	arg := fmt.Sprintf("--s2i=%s", createS2IFlag(vals))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--s2i", createS2IFlag(vals)...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -146,8 +136,7 @@ func TestS2IWithDefault(t *testing.T) {
 	f := setUpS2IFlagSetWithDefault(&s2i)
 
 	vals := map[string]int{"a": 1, "b": 2}
-	arg := fmt.Sprintf("--s2i=%s", createS2IFlag(vals))
-	err := f.Parse([]string{arg})
+	err := f.Parse(repeatFlag("--s2i", createS2IFlag(vals)...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}
@@ -179,12 +168,9 @@ func TestS2ICalledTwice(t *testing.T) {
 	var s2i map[string]int
 	f := setUpS2IFlagSet(&s2i)
 
-	in := []string{"a=1,b=2", "b=3"}
+	in := []string{"a=1", "b=2", "b=3"}
 	expected := map[string]int{"a": 1, "b": 3}
-	argfmt := "--s2i=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
+	err := f.Parse(repeatFlag("--s2i", in...))
 	if err != nil {
 		t.Fatal("expected no error; got", err)
 	}

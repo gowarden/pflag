@@ -6,7 +6,6 @@ package zflag
 import (
 	"fmt"
 	"strconv"
-	"strings"
 )
 
 // -- float64Slice Value
@@ -27,22 +26,17 @@ func (s *float64SliceValue) Get() interface{} {
 }
 
 func (s *float64SliceValue) Set(val string) error {
-	ss := strings.Split(val, ",")
-	out := make([]float64, len(ss))
-	for i, d := range ss {
-		var err error
-		out[i], err = strconv.ParseFloat(d, 64)
-		if err != nil {
-			return err
-		}
+	out, err := strconv.ParseFloat(val, 64)
+	if err != nil {
+		return err
+	}
 
-	}
 	if !s.changed {
-		*s.value = out
-	} else {
-		*s.value = append(*s.value, out...)
+		*s.value = []float64{}
 	}
+	*s.value = append(*s.value, out)
 	s.changed = true
+
 	return nil
 }
 
@@ -51,11 +45,11 @@ func (s *float64SliceValue) Type() string {
 }
 
 func (s *float64SliceValue) String() string {
-	out := make([]string, len(*s.value))
-	for i, d := range *s.value {
-		out[i] = fmt.Sprintf("%f", d)
+	if s.value == nil {
+		return "[]"
 	}
-	return "[" + strings.Join(out, ",") + "]"
+
+	return fmt.Sprintf("%f", *s.value)
 }
 
 func (s *float64SliceValue) fromString(val string) (float64, error) {

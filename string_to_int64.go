@@ -4,9 +4,9 @@
 package zflag
 
 import (
-	"bytes"
-	"io"
+	"fmt"
 	"strconv"
+	"strings"
 )
 
 // -- stringToInt64 Value
@@ -24,29 +24,24 @@ func newStringToInt64Value(val map[string]int64, p *map[string]int64) *stringToI
 
 // Format: a=1,b=2
 func (s *stringToInt64Value) Set(val string) error {
-	// read flag arguments with CSV parser
-	mapStrInt, err := readCSVKeyValue(val)
-	if err != nil && err != io.EOF {
+	kv := strings.SplitN(val, "=", 2)
+	if len(kv) != 2 {
+		return fmt.Errorf("%s must be formatted as key=value", val)
+	}
+	key, val := kv[0], kv[1]
+
+	v, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
 		return err
 	}
 
-	out := make(map[string]int64, len(mapStrInt))
-	for key, value := range mapStrInt {
-		var err error
-		out[key], err = strconv.ParseInt(value, 10, 64)
-		if err != nil {
-			return err
-		}
+	if !s.changed {
+		*s.value = map[string]int64{}
 	}
 
-	if !s.changed {
-		*s.value = out
-	} else {
-		for k, v := range out {
-			(*s.value)[k] = v
-		}
-	}
+	(*s.value)[key] = v
 	s.changed = true
+
 	return nil
 }
 
@@ -59,18 +54,12 @@ func (s *stringToInt64Value) Type() string {
 }
 
 func (s *stringToInt64Value) String() string {
-	var buf bytes.Buffer
-	i := 0
+	records := make([]string, 0, len(*s.value)>>1)
 	for k, v := range *s.value {
-		if i > 0 {
-			buf.WriteRune(',')
-		}
-		buf.WriteString(k)
-		buf.WriteRune('=')
-		buf.WriteString(strconv.FormatInt(v, 10))
-		i++
+		records = append(records, k+"="+strconv.FormatInt(v, 10))
 	}
-	return "[" + buf.String() + "]"
+
+	return fmt.Sprintf("%s", records)
 }
 
 // GetStringToInt64 return the map[string]int64 value of a flag with the given name
@@ -93,21 +82,18 @@ func (f *FlagSet) MustGetStringToInt64(name string) map[string]int64 {
 
 // StringToInt64Var defines a map[string]int64 flag with specified name, default value, and usage string.
 // The argument p points to a map[string]int64 variable in which to store the values of multiple flags.
-// The values will be separated on comma. Items can be quoted, or escape commas to avoid splitting.
 func (f *FlagSet) StringToInt64Var(p *map[string]int64, name string, value map[string]int64, usage string, opts ...Opt) {
 	f.Var(newStringToInt64Value(value, p), name, usage, opts...)
 }
 
 // StringToInt64Var defines a map[string]int64 flag with specified name, default value, and usage string.
 // The argument p points to a map[string]int64 variable in which to store the values of multiple flags.
-// The values will be separated on comma. Items can be quoted, or escape commas to avoid splitting.
 func StringToInt64Var(p *map[string]int64, name string, value map[string]int64, usage string, opts ...Opt) {
 	CommandLine.StringToInt64Var(p, name, value, usage, opts...)
 }
 
 // StringToInt64 defines a map[string]int64 flag with specified name, default value, and usage string.
 // The return value is the address of a map[string]int64 variable that stores the values of multiple flags.
-// The values will be separated on comma. Items can be quoted, or escape commas to avoid splitting.
 func (f *FlagSet) StringToInt64(name string, value map[string]int64, usage string, opts ...Opt) *map[string]int64 {
 	var p map[string]int64
 	f.StringToInt64Var(&p, name, value, usage, opts...)
@@ -116,7 +102,6 @@ func (f *FlagSet) StringToInt64(name string, value map[string]int64, usage strin
 
 // StringToInt64 defines a map[string]int64 flag with specified name, default value, and usage string.
 // The return value is the address of a map[string]int64 variable that stores the values of multiple flags.
-// The values will be separated on comma. Items can be quoted, or escape commas to avoid splitting.
 func StringToInt64(name string, value map[string]int64, usage string, opts ...Opt) *map[string]int64 {
 	return CommandLine.StringToInt64(name, value, usage, opts...)
 }
