@@ -5,23 +5,11 @@ package zflag_test
 
 import (
 	"fmt"
-	"strconv"
+	"reflect"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
-
-func setUpBSFlagSet(bsp *[]bool) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.BoolSliceVar(bsp, "bs", []bool{}, "Command separated list!")
-	return f
-}
-
-func setUpBSFlagSetWithDefault(bsp *[]bool) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.BoolSliceVar(bsp, "bs", []bool{false, true}, "Command separated list!")
-	return f
-}
 
 func TestBoolSliceValueImplementsGetter(t *testing.T) {
 	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
@@ -33,27 +21,118 @@ func TestBoolSliceValueImplementsGetter(t *testing.T) {
 	}
 }
 
-func TestEmptyBS(t *testing.T) {
-	var bs []bool
-	f := setUpBSFlagSet(&bs)
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
+func TestBoolSlice(t *testing.T) {
+	tests := []struct {
+		name           string
+		flagDefault    []bool
+		input          []string
+		expectedErr    string
+		expectedValues []bool
+		visitor        func(f *zflag.Flag)
+	}{
+		{
+			name:           "no value passed",
+			input:          []string{},
+			flagDefault:    []bool{},
+			expectedErr:    "",
+			expectedValues: []bool{},
+		},
+		{
+			name:        "empty value passed",
+			input:       []string{""},
+			flagDefault: []bool{},
+			expectedErr: `invalid argument "" for "--bs" flag: strconv.ParseBool: parsing "": invalid syntax`,
+		},
+		{
+			name:        "invalid bool",
+			input:       []string{"blabla"},
+			flagDefault: []bool{},
+			expectedErr: `invalid argument "blabla" for "--bs" flag: strconv.ParseBool: parsing "blabla": invalid syntax`,
+		},
+		{
+			name:        "no csv",
+			input:       []string{"true,false"},
+			flagDefault: []bool{},
+			expectedErr: `invalid argument "true,false" for "--bs" flag: strconv.ParseBool: parsing "true,false": invalid syntax`,
+		},
+		{
+			name:           "empty value passed",
+			input:          []string{"true", "false"},
+			flagDefault:    []bool{},
+			expectedValues: []bool{true, false},
+		},
+		{
+			name:           "with default values",
+			input:          []string{"false", "true"},
+			flagDefault:    []bool{true, false},
+			expectedValues: []bool{false, true},
+		},
+		{
+			name:  "replace values",
+			input: []string{"true", "false"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					_ = val.Replace([]string{"false"})
+				}
+			},
+			expectedValues: []bool{false},
+		},
+		{
+			name:           "trims input",
+			input:          []string{" true ", " false "},
+			expectedValues: []bool{true, false},
+		},
+		{
+			name:           "all valid bool values",
+			input:          []string{"true", "false", "1", "0", "t", "f", "TRUE", "FALSE", "1", "0", "T", "F", "True", "False"},
+			expectedValues: []bool{true, false, true, false, true, false, true, false, true, false, true, false, true, false},
+		},
 	}
 
-	getBS, err := f.GetBoolSlice("bs")
-	if err != nil {
-		t.Fatal("got an error from GetBoolSlice():", err)
-	}
-	if len(getBS) != 0 {
-		t.Fatalf("got bs %v with len=%d but expected length=0", getBS, len(getBS))
-	}
-	getBS2, err := f.Get("bs")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if len(getBS2.([]bool)) != 0 {
-		t.Fatalf("got bs %v with len=%d but expected length=0", getBS2.([]bool), len(getBS2.([]bool)))
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var bs []bool
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.BoolSliceVar(&bs, "bs", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--bs", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && err.Error() != test.expectedErr {
+					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
+
+			if test.visitor != nil {
+				f.VisitAll(test.visitor)
+			}
+
+			if !reflect.DeepEqual(test.expectedValues, bs) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, bs, bs)
+			}
+
+			boolSlice, err := f.GetBoolSlice("bs")
+			if err != nil {
+				t.Fatal("got an error from GetBoolSlice():", err)
+			}
+			if !reflect.DeepEqual(test.expectedValues, boolSlice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, boolSlice, boolSlice)
+			}
+
+			boolSliceGet, err := f.Get("bs")
+			if err != nil {
+				t.Fatal("got an error from Get():", err)
+			}
+			if !reflect.DeepEqual(boolSliceGet, boolSlice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, boolSliceGet, boolSliceGet)
+			}
+		})
 	}
 }
 
@@ -64,178 +143,4 @@ func repeatFlag(flag string, values ...string) (res []string) {
 	}
 
 	return
-}
-
-func TestBS(t *testing.T) {
-	var bs []bool
-	f := setUpBSFlagSet(&bs)
-
-	vals := []string{"1", "F", "TRUE", "0"}
-	err := f.Parse(repeatFlag("--bs", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range bs {
-		b, err := strconv.ParseBool(vals[i])
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if b != v {
-			t.Fatalf("expected is[%d] to be %s but got: %t", i, vals[i], v)
-		}
-	}
-	getBS, err := f.GetBoolSlice("bs")
-	if err != nil {
-		t.Fatalf("got error: %v", err)
-	}
-	for i, v := range getBS {
-		b, err := strconv.ParseBool(vals[i])
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if b != v {
-			t.Fatalf("expected bs[%d] to be %s but got: %t from GetBoolSlice", i, vals[i], v)
-		}
-	}
-}
-
-func TestBSDefault(t *testing.T) {
-	var bs []bool
-	f := setUpBSFlagSetWithDefault(&bs)
-
-	vals := []string{"false", "T"}
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range bs {
-		b, err := strconv.ParseBool(vals[i])
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if b != v {
-			t.Fatalf("expected bs[%d] to be %t from GetBoolSlice but got: %t", i, b, v)
-		}
-	}
-
-	getBS, err := f.GetBoolSlice("bs")
-	if err != nil {
-		t.Fatal("got an error from GetBoolSlice():", err)
-	}
-	for i, v := range getBS {
-		b, err := strconv.ParseBool(vals[i])
-		if err != nil {
-			t.Fatal("got an error from GetBoolSlice():", err)
-		}
-		if b != v {
-			t.Fatalf("expected bs[%d] to be %t from GetBoolSlice but got: %t", i, b, v)
-		}
-	}
-}
-
-func TestBSWithDefault(t *testing.T) {
-	var bs []bool
-	f := setUpBSFlagSetWithDefault(&bs)
-
-	vals := []string{"FALSE", "1"}
-	err := f.Parse(repeatFlag("--bs", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range bs {
-		b, err := strconv.ParseBool(vals[i])
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if b != v {
-			t.Fatalf("expected bs[%d] to be %t but got: %t", i, b, v)
-		}
-	}
-
-	getBS, err := f.GetBoolSlice("bs")
-	if err != nil {
-		t.Fatal("got an error from GetBoolSlice():", err)
-	}
-	for i, v := range getBS {
-		b, err := strconv.ParseBool(vals[i])
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if b != v {
-			t.Fatalf("expected bs[%d] to be %t from GetBoolSlice but got: %t", i, b, v)
-		}
-	}
-}
-
-func TestBSAsSliceValue(t *testing.T) {
-	var bs []bool
-	f := setUpBSFlagSet(&bs)
-
-	in := []string{"true", "false"}
-	err := f.Parse(repeatFlag("--bs", in...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-
-	f.VisitAll(func(f *zflag.Flag) {
-		if val, ok := f.Value.(zflag.SliceValue); ok {
-			_ = val.Replace([]string{"false"})
-		}
-	})
-	if len(bs) != 1 || bs[0] != false {
-		t.Fatalf("Expected ss to be overwritten with 'false', but got: %v", bs)
-	}
-}
-
-func TestBSBadSpacing(t *testing.T) {
-	tests := []struct {
-		Want    []bool
-		FlagArg []string
-	}{
-		{
-			Want:    []bool{true, false, true},
-			FlagArg: []string{"1", "0", "true"},
-		},
-		{
-			Want:    []bool{true, false},
-			FlagArg: []string{"True", "F"},
-		},
-		{
-			Want:    []bool{true, false},
-			FlagArg: []string{"T", "0"},
-		},
-		{
-			Want:    []bool{true, false},
-			FlagArg: []string{"1", "0"},
-		},
-		{
-			Want:    []bool{true, false, false},
-			FlagArg: []string{"true", "false", "false"},
-		},
-		{
-			Want:    []bool{true, false, false, true, false, true, false},
-			FlagArg: []string{"true", "false", "false", "1", "0", "     T", " false "},
-		},
-		{
-			Want:    []bool{false, false, true, false, true, false, true},
-			FlagArg: []string{"0", " False", "  T", "false  ", " true", "F", "true"},
-		},
-	}
-
-	for i, test := range tests {
-
-		var bs []bool
-		f := setUpBSFlagSet(&bs)
-
-		if err := f.Parse(repeatFlag("--bs", test.FlagArg...)); err != nil {
-			t.Fatalf("flag parsing failed with error: %s\nparsing:\t%#v\nwant:\t\t%#v",
-				err, test.FlagArg, test.Want[i])
-		}
-
-		for j, b := range bs {
-			if b != test.Want[j] {
-				t.Fatalf("bad value parsed for test %d on bool %d:\nwant:\t%t\ngot:\t%t", i, j, test.Want[j], b)
-			}
-		}
-	}
 }

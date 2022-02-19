@@ -3,7 +3,10 @@
 
 package zflag
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 // -- float32 Value
 type float32Value float32
@@ -13,8 +16,9 @@ func newFloat32Value(val float32, p *float32) *float32Value {
 	return (*float32Value)(p)
 }
 
-func (f *float32Value) Set(s string) error {
-	v, err := strconv.ParseFloat(s, 32)
+func (f *float32Value) Set(val string) error {
+	val = strings.TrimSpace(val)
+	v, err := strconv.ParseFloat(val, 32)
 	*f = float32Value(v)
 	return err
 }

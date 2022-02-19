@@ -4,25 +4,11 @@
 package zflag_test
 
 import (
-	"fmt"
 	"reflect"
-	"strconv"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
-
-func setUpF32SFlagSet(f32sp *[]float32) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Float32SliceVar(f32sp, "f32s", []float32{}, "Command separated list!")
-	return f
-}
-
-func setUpF32SFlagSetWithDefault(f32sp *[]float32) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Float32SliceVar(f32sp, "f32s", []float32{0.0, 1.0}, "Command separated list!")
-	return f
-}
 
 func TestF32SValueImplementsGetter(t *testing.T) {
 	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
@@ -33,189 +19,114 @@ func TestF32SValueImplementsGetter(t *testing.T) {
 		t.Fatalf("%T should implement the Getter interface", v)
 	}
 }
-func TestEmptyF32S(t *testing.T) {
-	var f32s []float32
-	f := setUpF32SFlagSet(&f32s)
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
+
+func TestFloat32Slice(t *testing.T) {
+	tests := []struct {
+		name           string
+		flagDefault    []float32
+		input          []string
+		expectedErr    string
+		expectedValues []float32
+		visitor        func(f *zflag.Flag)
+	}{
+		{
+			name:           "no value passed",
+			input:          []string{},
+			flagDefault:    []float32{},
+			expectedErr:    "",
+			expectedValues: []float32{},
+		},
+		{
+			name:        "empty value passed",
+			input:       []string{""},
+			flagDefault: []float32{},
+			expectedErr: `invalid argument "" for "--f32s" flag: strconv.ParseFloat: parsing "": invalid syntax`,
+		},
+		{
+			name:        "invalid float32",
+			input:       []string{"blabla"},
+			flagDefault: []float32{},
+			expectedErr: `invalid argument "blabla" for "--f32s" flag: strconv.ParseFloat: parsing "blabla": invalid syntax`,
+		},
+		{
+			name:        "no csv",
+			input:       []string{"1.1,1.5"},
+			flagDefault: []float32{},
+			expectedErr: `invalid argument "1.1,1.5" for "--f32s" flag: strconv.ParseFloat: parsing "1.1,1.5": invalid syntax`,
+		},
+		{
+			name:           "empty value passed",
+			input:          []string{"1.5", "1.1"},
+			flagDefault:    []float32{},
+			expectedValues: []float32{1.5, 1.1},
+		},
+		{
+			name:           "with default values",
+			input:          []string{"1.5", "1.1"},
+			flagDefault:    []float32{1.1, 1.5},
+			expectedValues: []float32{1.5, 1.1},
+		},
+		{
+			name:           "trims input",
+			input:          []string{"    1.5", "1.1    ", "   1.1  "},
+			flagDefault:    []float32{},
+			expectedValues: []float32{1.5, 1.1, 1.1},
+		},
+		{
+			name:  "replace values",
+			input: []string{"1.5", "1.1"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					_ = val.Replace([]string{"1.3"})
+				}
+			},
+			expectedValues: []float32{1.3},
+		},
 	}
 
-	getF32S, err := f.GetFloat32Slice("f32s")
-	if err != nil {
-		t.Fatal("got an error from GetFloat32Slice():", err)
-	}
-	if len(getF32S) != 0 {
-		t.Fatalf("got f32s %v with len=%d but expected length=0", getF32S, len(getF32S))
-	}
-	getF32S_2, err := f.Get("f32s")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var f32s []float32
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.Float32SliceVar(&f32s, "f32s", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--f32s", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && err.Error() != test.expectedErr {
+					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+				}
+				return
+			}
 
-	if !reflect.DeepEqual(getF32S_2, getF32S) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getF32S, getF32S, getF32S_2, getF32S_2)
-	}
-}
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
 
-func TestF32S(t *testing.T) {
-	var f32s []float32
-	f := setUpF32SFlagSet(&f32s)
+			if test.visitor != nil {
+				f.VisitAll(test.visitor)
+			}
 
-	vals := []string{"1.0", "2.0", "4.0", "3.0"}
-	err := f.Parse(repeatFlag("--f32s", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range f32s {
-		d64, err := strconv.ParseFloat(vals[i], 32)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
+			if !reflect.DeepEqual(test.expectedValues, f32s) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, f32s, f32s)
+			}
 
-		d := float32(d64)
-		if d != v {
-			t.Fatalf("expected f32s[%d] to be %s but got: %f", i, vals[i], v)
-		}
-	}
-	getF32S, err := f.GetFloat32Slice("f32s")
-	if err != nil {
-		t.Fatalf("got error: %v", err)
-	}
-	for i, v := range getF32S {
-		d64, err := strconv.ParseFloat(vals[i], 32)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
+			float32Slice, err := f.GetFloat32Slice("f32s")
+			if err != nil {
+				t.Fatal("got an error from GetFloat32Slice():", err)
+			}
+			if !reflect.DeepEqual(test.expectedValues, float32Slice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, float32Slice, float32Slice)
+			}
 
-		d := float32(d64)
-		if d != v {
-			t.Fatalf("expected f32s[%d] to be %s but got: %f from GetFloat32Slice", i, vals[i], v)
-		}
-	}
-	getF32S_2, err := f.Get("f32s")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-
-	if !reflect.DeepEqual(getF32S_2, getF32S) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getF32S, getF32S, getF32S_2, getF32S_2)
-	}
-}
-
-func TestF32SDefault(t *testing.T) {
-	var f32s []float32
-	f := setUpF32SFlagSetWithDefault(&f32s)
-
-	vals := []string{"0.0", "1.0"}
-
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range f32s {
-		d64, err := strconv.ParseFloat(vals[i], 32)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-
-		d := float32(d64)
-		if d != v {
-			t.Fatalf("expected f32s[%d] to be %f but got: %f", i, d, v)
-		}
-	}
-
-	getF32S, err := f.GetFloat32Slice("f32s")
-	if err != nil {
-		t.Fatal("got an error from GetFloat32Slice():", err)
-	}
-	for i, v := range getF32S {
-		d64, err := strconv.ParseFloat(vals[i], 32)
-		if err != nil {
-			t.Fatal("got an error from GetFloat32Slice():", err)
-		}
-
-		d := float32(d64)
-		if d != v {
-			t.Fatalf("expected f32s[%d] to be %f from GetFloat32Slice but got: %f", i, d, v)
-		}
-	}
-}
-
-func TestF32SWithDefault(t *testing.T) {
-	var f32s []float32
-	f := setUpF32SFlagSetWithDefault(&f32s)
-
-	vals := []string{"1.0", "2.0"}
-	err := f.Parse(repeatFlag("--f32s", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range f32s {
-		d64, err := strconv.ParseFloat(vals[i], 32)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-
-		d := float32(d64)
-		if d != v {
-			t.Fatalf("expected f32s[%d] to be %f but got: %f", i, d, v)
-		}
-	}
-
-	getF32S, err := f.GetFloat32Slice("f32s")
-	if err != nil {
-		t.Fatal("got an error from GetFloat32Slice():", err)
-	}
-	for i, v := range getF32S {
-		d64, err := strconv.ParseFloat(vals[i], 32)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-
-		d := float32(d64)
-		if d != v {
-			t.Fatalf("expected f32s[%d] to be %f from GetFloat32Slice but got: %f", i, d, v)
-		}
-	}
-}
-
-func TestF32SAsSliceValue(t *testing.T) {
-	var f32s []float32
-	f := setUpF32SFlagSet(&f32s)
-
-	in := []string{"1.0", "2.0"}
-	argfmt := "--f32s=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-
-	f.VisitAll(func(f *zflag.Flag) {
-		if val, ok := f.Value.(zflag.SliceValue); ok {
-			_ = val.Replace([]string{"3.1"})
-		}
-	})
-	if len(f32s) != 1 || f32s[0] != 3.1 {
-		t.Fatalf("Expected ss to be overwritten with '3.1', but got: %v", f32s)
-	}
-}
-
-func TestF32SCalledTwice(t *testing.T) {
-	var f32s []float32
-	f := setUpF32SFlagSet(&f32s)
-
-	in := []string{"1.0", "2.0", "3.0"}
-	expected := []float32{1.0, 2.0, 3.0}
-	err := f.Parse(repeatFlag("--f32s", in...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range f32s {
-		if expected[i] != v {
-			t.Fatalf("expected f32s[%d] to be %f but got: %f", i, expected[i], v)
-		}
+			float32SliceGet, err := f.Get("f32s")
+			if err != nil {
+				t.Fatal("got an error from Get():", err)
+			}
+			if !reflect.DeepEqual(float32SliceGet, float32Slice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, float32SliceGet, float32SliceGet)
+			}
+		})
 	}
 }

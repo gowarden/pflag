@@ -9,6 +9,7 @@ package zflag
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // -- complex128Slice Value
@@ -29,15 +30,18 @@ func (s *complex128SliceValue) Get() interface{} {
 }
 
 func (s *complex128SliceValue) Set(val string) error {
+	val = strings.TrimSpace(val)
 	out, err := strconv.ParseComplex(val, 128)
 	if err != nil {
 		return err
 	}
+
 	if !s.changed {
 		*s.value = []complex128{}
 	}
 	*s.value = append(*s.value, out)
 	s.changed = true
+
 	return nil
 }
 

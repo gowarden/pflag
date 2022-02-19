@@ -22,7 +22,6 @@ func newStringToStringValue(val map[string]string, p *map[string]string) *string
 	return ssv
 }
 
-// Format: a=1
 func (s *stringToStringValue) Set(val string) error {
 	kv := strings.SplitN(val, "=", 2)
 	if len(kv) != 2 {

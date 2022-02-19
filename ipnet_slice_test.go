@@ -6,35 +6,16 @@ package zflag_test
 import (
 	"net"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
 
 // Helper function to set static slices
-func getCIDR(ip net.IP, cidr *net.IPNet, err error) net.IPNet {
+func getCIDR(val string) net.IPNet {
+	_, cidr, _ := net.ParseCIDR(val)
 	return *cidr
-}
-
-func equalCIDR(c1 net.IPNet, c2 net.IPNet) bool {
-	return c1.String() == c2.String()
-}
-
-func setUpIPNetFlagSet(ipsp *[]net.IPNet) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.IPNetSliceVar(ipsp, "cidrs", []net.IPNet{}, "Command separated list!")
-	return f
-}
-
-func setUpIPNetFlagSetWithDefault(ipsp *[]net.IPNet) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.IPNetSliceVar(ipsp, "cidrs",
-		[]net.IPNet{
-			getCIDR(net.ParseCIDR("192.168.1.1/16")),
-			getCIDR(net.ParseCIDR("fd00::/64")),
-		},
-		"Command separated list!")
-	return f
 }
 
 func TestIPNetsValueImplementsGetter(t *testing.T) {
@@ -47,222 +28,123 @@ func TestIPNetsValueImplementsGetter(t *testing.T) {
 	}
 }
 
-func TestEmptyIPNet(t *testing.T) {
-	var cidrs []net.IPNet
-	f := setUpIPNetFlagSet(&cidrs)
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-
-	getIPNet, err := f.GetIPNetSlice("cidrs")
-	if err != nil {
-		t.Fatal("got an error from GetIPNetSlice():", err)
-	}
-	if len(getIPNet) != 0 {
-		t.Fatalf("got ips %v with len=%d but expected length=0", getIPNet, len(getIPNet))
-	}
-	getIPNet_2, err := f.Get("cidrs")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getIPNet_2, getIPNet) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getIPNet, getIPNet, getIPNet_2, getIPNet_2)
-	}
-}
-
-func TestIPNets(t *testing.T) {
-	var ips []net.IPNet
-	f := setUpIPNetFlagSet(&ips)
-
-	vals := []string{"192.168.1.1/24", "10.0.0.1/16", "fd00:0:0:0:0:0:0:2/64"}
-	err := f.Parse(repeatFlag("--cidrs", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range ips {
-		if _, cidr, _ := net.ParseCIDR(vals[i]); cidr == nil {
-			t.Fatalf("invalid string being converted to CIDR: %s", vals[i])
-		} else if !equalCIDR(*cidr, v) {
-			t.Fatalf("expected ips[%d] to be %s but got: %s from GetIPSlice", i, vals[i], v)
-		}
-	}
-}
-
-func TestIPNetDefault(t *testing.T) {
-	var cidrs []net.IPNet
-	f := setUpIPNetFlagSetWithDefault(&cidrs)
-
-	vals := []string{"192.168.1.1/16", "fd00::/64"}
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range cidrs {
-		if _, cidr, _ := net.ParseCIDR(vals[i]); cidr == nil {
-			t.Fatalf("invalid string being converted to CIDR: %s", vals[i])
-		} else if !equalCIDR(*cidr, v) {
-			t.Fatalf("expected cidrs[%d] to be %s but got: %s", i, vals[i], v)
-		}
-	}
-
-	getIPNet, err := f.GetIPNetSlice("cidrs")
-	if err != nil {
-		t.Fatal("got an error from GetIPNetSlice")
-	}
-	for i, v := range getIPNet {
-		if _, cidr, _ := net.ParseCIDR(vals[i]); cidr == nil {
-			t.Fatalf("invalid string being converted to CIDR: %s", vals[i])
-		} else if !equalCIDR(*cidr, v) {
-			t.Fatalf("expected cidrs[%d] to be %s but got: %s", i, vals[i], v)
-		}
-	}
-	getIPNet_2, err := f.Get("cidrs")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getIPNet_2, getIPNet) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getIPNet, getIPNet, getIPNet_2, getIPNet_2)
-	}
-}
-
-func TestIPNetWithDefault(t *testing.T) {
-	var cidrs []net.IPNet
-	f := setUpIPNetFlagSetWithDefault(&cidrs)
-
-	vals := []string{"192.168.1.1/16", "fd00::/64"}
-	err := f.Parse(repeatFlag("--cidrs", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range cidrs {
-		if _, cidr, _ := net.ParseCIDR(vals[i]); cidr == nil {
-			t.Fatalf("invalid string being converted to CIDR: %s", vals[i])
-		} else if !equalCIDR(*cidr, v) {
-			t.Fatalf("expected cidrs[%d] to be %s but got: %s", i, vals[i], v)
-		}
-	}
-
-	getIPNet, err := f.GetIPNetSlice("cidrs")
-	if err != nil {
-		t.Fatal("got an error from GetIPNetSlice")
-	}
-	for i, v := range getIPNet {
-		if _, cidr, _ := net.ParseCIDR(vals[i]); cidr == nil {
-			t.Fatalf("invalid string being converted to CIDR: %s", vals[i])
-		} else if !equalCIDR(*cidr, v) {
-			t.Fatalf("expected cidrs[%d] to be %s but got: %s", i, vals[i], v)
-		}
-	}
-	getIPNet_2, err := f.Get("cidrs")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getIPNet_2, getIPNet) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getIPNet, getIPNet, getIPNet_2, getIPNet_2)
-	}
-}
-
-func TestIPNetCalledTwice(t *testing.T) {
-	var cidrs []net.IPNet
-	f := setUpIPNetFlagSet(&cidrs)
-
-	in := []string{"192.168.1.2/16", "fd00::/64", "10.0.0.1/24"}
-
-	expected := []net.IPNet{
-		getCIDR(net.ParseCIDR("192.168.1.2/16")),
-		getCIDR(net.ParseCIDR("fd00::/64")),
-		getCIDR(net.ParseCIDR("10.0.0.1/24")),
-	}
-	err := f.Parse(repeatFlag("--cidrs", in...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range cidrs {
-		if !equalCIDR(expected[i], v) {
-			t.Fatalf("expected cidrs[%d] to be %s but got: %s", i, expected[i], v)
-		}
-	}
-}
-
-func TestIPNetBadSpacing(t *testing.T) {
-
+func TestIPNetSlice(t *testing.T) {
 	tests := []struct {
-		Want    []net.IPNet
-		FlagArg []string
+		name           string
+		flagDefault    []net.IPNet
+		input          []string
+		expectedErr    string
+		expectedValues []net.IPNet
+		visitor        func(f *zflag.Flag)
 	}{
 		{
-			Want: []net.IPNet{
-				getCIDR(net.ParseCIDR("a4ab:61d:f03e:5d7d:fad7:d4c2:a1a5:568/128")),
-				getCIDR(net.ParseCIDR("203.107.49.208/32")),
-				getCIDR(net.ParseCIDR("14.57.204.90/32")),
-			},
-			FlagArg: []string{
-				"a4ab:61d:f03e:5d7d:fad7:d4c2:a1a5:568/128",
-				"203.107.49.208/32",
-				"14.57.204.90/32",
-			},
+			name:           "no value passed",
+			input:          []string{},
+			flagDefault:    []net.IPNet{},
+			expectedErr:    "",
+			expectedValues: []net.IPNet{},
 		},
 		{
-			Want: []net.IPNet{
-				getCIDR(net.ParseCIDR("204.228.73.195/32")),
-				getCIDR(net.ParseCIDR("86.141.15.94/32")),
-			},
-			FlagArg: []string{
-				"204.228.73.195/32",
-				"86.141.15.94/32",
-			},
+			name:        "empty value passed",
+			input:       []string{""},
+			flagDefault: []net.IPNet{},
+			expectedErr: `invalid argument "" for "--cidr" flag: invalid CIDR address: `,
 		},
 		{
-			Want: []net.IPNet{
-				getCIDR(net.ParseCIDR("c70c:db36:3001:890f:c6ea:3f9b:7a39:cc3f/128")),
-				getCIDR(net.ParseCIDR("4d17:1d6e:e699:bd7a:88c5:5e7e:ac6a:4472/128")),
-			},
-			FlagArg: []string{
-				"c70c:db36:3001:890f:c6ea:3f9b:7a39:cc3f/128",
-				"4d17:1d6e:e699:bd7a:88c5:5e7e:ac6a:4472/128",
-			},
+			name:        "invalid ip",
+			input:       []string{"blabla"},
+			flagDefault: []net.IPNet{},
+			expectedErr: `invalid argument "blabla" for "--cidr" flag: invalid CIDR address: blabla`,
 		},
 		{
-			Want: []net.IPNet{
-				getCIDR(net.ParseCIDR("5170:f971:cfac:7be3:512a:af37:952c:bc33/128")),
-				getCIDR(net.ParseCIDR("93.21.145.140/32")),
-				getCIDR(net.ParseCIDR("2cac:61d3:c5ff:6caf:73e0:1b1a:c336:c1ca/128")),
-			},
-			FlagArg: []string{
-				" 5170:f971:cfac:7be3:512a:af37:952c:bc33/128",
-				"93.21.145.140/32     ",
-				"2cac:61d3:c5ff:6caf:73e0:1b1a:c336:c1ca/128",
-			},
+			name:        "no csv",
+			input:       []string{"192.168.1.1/16,172.16.1.1/16"},
+			flagDefault: []net.IPNet{},
+			expectedErr: `invalid argument "192.168.1.1/16,172.16.1.1/16" for "--cidr" flag: invalid CIDR address: 192.168.1.1/16,172.16.1.1/16`,
 		},
 		{
-			Want: []net.IPNet{
-				getCIDR(net.ParseCIDR("2e5e:66b2:6441:848:5b74:76ea:574c:3a7b/128")),
-				getCIDR(net.ParseCIDR("2e5e:66b2:6441:848:5b74:76ea:574c:3a7b/128")),
-				getCIDR(net.ParseCIDR("2e5e:66b2:6441:848:5b74:76ea:574c:3a7b/128")),
-				getCIDR(net.ParseCIDR("2e5e:66b2:6441:848:5b74:76ea:574c:3a7b/128")),
+			name:           "empty defaults",
+			input:          []string{"192.168.1.1/16", "10.0.0.1/16", "fd00::/64"},
+			flagDefault:    []net.IPNet{},
+			expectedValues: []net.IPNet{getCIDR("192.168.1.1/16"), getCIDR("10.0.0.1/16"), getCIDR("fd00::/64")},
+		},
+		{
+			name:           "overrides default values",
+			input:          []string{"192.168.1.1/16", "fd00::/64"},
+			flagDefault:    []net.IPNet{getCIDR("fd00::/64"), getCIDR("192.168.1.1/16")},
+			expectedValues: []net.IPNet{getCIDR("192.168.1.1/16"), getCIDR("fd00::/64")},
+		},
+		{
+			name:           "with default values",
+			input:          []string{},
+			flagDefault:    []net.IPNet{getCIDR("192.168.1.1/16"), getCIDR("fd00::/64")},
+			expectedValues: []net.IPNet{getCIDR("192.168.1.1/16"), getCIDR("fd00::/64")},
+		},
+		{
+			name:  "sets values",
+			input: []string{"192.168.1.1/16", "fd00::/64"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					_ = val.Replace([]string{"192.168.1.2/24"})
+				}
 			},
-			FlagArg: []string{
-				"2e5e:66b2:6441:848:5b74:76ea:574c:3a7b/128",
-				"        2e5e:66b2:6441:848:5b74:76ea:574c:3a7b/128",
-				"2e5e:66b2:6441:848:5b74:76ea:574c:3a7b/128     ",
-				" 2e5e:66b2:6441:848:5b74:76ea:574c:3a7b/128"},
+			expectedValues: []net.IPNet{getCIDR("192.168.1.2/24")},
+		},
+		{
+			name:           "trims input ipv4",
+			input:          []string{"204.228.73.195/32", "86.141.15.94/32"},
+			expectedValues: []net.IPNet{getCIDR("204.228.73.195/32"), getCIDR("86.141.15.94/32")},
+		},
+		{
+			name:           "trims input ipv6",
+			input:          []string{"fd00::/64", "        fd00::/64"},
+			expectedValues: []net.IPNet{getCIDR("fd00::/64"), getCIDR("fd00::/64")},
 		},
 	}
 
-	for i, test := range tests {
-
-		var cidrs []net.IPNet
-		f := setUpIPNetFlagSet(&cidrs)
-
-		if err := f.Parse(repeatFlag("--cidrs", test.FlagArg...)); err != nil {
-			t.Fatalf("flag parsing failed with error: %s\nparsing:\t%#v\nwant:\t\t%s", err, test.FlagArg, test.Want[i])
-		}
-
-		for j, b := range cidrs {
-			if !equalCIDR(b, test.Want[j]) {
-				t.Fatalf("bad value parsed for test %d on net.IP %d:\nwant:\t%s\ngot:\t%s", i, j, test.Want[j], b)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var cidrs []net.IPNet
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.IPNetSliceVar(&cidrs, "cidr", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--cidr", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && !strings.Contains(err.Error(), test.expectedErr) {
+					t.Fatalf("expected error to contain %q, but was: %s", test.expectedErr, err)
+				}
+				return
 			}
-		}
+
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
+
+			if test.visitor != nil {
+				f.VisitAll(test.visitor)
+			}
+
+			if !reflect.DeepEqual(test.expectedValues, cidrs) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, cidrs, cidrs)
+			}
+
+			getIPS, err := f.GetIPNetSlice("cidr")
+			if err != nil {
+				t.Fatal("got an error from GetIPNetSlice():", err)
+			}
+			if !reflect.DeepEqual(test.expectedValues, getIPS) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", getIPS, getIPS, test.expectedValues, test.expectedValues)
+			}
+
+			getIPSGet, err := f.Get("cidr")
+			if err != nil {
+				t.Fatal("got an error from Get():", err)
+			}
+			if !reflect.DeepEqual(getIPSGet, getIPS) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", getIPS, getIPS, getIPSGet, getIPSGet)
+			}
+		})
 	}
 }

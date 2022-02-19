@@ -5,22 +5,11 @@ package zflag_test
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
-
-func setUpSSFlagSet(ssp *[]string) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.StringSliceVar(ssp, "ss", []string{}, "Command separated list!")
-	return f
-}
-
-func setUpSSFlagSetWithDefault(ssp *[]string) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.StringSliceVar(ssp, "ss", []string{"default", "values"}, "Command separated list!")
-	return f
-}
 
 func TestSSValueImplementsGetter(t *testing.T) {
 	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
@@ -32,204 +21,123 @@ func TestSSValueImplementsGetter(t *testing.T) {
 	}
 }
 
-func TestEmptySS(t *testing.T) {
-	var ss []string
-	f := setUpSSFlagSet(&ss)
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
+func TestStringSlice(t *testing.T) {
+	tests := []struct {
+		name           string
+		flagDefault    []string
+		input          []string
+		expectedErr    string
+		expectedValues []string
+		visitor        func(f *zflag.Flag)
+	}{
+		{
+			name:           "no value passed",
+			input:          []string{},
+			flagDefault:    []string{},
+			expectedErr:    "",
+			expectedValues: []string{},
+		},
+		{
+			name:           "empty value passed",
+			input:          []string{""},
+			flagDefault:    []string{},
+			expectedValues: []string{""},
+		},
+		{
+			name:           "single string",
+			input:          []string{"blabla"},
+			flagDefault:    []string{},
+			expectedValues: []string{"blabla"},
+		},
+		{
+			name:           "no csv",
+			input:          []string{"testing,something"},
+			flagDefault:    []string{},
+			expectedValues: []string{"testing,something"},
+		},
+		{
+			name:           "multiple values passed",
+			input:          []string{"testing", "something", "all the strings"},
+			flagDefault:    []string{},
+			expectedValues: []string{"testing", "something", "all the strings"},
+		},
+		{
+			name:           "with default values",
+			input:          []string{},
+			flagDefault:    []string{"testing", "0:0:0:0:0:0:0:1"},
+			expectedValues: []string{"testing", "0:0:0:0:0:0:0:1"},
+		},
+		{
+			name:           "overrides default values",
+			input:          []string{"all the strings", "testing"},
+			flagDefault:    []string{"testing", "0:0:0:0:0:0:0:1"},
+			expectedValues: []string{"all the strings", "testing"},
+		},
+		{
+			name:  "as slice values",
+			input: []string{"testing", "all the strings"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					_ = val.Replace([]string{"overridden"})
+				}
+			},
+			expectedValues: []string{"overridden"},
+		},
+		{
+			name:           "keeps spacing",
+			input:          []string{"somestring", "        somestring", "somestring     ", "   somestring  "},
+			expectedValues: []string{"somestring", "        somestring", "somestring     ", "   somestring  "},
+		},
+		{
+			name:           "keeps new lines",
+			input:          []string{"foo\nbar\nbaz\n\n\nasdasd\n\n"},
+			expectedValues: []string{"foo\nbar\nbaz\n\n\nasdasd\n\n"},
+		},
 	}
 
-	getSS, err := f.GetStringSlice("ss")
-	if err != nil {
-		t.Fatal("got an error from GetStringSlice():", err)
-	}
-	if len(getSS) != 0 {
-		t.Fatalf("got ss %v with len=%d but expected length=0", getSS, len(getSS))
-	}
-	getSS_2, err := f.Get("ss")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getSS_2, getSS) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getSS, getSS, getSS_2, getSS_2)
-	}
-}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var ss []string
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.StringSliceVar(&ss, "ss", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--ss", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && !strings.Contains(err.Error(), test.expectedErr) {
+					t.Fatalf("expected error to contain %q, but was: %s", test.expectedErr, err)
+				}
+				return
+			}
 
-func TestEmptySSValue(t *testing.T) {
-	var ss []string
-	f := setUpSSFlagSet(&ss)
-	err := f.Parse([]string{"--ss="})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
 
-	getSS, err := f.GetStringSlice("ss")
-	if err != nil {
-		t.Fatal("got an error from GetStringSlice():", err)
-	}
-	if len(getSS) != 1 {
-		t.Fatalf("got ss %v with len=%d but expected length=1", getSS, len(getSS))
-	}
-	getSS_2, err := f.Get("ss")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getSS_2, getSS) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getSS, getSS, getSS_2, getSS_2)
-	}
-}
+			if test.visitor != nil {
+				f.VisitAll(test.visitor)
+			}
 
-func TestSS(t *testing.T) {
-	var ss []string
-	f := setUpSSFlagSet(&ss)
+			if !reflect.DeepEqual(test.expectedValues, ss) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, ss, ss)
+			}
 
-	vals := []string{"one", "two", "4", "3"}
-	err := f.Parse(repeatFlag("--ss", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range ss {
-		if vals[i] != v {
-			t.Fatalf("expected ss[%d] to be %s but got: %s", i, vals[i], v)
-		}
-	}
+			stringSlice, err := f.GetStringSlice("ss")
+			if err != nil {
+				t.Fatal("got an error from GetStringSlice():", err)
+			}
+			if !reflect.DeepEqual(test.expectedValues, stringSlice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, stringSlice, stringSlice)
+			}
 
-	getSS, err := f.GetStringSlice("ss")
-	if err != nil {
-		t.Fatal("got an error from GetStringSlice():", err)
-	}
-	for i, v := range getSS {
-		if vals[i] != v {
-			t.Fatalf("expected ss[%d] to be %s from GetStringSlice but got: %s", i, vals[i], v)
-		}
-	}
-	getSS_2, err := f.Get("ss")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getSS_2, getSS) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getSS, getSS, getSS_2, getSS_2)
-	}
-}
-
-func TestSSDefault(t *testing.T) {
-	var ss []string
-	f := setUpSSFlagSetWithDefault(&ss)
-
-	vals := []string{"default", "values"}
-
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range ss {
-		if vals[i] != v {
-			t.Fatalf("expected ss[%d] to be %s but got: %s", i, vals[i], v)
-		}
-	}
-
-	getSS, err := f.GetStringSlice("ss")
-	if err != nil {
-		t.Fatal("got an error from GetStringSlice():", err)
-	}
-	for i, v := range getSS {
-		if vals[i] != v {
-			t.Fatalf("expected ss[%d] to be %s from GetStringSlice but got: %s", i, vals[i], v)
-		}
-	}
-	getSS_2, err := f.Get("ss")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getSS_2, getSS) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getSS, getSS, getSS_2, getSS_2)
-	}
-}
-
-func TestSSWithDefault(t *testing.T) {
-	var ss []string
-	f := setUpSSFlagSetWithDefault(&ss)
-
-	vals := []string{"one", "two", "4", "3"}
-	err := f.Parse(repeatFlag("--ss", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range ss {
-		if vals[i] != v {
-			t.Fatalf("expected ss[%d] to be %s but got: %s", i, vals[i], v)
-		}
-	}
-
-	getSS, err := f.GetStringSlice("ss")
-	if err != nil {
-		t.Fatal("got an error from GetStringSlice():", err)
-	}
-	for i, v := range getSS {
-		if vals[i] != v {
-			t.Fatalf("expected ss[%d] to be %s from GetStringSlice but got: %s", i, vals[i], v)
-		}
-	}
-	getSS_2, err := f.Get("ss")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getSS_2, getSS) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getSS, getSS, getSS_2, getSS_2)
-	}
-}
-
-func TestSSCalledTwice(t *testing.T) {
-	var ss []string
-	f := setUpSSFlagSet(&ss)
-
-	in := []string{"one", "two", "three"}
-	expected := []string{"one", "two", "three"}
-	err := f.Parse(repeatFlag("--ss", in...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-
-	if len(expected) != len(ss) {
-		t.Fatalf("expected number of ss to be %d but got: %d", len(expected), len(ss))
-	}
-	for i, v := range ss {
-		if expected[i] != v {
-			t.Fatalf("expected ss[%d] to be %s but got: %s", i, expected[i], v)
-		}
-	}
-
-	values, err := f.GetStringSlice("ss")
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-
-	if len(expected) != len(values) {
-		t.Fatalf("expected number of values to be %d but got: %d", len(expected), len(ss))
-	}
-	for i, v := range values {
-		if expected[i] != v {
-			t.Fatalf("expected got ss[%d] to be %s but got: %s", i, expected[i], v)
-		}
-	}
-	values_2, err := f.Get("ss")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(values_2, values) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", values, values, values_2, values_2)
-	}
-}
-
-func TestSSNewLines(t *testing.T) {
-	var got []string
-	expected := []string{"foo\nbar\nbaz\n"}
-
-	fs := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	fs.StringSliceVar(&got, "ss", []string{}, "")
-	fs.Parse([]string{"--ss", expected[0]})
-	if expected[0] != got[0] {
-		t.Errorf("expected %q, got %q", expected[0], got[0])
+			stringSliceGet, err := f.Get("ss")
+			if err != nil {
+				t.Fatal("got an error from Get():", err)
+			}
+			if !reflect.DeepEqual(stringSliceGet, stringSlice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, stringSliceGet, stringSliceGet)
+			}
+		})
 	}
 }

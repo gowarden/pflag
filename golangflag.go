@@ -49,8 +49,8 @@ func (v *flagValueWrapper) String() string {
 	return v.inner.String()
 }
 
-func (v *flagValueWrapper) Set(s string) error {
-	return v.inner.Set(s)
+func (v *flagValueWrapper) Set(val string) error {
+	return v.inner.Set(val)
 }
 
 func (v *flagValueWrapper) Get() interface{} {

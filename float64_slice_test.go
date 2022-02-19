@@ -4,25 +4,11 @@
 package zflag_test
 
 import (
-	"fmt"
 	"reflect"
-	"strconv"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
-
-func setUpF64SFlagSet(f64sp *[]float64) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Float64SliceVar(f64sp, "f64s", []float64{}, "Command separated list!")
-	return f
-}
-
-func setUpF64SFlagSetWithDefault(f64sp *[]float64) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Float64SliceVar(f64sp, "f64s", []float64{0.0, 1.0}, "Command separated list!")
-	return f
-}
 
 func TestF64SValueImplementsGetter(t *testing.T) {
 	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
@@ -34,160 +20,113 @@ func TestF64SValueImplementsGetter(t *testing.T) {
 	}
 }
 
-func TestEmptyF64S(t *testing.T) {
-	var f64s []float64
-	f := setUpF64SFlagSet(&f64s)
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
+func TestFloat64Slice(t *testing.T) {
+	tests := []struct {
+		name           string
+		flagDefault    []float64
+		input          []string
+		expectedErr    string
+		expectedValues []float64
+		visitor        func(f *zflag.Flag)
+	}{
+		{
+			name:           "no value passed",
+			input:          []string{},
+			flagDefault:    []float64{},
+			expectedErr:    "",
+			expectedValues: []float64{},
+		},
+		{
+			name:        "empty value passed",
+			input:       []string{""},
+			flagDefault: []float64{},
+			expectedErr: `invalid argument "" for "--f64s" flag: strconv.ParseFloat: parsing "": invalid syntax`,
+		},
+		{
+			name:        "invalid float64",
+			input:       []string{"blabla"},
+			flagDefault: []float64{},
+			expectedErr: `invalid argument "blabla" for "--f64s" flag: strconv.ParseFloat: parsing "blabla": invalid syntax`,
+		},
+		{
+			name:        "no csv",
+			input:       []string{"1.1,1.5"},
+			flagDefault: []float64{},
+			expectedErr: `invalid argument "1.1,1.5" for "--f64s" flag: strconv.ParseFloat: parsing "1.1,1.5": invalid syntax`,
+		},
+		{
+			name:           "empty value passed",
+			input:          []string{"1.5", "1.1"},
+			flagDefault:    []float64{},
+			expectedValues: []float64{1.5, 1.1},
+		},
+		{
+			name:           "with default values",
+			input:          []string{"1.5", "1.1"},
+			flagDefault:    []float64{1.1, 1.5},
+			expectedValues: []float64{1.5, 1.1},
+		},
+		{
+			name:           "trims input",
+			input:          []string{"    1.5", "1.1    ", "   1.1  "},
+			flagDefault:    []float64{},
+			expectedValues: []float64{1.5, 1.1, 1.1},
+		},
+		{
+			name:  "replace values",
+			input: []string{"1.5", "1.1"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					_ = val.Replace([]string{"1.3"})
+				}
+			},
+			expectedValues: []float64{1.3},
+		},
 	}
 
-	getF64S, err := f.GetFloat64Slice("f64s")
-	if err != nil {
-		t.Fatal("got an error from GetFloat64Slice():", err)
-	}
-	if len(getF64S) != 0 {
-		t.Fatalf("got f64s %v with len=%d but expected length=0", getF64S, len(getF64S))
-	}
-	getF64S_2, err := f.Get("f64s")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var f64s []float64
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.Float64SliceVar(&f64s, "f64s", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--f64s", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && err.Error() != test.expectedErr {
+					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+				}
+				return
+			}
 
-	if !reflect.DeepEqual(getF64S_2, getF64S) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getF64S, getF64S, getF64S_2, getF64S_2)
-	}
-}
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
 
-func TestF64S(t *testing.T) {
-	var f64s []float64
-	f := setUpF64SFlagSet(&f64s)
+			if test.visitor != nil {
+				f.VisitAll(test.visitor)
+			}
 
-	vals := []string{"1.0", "2.0", "4.0", "3.0"}
-	err := f.Parse(repeatFlag("--f64s", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range f64s {
-		d, err := strconv.ParseFloat(vals[i], 64)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected f64s[%d] to be %s but got: %f", i, vals[i], v)
-		}
-	}
-	getF64S, err := f.GetFloat64Slice("f64s")
-	if err != nil {
-		t.Fatalf("got error: %v", err)
-	}
-	for i, v := range getF64S {
-		d, err := strconv.ParseFloat(vals[i], 64)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected f64s[%d] to be %s but got: %f from GetFloat64Slice", i, vals[i], v)
-		}
-	}
-	getF64S_2, err := f.Get("f64s")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
+			if !reflect.DeepEqual(test.expectedValues, f64s) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, f64s, f64s)
+			}
 
-	if !reflect.DeepEqual(getF64S_2, getF64S) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getF64S, getF64S, getF64S_2, getF64S_2)
-	}
-}
+			float64Slice, err := f.GetFloat64Slice("f64s")
+			if err != nil {
+				t.Fatal("got an error from GetFloat64Slice():", err)
+			}
+			if !reflect.DeepEqual(test.expectedValues, float64Slice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, float64Slice, float64Slice)
+			}
 
-func TestF64SDefault(t *testing.T) {
-	var f64s []float64
-	f := setUpF64SFlagSetWithDefault(&f64s)
-
-	vals := []string{"0.0", "1.0"}
-
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range f64s {
-		d, err := strconv.ParseFloat(vals[i], 64)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected f64s[%d] to be %f but got: %f", i, d, v)
-		}
-	}
-
-	getF64S, err := f.GetFloat64Slice("f64s")
-	if err != nil {
-		t.Fatal("got an error from GetFloat64Slice():", err)
-	}
-	for i, v := range getF64S {
-		d, err := strconv.ParseFloat(vals[i], 64)
-		if err != nil {
-			t.Fatal("got an error from GetFloat64Slice():", err)
-		}
-		if d != v {
-			t.Fatalf("expected f64s[%d] to be %f from GetFloat64Slice but got: %f", i, d, v)
-		}
-	}
-}
-
-func TestF64SWithDefault(t *testing.T) {
-	var f64s []float64
-	f := setUpF64SFlagSetWithDefault(&f64s)
-
-	vals := []string{"1.0", "2.0"}
-	err := f.Parse(repeatFlag("--f64s", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range f64s {
-		d, err := strconv.ParseFloat(vals[i], 64)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected f64s[%d] to be %f but got: %f", i, d, v)
-		}
-	}
-
-	getF64S, err := f.GetFloat64Slice("f64s")
-	if err != nil {
-		t.Fatal("got an error from GetFloat64Slice():", err)
-	}
-	for i, v := range getF64S {
-		d, err := strconv.ParseFloat(vals[i], 64)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected f64s[%d] to be %f from GetFloat64Slice but got: %f", i, d, v)
-		}
-	}
-}
-
-func TestF64SAsSliceValue(t *testing.T) {
-	var f64s []float64
-	f := setUpF64SFlagSet(&f64s)
-
-	in := []string{"1.0", "2.0"}
-	argfmt := "--f64s=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-
-	f.VisitAll(func(f *zflag.Flag) {
-		if val, ok := f.Value.(zflag.SliceValue); ok {
-			_ = val.Replace([]string{"3.1"})
-		}
-	})
-	if len(f64s) != 1 || f64s[0] != 3.1 {
-		t.Fatalf("Expected ss to be overwritten with '3.1', but got: %v", f64s)
+			float64SliceGet, err := f.Get("f64s")
+			if err != nil {
+				t.Fatal("got an error from Get():", err)
+			}
+			if !reflect.DeepEqual(float64SliceGet, float64Slice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, float64SliceGet, float64SliceGet)
+			}
+		})
 	}
 }

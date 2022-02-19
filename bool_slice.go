@@ -25,7 +25,8 @@ func newBoolSliceValue(val []bool, p *[]bool) *boolSliceValue {
 // Set converts, and assigns, the boolean argument string representation as the []bool value of this flag.
 // If Set is called on a flag that already has a []bool assigned, the newly converted values will be appended.
 func (s *boolSliceValue) Set(val string) error {
-	b, err := strconv.ParseBool(strings.TrimSpace(val))
+	val = strings.TrimSpace(val)
+	b, err := strconv.ParseBool(val)
 	if err != nil {
 		return err
 	}

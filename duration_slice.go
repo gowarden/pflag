@@ -5,6 +5,7 @@ package zflag
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -22,6 +23,7 @@ func newDurationSliceValue(val []time.Duration, p *[]time.Duration) *durationSli
 }
 
 func (s *durationSliceValue) Set(val string) error {
+	val = strings.TrimSpace(val)
 	out, err := time.ParseDuration(val)
 	if err != nil {
 		return err

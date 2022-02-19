@@ -3,7 +3,10 @@
 
 package zflag
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 // -- int64 Value
 type int64Value int64
@@ -13,8 +16,9 @@ func newInt64Value(val int64, p *int64) *int64Value {
 	return (*int64Value)(p)
 }
 
-func (i *int64Value) Set(s string) error {
-	v, err := strconv.ParseInt(s, 0, 64)
+func (i *int64Value) Set(val string) error {
+	val = strings.TrimSpace(val)
+	v, err := strconv.ParseInt(val, 0, 64)
 	*i = int64Value(v)
 	return err
 }

@@ -3,7 +3,10 @@
 
 package zflag
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 // -- uint8 Value
 type uint8Value uint8
@@ -13,8 +16,9 @@ func newUint8Value(val uint8, p *uint8) *uint8Value {
 	return (*uint8Value)(p)
 }
 
-func (i *uint8Value) Set(s string) error {
-	v, err := strconv.ParseUint(s, 0, 8)
+func (i *uint8Value) Set(val string) error {
+	val = strings.TrimSpace(val)
+	v, err := strconv.ParseUint(val, 0, 8)
 	*i = uint8Value(v)
 	return err
 }

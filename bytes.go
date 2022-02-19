@@ -96,7 +96,7 @@ type bytesBase64Value []byte
 
 // String implements zflag.Value.String.
 func (bytesBase64 bytesBase64Value) String() string {
-	return base64.StdEncoding.EncodeToString([]byte(bytesBase64))
+	return base64.StdEncoding.EncodeToString(bytesBase64)
 }
 
 func (bytesBase64 *bytesBase64Value) Get() interface{} {

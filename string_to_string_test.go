@@ -10,27 +10,6 @@ import (
 	"github.com/gowarden/zflag"
 )
 
-func setUpS2SFlagSet(s2sp *map[string]string) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.StringToStringVar(s2sp, "s2s", map[string]string{}, "Command separated ls2st!")
-	return f
-}
-
-func setUpS2SFlagSetWithDefault(s2sp *map[string]string) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.StringToStringVar(s2sp, "s2s", map[string]string{"da": "1", "db": "2", "de": "5,6"}, "Command separated ls2st!")
-	return f
-}
-
-func createS2SFlag(vals map[string]string) []string {
-	records := make([]string, 0, len(vals)>>1)
-	for k, v := range vals {
-		records = append(records, k+"="+v)
-	}
-
-	return records
-}
-
 func TestS2SValueImplementsGetter(t *testing.T) {
 	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 	f.StringToString("s2s", map[string]string{}, "Command separated ls2st!")
@@ -41,145 +20,121 @@ func TestS2SValueImplementsGetter(t *testing.T) {
 	}
 }
 
-func TestEmptyS2S(t *testing.T) {
-	var s2s map[string]string
-	f := setUpS2SFlagSet(&s2s)
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
+func TestStringToString(t *testing.T) {
+	tests := []struct {
+		name           string
+		flagDefault    map[string]string
+		input          []string
+		expectedErr    string
+		expectedValues map[string]string
+		visitor        func(f *zflag.Flag)
+	}{
+		{
+			name:           "no value passed",
+			input:          []string{},
+			flagDefault:    map[string]string{},
+			expectedErr:    "",
+			expectedValues: map[string]string{},
+		},
+		{
+			name:        "empty value passed",
+			input:       []string{""},
+			flagDefault: map[string]string{},
+			expectedErr: `invalid argument "" for "--s2s" flag:  must be formatted as key=value`,
+		},
+		{
+			name:        "invalid string",
+			input:       []string{"blabla"},
+			flagDefault: map[string]string{},
+			expectedErr: `invalid argument "blabla" for "--s2s" flag: blabla must be formatted as key=value`,
+		},
+		{
+			name:           "no csv",
+			input:          []string{"test=1,5"},
+			flagDefault:    map[string]string{},
+			expectedValues: map[string]string{"test": "1,5"},
+		},
+		{
+			name:           "single key value pair per arg",
+			input:          []string{"test=1=1"},
+			flagDefault:    map[string]string{},
+			expectedValues: map[string]string{"test": "1=1"},
+		},
+		{
+			name:           "overrides multiple calls",
+			input:          []string{"test=1", "test=5"},
+			flagDefault:    map[string]string{},
+			expectedValues: map[string]string{"test": "5"},
+		},
+		{
+			name:           "empty defaults",
+			input:          []string{"test=1", "test2=5"},
+			flagDefault:    map[string]string{},
+			expectedValues: map[string]string{"test": "1", "test2": "5"},
+		},
+		{
+			name:           "overrides default values",
+			input:          []string{"test=1", "test2=5"},
+			flagDefault:    map[string]string{"test2": "1", "test": "5"},
+			expectedValues: map[string]string{"test": "1", "test2": "5"},
+		},
+		{
+			name:           "returns default values",
+			input:          []string{},
+			flagDefault:    map[string]string{"test2": "1", "test": "5"},
+			expectedValues: map[string]string{"test2": "1", "test": "5"},
+		},
+		{
+			name:           "keeps whitespace",
+			input:          []string{"test1=asd   ", "test2=   value", "test3=    asd   ", "test4=multi\nline\narg\npassed\nin\n"},
+			flagDefault:    map[string]string{},
+			expectedValues: map[string]string{"test1": "asd   ", "test2": "   value", "test3": "    asd   ", "test4": "multi\nline\narg\npassed\nin\n"},
+		},
 	}
 
-	getS2S, err := f.GetStringToString("s2s")
-	if err != nil {
-		t.Fatal("got an error from GetStringToString():", err)
-	}
-	if len(getS2S) != 0 {
-		t.Fatalf("got s2s %v with len=%d but expected length=0", getS2S, len(getS2S))
-	}
-	getS2S_2, err := f.Get("s2s")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getS2S_2, getS2S) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getS2S, getS2S, getS2S_2, getS2S_2)
-	}
-}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var s2s map[string]string
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.StringToStringVar(&s2s, "s2s", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--s2s", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && err.Error() != test.expectedErr {
+					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+				}
+				return
+			}
 
-func TestS2S(t *testing.T) {
-	var s2s map[string]string
-	f := setUpS2SFlagSet(&s2s)
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
 
-	vals := map[string]string{"a": "1", "b": "2", "d": "4", "c": "3", "e": "5,6"}
-	err := f.Parse(repeatFlag("--s2s", createS2SFlag(vals)...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for k, v := range s2s {
-		if vals[k] != v {
-			t.Fatalf("expected s2s[%s] to be %s but got: %s", k, vals[k], v)
-		}
-	}
-	getS2S, err := f.GetStringToString("s2s")
-	if err != nil {
-		t.Fatalf("got error: %v", err)
-	}
-	for k, v := range getS2S {
-		if vals[k] != v {
-			t.Fatalf("expected s2s[%s] to be %s but got: %s from GetStringToString", k, vals[k], v)
-		}
-	}
-	getS2S_2, err := f.Get("s2s")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getS2S_2, getS2S) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getS2S, getS2S, getS2S_2, getS2S_2)
-	}
-}
+			if test.visitor != nil {
+				f.VisitAll(test.visitor)
+			}
 
-func TestS2SDefault(t *testing.T) {
-	var s2s map[string]string
-	f := setUpS2SFlagSetWithDefault(&s2s)
+			if !reflect.DeepEqual(test.expectedValues, s2s) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, s2s, s2s)
+			}
 
-	vals := map[string]string{"da": "1", "db": "2", "de": "5,6"}
+			int16Slice, err := f.GetStringToString("s2s")
+			if err != nil {
+				t.Fatal("got an error from GetStringToString():", err)
+			}
+			if !reflect.DeepEqual(test.expectedValues, int16Slice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, int16Slice, int16Slice)
+			}
 
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for k, v := range s2s {
-		if vals[k] != v {
-			t.Fatalf("expected s2s[%s] to be %s but got: %s", k, vals[k], v)
-		}
-	}
-
-	getS2S, err := f.GetStringToString("s2s")
-	if err != nil {
-		t.Fatal("got an error from GetStringToString():", err)
-	}
-	for k, v := range getS2S {
-		if vals[k] != v {
-			t.Fatalf("expected s2s[%s] to be %s from GetStringToString but got: %s", k, vals[k], v)
-		}
-	}
-	getS2S_2, err := f.Get("s2s")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getS2S_2, getS2S) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getS2S, getS2S, getS2S_2, getS2S_2)
-	}
-}
-
-func TestS2SWithDefault(t *testing.T) {
-	var s2s map[string]string
-	f := setUpS2SFlagSetWithDefault(&s2s)
-
-	vals := map[string]string{"a": "1", "b": "2", "e": "5,6"}
-	err := f.Parse(repeatFlag("--s2s", createS2SFlag(vals)...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for k, v := range s2s {
-		if vals[k] != v {
-			t.Fatalf("expected s2s[%s] to be %s but got: %s", k, vals[k], v)
-		}
-	}
-
-	getS2S, err := f.GetStringToString("s2s")
-	if err != nil {
-		t.Fatal("got an error from GetStringToString():", err)
-	}
-	for k, v := range getS2S {
-		if vals[k] != v {
-			t.Fatalf("expected s2s[%s] to be %s from GetStringToString but got: %s", k, vals[k], v)
-		}
-	}
-	getS2S_2, err := f.Get("s2s")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getS2S_2, getS2S) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getS2S, getS2S, getS2S_2, getS2S_2)
-	}
-}
-
-func TestS2SCalledTwice(t *testing.T) {
-	var s2s map[string]string
-	f := setUpS2SFlagSet(&s2s)
-
-	in := []string{"a=1,b=2", "b=3", `e=5,6`}
-	expected := map[string]string{"a": "1,b=2", "b": "3", "e": "5,6"}
-	err := f.Parse(repeatFlag("--s2s", in...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	if len(s2s) != len(expected) {
-		t.Fatalf("expected %d flags; got %d flags", len(expected), len(s2s))
-	}
-	for i, v := range s2s {
-		if expected[i] != v {
-			t.Fatalf("expected s2s[%s] to be %s but got: %s", i, expected[i], v)
-		}
+			int16SliceGet, err := f.Get("s2s")
+			if err != nil {
+				t.Fatal("got an error from Get():", err)
+			}
+			if !reflect.DeepEqual(test.expectedValues, int16SliceGet) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, int16SliceGet, int16SliceGet)
+			}
+		})
 	}
 }

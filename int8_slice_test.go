@@ -4,24 +4,11 @@
 package zflag_test
 
 import (
-	"fmt"
-	"strconv"
+	"reflect"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
-
-func setUpI8SFlagSet(isp *[]int8) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Int8SliceVar(isp, "is", []int8{}, "Command separated list!")
-	return f
-}
-
-func setUpI8SFlagSetWithDefault(isp *[]int8) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Int8SliceVar(isp, "is", []int8{0, 1}, "Command separated list!")
-	return f
-}
 
 func TestI8SliceValueImplementsGetter(t *testing.T) {
 	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
@@ -33,174 +20,113 @@ func TestI8SliceValueImplementsGetter(t *testing.T) {
 	}
 }
 
-func TestEmptyI8S(t *testing.T) {
-	var is []int8
-	f := setUpI8SFlagSet(&is)
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
+func TestInt8Slice(t *testing.T) {
+	tests := []struct {
+		name           string
+		flagDefault    []int8
+		input          []string
+		expectedErr    string
+		expectedValues []int8
+		visitor        func(f *zflag.Flag)
+	}{
+		{
+			name:           "no value passed",
+			input:          []string{},
+			flagDefault:    []int8{},
+			expectedErr:    "",
+			expectedValues: []int8{},
+		},
+		{
+			name:        "empty value passed",
+			input:       []string{""},
+			flagDefault: []int8{},
+			expectedErr: `invalid argument "" for "--i8s" flag: strconv.ParseInt: parsing "": invalid syntax`,
+		},
+		{
+			name:        "invalid int8",
+			input:       []string{"blabla"},
+			flagDefault: []int8{},
+			expectedErr: `invalid argument "blabla" for "--i8s" flag: strconv.ParseInt: parsing "blabla": invalid syntax`,
+		},
+		{
+			name:        "no csv",
+			input:       []string{"1,5"},
+			flagDefault: []int8{},
+			expectedErr: `invalid argument "1,5" for "--i8s" flag: strconv.ParseInt: parsing "1,5": invalid syntax`,
+		},
+		{
+			name:           "empty defaults",
+			input:          []string{"1", "5"},
+			flagDefault:    []int8{},
+			expectedValues: []int8{1, 5},
+		},
+		{
+			name:           "with default values",
+			input:          []string{"5", "1"},
+			flagDefault:    []int8{1, 5},
+			expectedValues: []int8{5, 1},
+		},
+		{
+			name:           "trims input",
+			input:          []string{"    1", "2    ", "   3  "},
+			flagDefault:    []int8{},
+			expectedValues: []int8{1, 2, 3},
+		},
+		{
+			name:  "replace values",
+			input: []string{"5", "1"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					_ = val.Replace([]string{"3"})
+				}
+			},
+			expectedValues: []int8{3},
+		},
 	}
 
-	getI8S, err := f.GetInt8Slice("is")
-	if err != nil {
-		t.Fatal("got an error from GetInt8Slice():", err)
-	}
-	if len(getI8S) != 0 {
-		t.Fatalf("got is %v with len=%d but expected length=0", getI8S, len(getI8S))
-	}
-	getI8S2, err := f.Get("is")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if len(getI8S2.([]int8)) != 0 {
-		t.Fatalf("got bs %v with len=%d but expected length=0", getI8S2.([]int8), len(getI8S2.([]int8)))
-	}
-}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var i8s []int8
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.Int8SliceVar(&i8s, "i8s", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--i8s", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && err.Error() != test.expectedErr {
+					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+				}
+				return
+			}
 
-func TestI8S(t *testing.T) {
-	var is []int8
-	f := setUpI8SFlagSet(&is)
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
 
-	vals := []string{"1", "2", "4", "3"}
-	err := f.Parse(repeatFlag("--is", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		d64, err := strconv.ParseInt(vals[i], 0, 8)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		d := int8(d64)
-		if d != v {
-			t.Fatalf("expected is[%d] to be %s but got: %d", i, vals[i], v)
-		}
-	}
-	getI8S, err := f.GetInt8Slice("is")
-	if err != nil {
-		t.Fatalf("got error: %v", err)
-	}
-	for i, v := range getI8S {
-		d64, err := strconv.ParseInt(vals[i], 0, 8)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		d := int8(d64)
-		if d != v {
-			t.Fatalf("expected is[%d] to be %s but got: %d from GetInt8Slice", i, vals[i], v)
-		}
-	}
-}
+			if test.visitor != nil {
+				f.VisitAll(test.visitor)
+			}
 
-func TestI8SDefault(t *testing.T) {
-	var is []int8
-	f := setUpI8SFlagSetWithDefault(&is)
+			if !reflect.DeepEqual(test.expectedValues, i8s) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, i8s, i8s)
+			}
 
-	vals := []string{"0", "1"}
+			int8Slice, err := f.GetInt8Slice("i8s")
+			if err != nil {
+				t.Fatal("got an error from GetInt8Slice():", err)
+			}
+			if !reflect.DeepEqual(test.expectedValues, int8Slice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, int8Slice, int8Slice)
+			}
 
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		d64, err := strconv.ParseInt(vals[i], 0, 8)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		d := int8(d64)
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d but got: %d", i, d, v)
-		}
-	}
-
-	getI8S, err := f.GetInt8Slice("is")
-	if err != nil {
-		t.Fatal("got an error from GetInt8Slice():", err)
-	}
-	for i, v := range getI8S {
-		d64, err := strconv.ParseInt(vals[i], 0, 8)
-		if err != nil {
-			t.Fatal("got an error from GetInt8Slice():", err)
-		}
-		d := int8(d64)
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d from GetInt8Slice but got: %d", i, d, v)
-		}
-	}
-}
-
-func TestI8SWithDefault(t *testing.T) {
-	var is []int8
-	f := setUpI8SFlagSetWithDefault(&is)
-
-	vals := []string{"1", "2"}
-	err := f.Parse(repeatFlag("--is", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		d64, err := strconv.ParseInt(vals[i], 0, 8)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		d := int8(d64)
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d but got: %d", i, d, v)
-		}
-	}
-
-	getI8S, err := f.GetInt8Slice("is")
-	if err != nil {
-		t.Fatal("got an error from GetInt8Slice():", err)
-	}
-	for i, v := range getI8S {
-		d64, err := strconv.ParseInt(vals[i], 0, 8)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		d := int8(d64)
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d from GetInt8Slice but got: %d", i, d, v)
-		}
-	}
-}
-
-func TestI8SAsSliceValue(t *testing.T) {
-	var i8s []int8
-	f := setUpI8SFlagSet(&i8s)
-
-	in := []string{"1", "2"}
-	argfmt := "--is=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-
-	f.VisitAll(func(f *zflag.Flag) {
-		if val, ok := f.Value.(zflag.SliceValue); ok {
-			_ = val.Replace([]string{"3"})
-		}
-	})
-	if len(i8s) != 1 || i8s[0] != 3 {
-		t.Fatalf("Expected ss to be overwritten with '3.1', but got: %v", i8s)
-	}
-}
-
-func TestI8SCalledTwice(t *testing.T) {
-	var is []int8
-	f := setUpI8SFlagSet(&is)
-
-	in := []string{"1", "2", "3"}
-	expected := []int8{1, 2, 3}
-	err := f.Parse(repeatFlag("--is", in...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		if expected[i] != v {
-			t.Fatalf("expected is[%d] to be %d but got: %d", i, expected[i], v)
-		}
+			int8SliceGet, err := f.Get("i8s")
+			if err != nil {
+				t.Fatal("got an error from Get():", err)
+			}
+			if !reflect.DeepEqual(int8SliceGet, int8Slice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, int8SliceGet, int8SliceGet)
+			}
+		})
 	}
 }

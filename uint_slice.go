@@ -6,6 +6,7 @@ package zflag
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // -- uintSlice Value
@@ -22,6 +23,7 @@ func newUintSliceValue(val []uint, p *[]uint) *uintSliceValue {
 }
 
 func (s *uintSliceValue) Set(val string) error {
+	val = strings.TrimSpace(val)
 	u, err := strconv.ParseUint(val, 10, 0)
 	if err != nil {
 		return err

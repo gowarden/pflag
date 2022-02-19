@@ -6,6 +6,7 @@ package zflag
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // -- int16Slice Value
@@ -26,6 +27,7 @@ func (s *int16SliceValue) Get() interface{} {
 }
 
 func (s *int16SliceValue) Set(val string) error {
+	val = strings.TrimSpace(val)
 	temp64, err := strconv.ParseInt(val, 0, 16)
 	if err != nil {
 		return err

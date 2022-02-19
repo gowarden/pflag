@@ -4,25 +4,11 @@
 package zflag_test
 
 import (
-	"fmt"
 	"reflect"
-	"strconv"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
-
-func setUpI64SFlagSet(isp *[]int64) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Int64SliceVar(isp, "is", []int64{}, "Command separated list!")
-	return f
-}
-
-func setUpI64SFlagSetWithDefault(isp *[]int64) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Int64SliceVar(isp, "is", []int64{0, 1}, "Command separated list!")
-	return f
-}
 
 func TestI64SValueImplementsGetter(t *testing.T) {
 	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
@@ -34,158 +20,113 @@ func TestI64SValueImplementsGetter(t *testing.T) {
 	}
 }
 
-func TestEmptyI64S(t *testing.T) {
-	var is []int64
-	f := setUpI64SFlagSet(&is)
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
+func TestInt64Slice(t *testing.T) {
+	tests := []struct {
+		name           string
+		flagDefault    []int64
+		input          []string
+		expectedErr    string
+		expectedValues []int64
+		visitor        func(f *zflag.Flag)
+	}{
+		{
+			name:           "no value passed",
+			input:          []string{},
+			flagDefault:    []int64{},
+			expectedErr:    "",
+			expectedValues: []int64{},
+		},
+		{
+			name:        "empty value passed",
+			input:       []string{""},
+			flagDefault: []int64{},
+			expectedErr: `invalid argument "" for "--i64s" flag: strconv.ParseInt: parsing "": invalid syntax`,
+		},
+		{
+			name:        "invalid int64",
+			input:       []string{"blabla"},
+			flagDefault: []int64{},
+			expectedErr: `invalid argument "blabla" for "--i64s" flag: strconv.ParseInt: parsing "blabla": invalid syntax`,
+		},
+		{
+			name:        "no csv",
+			input:       []string{"1,5"},
+			flagDefault: []int64{},
+			expectedErr: `invalid argument "1,5" for "--i64s" flag: strconv.ParseInt: parsing "1,5": invalid syntax`,
+		},
+		{
+			name:           "empty defaults",
+			input:          []string{"1", "5"},
+			flagDefault:    []int64{},
+			expectedValues: []int64{1, 5},
+		},
+		{
+			name:           "with default values",
+			input:          []string{"5", "1"},
+			flagDefault:    []int64{1, 5},
+			expectedValues: []int64{5, 1},
+		},
+		{
+			name:           "trims input",
+			input:          []string{"    1", "2    ", "   3  "},
+			flagDefault:    []int64{},
+			expectedValues: []int64{1, 2, 3},
+		},
+		{
+			name:  "replace values",
+			input: []string{"5", "1"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					_ = val.Replace([]string{"3"})
+				}
+			},
+			expectedValues: []int64{3},
+		},
 	}
 
-	getI64S, err := f.GetInt64Slice("is")
-	if err != nil {
-		t.Fatal("got an error from GetInt64Slice():", err)
-	}
-	if len(getI64S) != 0 {
-		t.Fatalf("got is %v with len=%d but expected length=0", getI64S, len(getI64S))
-	}
-	getI64S_2, err := f.Get("is")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getI64S_2, getI64S) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getI64S, getI64S, getI64S_2, getI64S_2)
-	}
-}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var i64s []int64
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.Int64SliceVar(&i64s, "i64s", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--i64s", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && err.Error() != test.expectedErr {
+					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+				}
+				return
+			}
 
-func TestI64S(t *testing.T) {
-	var is []int64
-	f := setUpI64SFlagSet(&is)
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
 
-	vals := []string{"1", "2", "4", "3"}
-	err := f.Parse(repeatFlag("--is", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		d, err := strconv.ParseInt(vals[i], 0, 64)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %s but got: %d", i, vals[i], v)
-		}
-	}
-	getI64S, err := f.GetInt64Slice("is")
-	if err != nil {
-		t.Fatalf("got error: %v", err)
-	}
-	for i, v := range getI64S {
-		d, err := strconv.ParseInt(vals[i], 0, 64)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %s but got: %d from GetInt64Slice", i, vals[i], v)
-		}
-	}
-	getI64S_2, err := f.Get("is")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getI64S_2, getI64S) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getI64S, getI64S, getI64S_2, getI64S_2)
-	}
-}
+			if test.visitor != nil {
+				f.VisitAll(test.visitor)
+			}
 
-func TestI64SDefault(t *testing.T) {
-	var is []int64
-	f := setUpI64SFlagSetWithDefault(&is)
+			if !reflect.DeepEqual(test.expectedValues, i64s) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, i64s, i64s)
+			}
 
-	vals := []string{"0", "1"}
+			int64Slice, err := f.GetInt64Slice("i64s")
+			if err != nil {
+				t.Fatal("got an error from GetInt64Slice():", err)
+			}
+			if !reflect.DeepEqual(test.expectedValues, int64Slice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, int64Slice, int64Slice)
+			}
 
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		d, err := strconv.ParseInt(vals[i], 0, 64)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d but got: %d", i, d, v)
-		}
-	}
-
-	getI64S, err := f.GetInt64Slice("is")
-	if err != nil {
-		t.Fatal("got an error from GetInt64Slice():", err)
-	}
-	for i, v := range getI64S {
-		d, err := strconv.ParseInt(vals[i], 0, 64)
-		if err != nil {
-			t.Fatal("got an error from GetInt64Slice():", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d from GetInt64Slice but got: %d", i, d, v)
-		}
-	}
-}
-
-func TestI64SWithDefault(t *testing.T) {
-	var is []int64
-	f := setUpI64SFlagSetWithDefault(&is)
-
-	vals := []string{"1", "2"}
-	err := f.Parse(repeatFlag("--is", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		d, err := strconv.ParseInt(vals[i], 0, 64)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d but got: %d", i, d, v)
-		}
-	}
-
-	getI64S, err := f.GetInt64Slice("is")
-	if err != nil {
-		t.Fatal("got an error from GetInt64Slice():", err)
-	}
-	for i, v := range getI64S {
-		d, err := strconv.ParseInt(vals[i], 0, 64)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d from GetInt64Slice but got: %d", i, d, v)
-		}
-	}
-}
-
-func TestI64SAsSliceValue(t *testing.T) {
-	var i64s []int64
-	f := setUpI64SFlagSet(&i64s)
-
-	in := []string{"1", "2"}
-	argfmt := "--is=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-
-	f.VisitAll(func(f *zflag.Flag) {
-		if val, ok := f.Value.(zflag.SliceValue); ok {
-			_ = val.Replace([]string{"3"})
-		}
-	})
-	if len(i64s) != 1 || i64s[0] != 3 {
-		t.Fatalf("Expected ss to be overwritten with '3.1', but got: %v", i64s)
+			int64SliceGet, err := f.Get("i64s")
+			if err != nil {
+				t.Fatal("got an error from Get():", err)
+			}
+			if !reflect.DeepEqual(int64SliceGet, int64Slice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, int64SliceGet, int64SliceGet)
+			}
+		})
 	}
 }

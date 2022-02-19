@@ -4,24 +4,11 @@
 package zflag_test
 
 import (
-	"fmt"
-	"strconv"
+	"reflect"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
-
-func setUpUI32SFlagSet(isp *[]uint32) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Uint32SliceVar(isp, "is", []uint32{}, "Command separated list!")
-	return f
-}
-
-func setUpUI32SFlagSetWithDefault(isp *[]uint32) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Uint32SliceVar(isp, "is", []uint32{0, 1}, "Command separated list!")
-	return f
-}
 
 func TestUI32SliceValueImplementsGetter(t *testing.T) {
 	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
@@ -33,174 +20,119 @@ func TestUI32SliceValueImplementsGetter(t *testing.T) {
 	}
 }
 
-func TestEmptyUI32S(t *testing.T) {
-	var is []uint32
-	f := setUpUI32SFlagSet(&is)
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
+func TestUint32Slice(t *testing.T) {
+	tests := []struct {
+		name           string
+		flagDefault    []uint32
+		input          []string
+		expectedErr    string
+		expectedValues []uint32
+		visitor        func(f *zflag.Flag)
+	}{
+		{
+			name:           "no value passed",
+			input:          []string{},
+			flagDefault:    []uint32{},
+			expectedErr:    "",
+			expectedValues: []uint32{},
+		},
+		{
+			name:        "empty value passed",
+			input:       []string{""},
+			flagDefault: []uint32{},
+			expectedErr: `invalid argument "" for "--ui32s" flag: strconv.ParseUint: parsing "": invalid syntax`,
+		},
+		{
+			name:        "invalid uint32",
+			input:       []string{"blabla"},
+			flagDefault: []uint32{},
+			expectedErr: `invalid argument "blabla" for "--ui32s" flag: strconv.ParseUint: parsing "blabla": invalid syntax`,
+		},
+		{
+			name:        "no csv",
+			input:       []string{"1,5"},
+			flagDefault: []uint32{},
+			expectedErr: `invalid argument "1,5" for "--ui32s" flag: strconv.ParseUint: parsing "1,5": invalid syntax`,
+		},
+		{
+			name:           "empty defaults",
+			input:          []string{"1", "5"},
+			flagDefault:    []uint32{},
+			expectedValues: []uint32{1, 5},
+		},
+		{
+			name:           "overrides default values",
+			input:          []string{"5", "1"},
+			flagDefault:    []uint32{1, 5},
+			expectedValues: []uint32{5, 1},
+		},
+		{
+			name:           "with default values",
+			input:          []string{},
+			flagDefault:    []uint32{1, 5},
+			expectedValues: []uint32{1, 5},
+		},
+		{
+			name:           "trims input",
+			input:          []string{"    1", "2    ", "   3  "},
+			flagDefault:    []uint32{},
+			expectedValues: []uint32{1, 2, 3},
+		},
+		{
+			name:  "replace values",
+			input: []string{"5", "1"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					_ = val.Replace([]string{"3"})
+				}
+			},
+			expectedValues: []uint32{3},
+		},
 	}
 
-	getUI32S, err := f.GetUint32Slice("is")
-	if err != nil {
-		t.Fatal("got an error from GetUint32Slice():", err)
-	}
-	if len(getUI32S) != 0 {
-		t.Fatalf("got is %v with len=%d but expected length=0", getUI32S, len(getUI32S))
-	}
-	getUI32S2, err := f.Get("is")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if len(getUI32S2.([]uint32)) != 0 {
-		t.Fatalf("got bs %v with len=%d but expected length=0", getUI32S2.([]uint32), len(getUI32S2.([]uint32)))
-	}
-}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var ui32s []uint32
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.Uint32SliceVar(&ui32s, "ui32s", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--ui32s", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && err.Error() != test.expectedErr {
+					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+				}
+				return
+			}
 
-func TestUI32S(t *testing.T) {
-	var is []uint32
-	f := setUpUI32SFlagSet(&is)
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
 
-	vals := []string{"1", "2", "4", "3"}
-	err := f.Parse(repeatFlag("--is", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		d64, err := strconv.ParseUint(vals[i], 0, 32)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		d := uint32(d64)
-		if d != v {
-			t.Fatalf("expected is[%d] to be %s but got: %d", i, vals[i], v)
-		}
-	}
-	getUI32S, err := f.GetUint32Slice("is")
-	if err != nil {
-		t.Fatalf("got error: %v", err)
-	}
-	for i, v := range getUI32S {
-		d64, err := strconv.ParseUint(vals[i], 0, 32)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		d := uint32(d64)
-		if d != v {
-			t.Fatalf("expected is[%d] to be %s but got: %d from GetUint32Slice", i, vals[i], v)
-		}
-	}
-}
+			if test.visitor != nil {
+				f.VisitAll(test.visitor)
+			}
 
-func TestUI32SDefault(t *testing.T) {
-	var is []uint32
-	f := setUpUI32SFlagSetWithDefault(&is)
+			if !reflect.DeepEqual(test.expectedValues, ui32s) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, ui32s, ui32s)
+			}
 
-	vals := []string{"0", "1"}
+			uint32Slice, err := f.GetUint32Slice("ui32s")
+			if err != nil {
+				t.Fatal("got an error from GetUint32Slice():", err)
+			}
+			if !reflect.DeepEqual(test.expectedValues, uint32Slice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, uint32Slice, uint32Slice)
+			}
 
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		d64, err := strconv.ParseUint(vals[i], 0, 32)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		d := uint32(d64)
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d but got: %d", i, d, v)
-		}
-	}
-
-	getUI32S, err := f.GetUint32Slice("is")
-	if err != nil {
-		t.Fatal("got an error from GetUint32Slice():", err)
-	}
-	for i, v := range getUI32S {
-		d64, err := strconv.ParseUint(vals[i], 0, 32)
-		if err != nil {
-			t.Fatal("got an error from GetUint32Slice():", err)
-		}
-		d := uint32(d64)
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d from GetUint32Slice but got: %d", i, d, v)
-		}
-	}
-}
-
-func TestUI32SWithDefault(t *testing.T) {
-	var is []uint32
-	f := setUpUI32SFlagSetWithDefault(&is)
-
-	vals := []string{"1", "2"}
-	err := f.Parse(repeatFlag("--is", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		d64, err := strconv.ParseUint(vals[i], 0, 32)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		d := uint32(d64)
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d but got: %d", i, d, v)
-		}
-	}
-
-	getUI32S, err := f.GetUint32Slice("is")
-	if err != nil {
-		t.Fatal("got an error from GetUint32Slice():", err)
-	}
-	for i, v := range getUI32S {
-		d64, err := strconv.ParseUint(vals[i], 0, 32)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		d := uint32(d64)
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d from GetUint32Slice but got: %d", i, d, v)
-		}
-	}
-}
-
-func TestUI32SAsSliceValue(t *testing.T) {
-	var i32s []uint32
-	f := setUpUI32SFlagSet(&i32s)
-
-	in := []string{"1", "2"}
-	argfmt := "--is=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-
-	f.VisitAll(func(f *zflag.Flag) {
-		if val, ok := f.Value.(zflag.SliceValue); ok {
-			_ = val.Replace([]string{"3"})
-		}
-	})
-	if len(i32s) != 1 || i32s[0] != 3 {
-		t.Fatalf("Expected ss to be overwritten with '3.1', but got: %v", i32s)
-	}
-}
-
-func TestUI32SCalledTwice(t *testing.T) {
-	var is []uint32
-	f := setUpUI32SFlagSet(&is)
-
-	in := []string{"1", "2", "3"}
-	expected := []uint32{1, 2, 3}
-	err := f.Parse(repeatFlag("--is", in...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		if expected[i] != v {
-			t.Fatalf("expected is[%d] to be %d but got: %d", i, expected[i], v)
-		}
+			uint32SliceGet, err := f.Get("ui32s")
+			if err != nil {
+				t.Fatal("got an error from Get():", err)
+			}
+			if !reflect.DeepEqual(uint32SliceGet, uint32Slice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, uint32SliceGet, uint32SliceGet)
+			}
+		})
 	}
 }

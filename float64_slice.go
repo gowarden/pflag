@@ -6,6 +6,7 @@ package zflag
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // -- float64Slice Value
@@ -26,6 +27,7 @@ func (s *float64SliceValue) Get() interface{} {
 }
 
 func (s *float64SliceValue) Set(val string) error {
+	val = strings.TrimSpace(val)
 	out, err := strconv.ParseFloat(val, 64)
 	if err != nil {
 		return err

@@ -4,24 +4,11 @@
 package zflag_test
 
 import (
-	"fmt"
-	"strconv"
+	"reflect"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
-
-func setUpUI64SFlagSet(isp *[]uint64) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Uint64SliceVar(isp, "is", []uint64{}, "Command separated list!")
-	return f
-}
-
-func setUpUI64SFlagSetWithDefault(isp *[]uint64) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Uint64SliceVar(isp, "is", []uint64{0, 1}, "Command separated list!")
-	return f
-}
 
 func TestUI64SliceValueImplementsGetter(t *testing.T) {
 	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
@@ -33,168 +20,119 @@ func TestUI64SliceValueImplementsGetter(t *testing.T) {
 	}
 }
 
-func TestEmptyUI64S(t *testing.T) {
-	var is []uint64
-	f := setUpUI64SFlagSet(&is)
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
+func TestUint64Slice(t *testing.T) {
+	tests := []struct {
+		name           string
+		flagDefault    []uint64
+		input          []string
+		expectedErr    string
+		expectedValues []uint64
+		visitor        func(f *zflag.Flag)
+	}{
+		{
+			name:           "no value passed",
+			input:          []string{},
+			flagDefault:    []uint64{},
+			expectedErr:    "",
+			expectedValues: []uint64{},
+		},
+		{
+			name:        "empty value passed",
+			input:       []string{""},
+			flagDefault: []uint64{},
+			expectedErr: `invalid argument "" for "--ui64s" flag: strconv.ParseUint: parsing "": invalid syntax`,
+		},
+		{
+			name:        "invalid uint64",
+			input:       []string{"blabla"},
+			flagDefault: []uint64{},
+			expectedErr: `invalid argument "blabla" for "--ui64s" flag: strconv.ParseUint: parsing "blabla": invalid syntax`,
+		},
+		{
+			name:        "no csv",
+			input:       []string{"1,5"},
+			flagDefault: []uint64{},
+			expectedErr: `invalid argument "1,5" for "--ui64s" flag: strconv.ParseUint: parsing "1,5": invalid syntax`,
+		},
+		{
+			name:           "empty defaults",
+			input:          []string{"1", "5"},
+			flagDefault:    []uint64{},
+			expectedValues: []uint64{1, 5},
+		},
+		{
+			name:           "overrides default values",
+			input:          []string{"5", "1"},
+			flagDefault:    []uint64{1, 5},
+			expectedValues: []uint64{5, 1},
+		},
+		{
+			name:           "with default values",
+			input:          []string{},
+			flagDefault:    []uint64{1, 5},
+			expectedValues: []uint64{1, 5},
+		},
+		{
+			name:           "trims input",
+			input:          []string{"    1", "2    ", "   3  "},
+			flagDefault:    []uint64{},
+			expectedValues: []uint64{1, 2, 3},
+		},
+		{
+			name:  "replace values",
+			input: []string{"5", "1"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					_ = val.Replace([]string{"3"})
+				}
+			},
+			expectedValues: []uint64{3},
+		},
 	}
 
-	getI64S, err := f.GetUint64Slice("is")
-	if err != nil {
-		t.Fatal("got an error from GetUint64Slice():", err)
-	}
-	if len(getI64S) != 0 {
-		t.Fatalf("got is %v with len=%d but expected length=0", getI64S, len(getI64S))
-	}
-	getUI64S2, err := f.Get("is")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if len(getUI64S2.([]uint64)) != 0 {
-		t.Fatalf("got bs %v with len=%d but expected length=0", getUI64S2.([]uint64), len(getUI64S2.([]uint64)))
-	}
-}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var ui64s []uint64
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.Uint64SliceVar(&ui64s, "ui64s", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--ui64s", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && err.Error() != test.expectedErr {
+					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+				}
+				return
+			}
 
-func TestUI64S(t *testing.T) {
-	var is []uint64
-	f := setUpUI64SFlagSet(&is)
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
 
-	vals := []string{"1", "2", "4", "3"}
-	err := f.Parse(repeatFlag("--is", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		d, err := strconv.ParseUint(vals[i], 0, 64)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %s but got: %d", i, vals[i], v)
-		}
-	}
-	getI64S, err := f.GetUint64Slice("is")
-	if err != nil {
-		t.Fatalf("got error: %v", err)
-	}
-	for i, v := range getI64S {
-		d, err := strconv.ParseUint(vals[i], 0, 64)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %s but got: %d from GetUint64Slice", i, vals[i], v)
-		}
-	}
-}
+			if test.visitor != nil {
+				f.VisitAll(test.visitor)
+			}
 
-func TestUI64SDefault(t *testing.T) {
-	var is []uint64
-	f := setUpUI64SFlagSetWithDefault(&is)
+			if !reflect.DeepEqual(test.expectedValues, ui64s) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, ui64s, ui64s)
+			}
 
-	vals := []string{"0", "1"}
+			uint64Slice, err := f.GetUint64Slice("ui64s")
+			if err != nil {
+				t.Fatal("got an error from GetUint64Slice():", err)
+			}
+			if !reflect.DeepEqual(test.expectedValues, uint64Slice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, uint64Slice, uint64Slice)
+			}
 
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		d, err := strconv.ParseUint(vals[i], 0, 64)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d but got: %d", i, d, v)
-		}
-	}
-
-	getI64S, err := f.GetUint64Slice("is")
-	if err != nil {
-		t.Fatal("got an error from GetUint64Slice():", err)
-	}
-	for i, v := range getI64S {
-		d, err := strconv.ParseUint(vals[i], 0, 64)
-		if err != nil {
-			t.Fatal("got an error from GetUint64Slice():", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d from GetUint64Slice but got: %d", i, d, v)
-		}
-	}
-}
-
-func TestIU64SWithDefault(t *testing.T) {
-	var is []uint64
-	f := setUpUI64SFlagSetWithDefault(&is)
-
-	vals := []string{"1", "2"}
-	err := f.Parse(repeatFlag("--is", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		d, err := strconv.ParseUint(vals[i], 0, 64)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d but got: %d", i, d, v)
-		}
-	}
-
-	getI64S, err := f.GetUint64Slice("is")
-	if err != nil {
-		t.Fatal("got an error from GetUint64Slice():", err)
-	}
-	for i, v := range getI64S {
-		d, err := strconv.ParseUint(vals[i], 0, 64)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d from GetUint64Slice but got: %d", i, d, v)
-		}
-	}
-}
-
-func TestUI64SAsSliceValue(t *testing.T) {
-	var i64s []uint64
-	f := setUpUI64SFlagSet(&i64s)
-
-	in := []string{"1", "2"}
-	argfmt := "--is=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-
-	f.VisitAll(func(f *zflag.Flag) {
-		if val, ok := f.Value.(zflag.SliceValue); ok {
-			_ = val.Replace([]string{"3"})
-		}
-	})
-	if len(i64s) != 1 || i64s[0] != 3 {
-		t.Fatalf("Expected ss to be overwritten with '3.1', but got: %v", i64s)
-	}
-}
-
-func TestUI64SCalledTwice(t *testing.T) {
-	var is []uint64
-	f := setUpUI64SFlagSet(&is)
-
-	in := []string{"1", "2", "3"}
-	expected := []uint64{1, 2, 3}
-	err := f.Parse(repeatFlag("--is", in...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		if expected[i] != v {
-			t.Fatalf("expected is[%d] to be %d but got: %d", i, expected[i], v)
-		}
+			uint64SliceGet, err := f.Get("ui64s")
+			if err != nil {
+				t.Fatal("got an error from Get():", err)
+			}
+			if !reflect.DeepEqual(uint64SliceGet, uint64Slice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, uint64SliceGet, uint64SliceGet)
+			}
+		})
 	}
 }

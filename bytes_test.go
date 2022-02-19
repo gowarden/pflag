@@ -4,21 +4,12 @@
 package zflag_test
 
 import (
-	"encoding/base64"
 	"fmt"
-	"os"
 	"reflect"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
-
-func setUpBytesHex(bytesHex *[]byte) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.BytesHexVar(bytesHex, "bytes", []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}, "Some bytes in HEX")
-	f.BytesHexVar(bytesHex, "bytes2", []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}, "Some bytes in HEX", zflag.OptShorthand('B'))
-	return f
-}
 
 func TestBytesValueImplementsGetter(t *testing.T) {
 	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
@@ -39,134 +30,240 @@ func TestBytesValueImplementsGetter(t *testing.T) {
 }
 
 func TestBytesHex(t *testing.T) {
-	testCases := []struct {
-		input    string
-		success  bool
-		expected string
+	tests := []struct {
+		name          string
+		flagDefault   []byte
+		input         []string
+		expectedErr   string
+		expectedValue string
 	}{
-		// Positive cases
-		{"", true, ""}, // Is empty string OK ?
-		{"01", true, "01"},
-		{"0101", true, "0101"},
-		{"1234567890abcdef", true, "1234567890ABCDEF"},
-		{"1234567890ABCDEF", true, "1234567890ABCDEF"},
-
-		// Negative cases
-		{"0", false, ""},   // Short string
-		{"000", false, ""}, // Odd-length string
-		{"qq", false, ""},  // non-hex character
+		{
+			name:          "no value passed",
+			input:         []string{},
+			flagDefault:   []byte{},
+			expectedErr:   "",
+			expectedValue: "",
+		},
+		{
+			name:          "empty value passed",
+			input:         []string{""},
+			flagDefault:   []byte{},
+			expectedErr:   "",
+			expectedValue: "",
+		},
+		{
+			name:        "invalid byte hex short string",
+			input:       []string{"0"},
+			flagDefault: []byte{},
+			expectedErr: `invalid argument "0" for "--bytes" flag: encoding/hex: odd length hex string`,
+		},
+		{
+			name:        "invalid byte hex odd-length string",
+			input:       []string{"000"},
+			flagDefault: []byte{},
+			expectedErr: `invalid argument "000" for "--bytes" flag: encoding/hex: odd length hex string`,
+		},
+		{
+			name:        "invalid byte hex non-hex char",
+			input:       []string{"qq"},
+			flagDefault: []byte{},
+			expectedErr: `invalid argument "qq" for "--bytes" flag: encoding/hex: invalid byte: U+0071 'q'`,
+		},
+		{
+			name:        "no csv",
+			input:       []string{"0101,0101"},
+			flagDefault: []byte{},
+			expectedErr: `invalid argument "0101,0101" for "--bytes" flag: encoding/hex: invalid byte: U+002C ','`,
+		},
+		{
+			name:          "repeated value gets the last call",
+			input:         []string{"01", "0101"},
+			flagDefault:   []byte{},
+			expectedValue: "0101",
+		},
+		{
+			name:          "default values get overwritten",
+			input:         []string{"0101"},
+			flagDefault:   []byte("01"),
+			expectedValue: "0101",
+		},
+		{
+			name:          "trims input",
+			input:         []string{" 01 "},
+			expectedValue: "01",
+		},
+		{
+			name:          "test valid",
+			input:         []string{"01"},
+			expectedValue: "01",
+		},
+		{
+			name:          "test valid",
+			input:         []string{"0101"},
+			expectedValue: "0101",
+		},
+		{
+			name:          "test valid",
+			input:         []string{"1234567890abcdef"},
+			expectedValue: "1234567890ABCDEF",
+		},
+		{
+			name:          "test valid",
+			input:         []string{"1234567890ABCDEF"},
+			expectedValue: "1234567890ABCDEF",
+		},
 	}
 
-	devnull, _ := os.Open(os.DevNull)
-	os.Stderr = devnull
-
-	for i := range testCases {
-		var bytesHex []byte
-		f := setUpBytesHex(&bytesHex)
-
-		tc := &testCases[i]
-
-		// --bytes
-		args := []string{
-			fmt.Sprintf("--bytes=%s", tc.input),
-			fmt.Sprintf("-B  %s", tc.input),
-			fmt.Sprintf("--bytes2=%s", tc.input),
-		}
-
-		for _, arg := range args {
-			err := f.Parse([]string{arg})
-
-			if err != nil && tc.success == true {
-				t.Errorf("expected success, got %q", err)
-				continue
-			} else if err == nil && tc.success == false {
-				// bytesHex, err := f.GetBytesHex("bytes")
-				t.Errorf("expected failure while processing %q", tc.input)
-				continue
-			} else if tc.success {
-				bytesHex, err := f.GetBytesHex("bytes")
-				if err != nil {
-					t.Errorf("Got error trying to fetch the 'bytes' flag: %v", err)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var bytes []byte
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.BytesHexVar(&bytes, "bytes", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--bytes", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
 				}
-				if fmt.Sprintf("%X", bytesHex) != tc.expected {
-					t.Errorf("expected %q, got '%X'", tc.expected, bytesHex)
+				if test.expectedErr != "" && err.Error() != test.expectedErr {
+					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
 				}
-				bytesHex2, err := f.Get("bytes")
-				if err != nil {
-					t.Fatal("got an error from Get():", err)
-				}
-				if !reflect.DeepEqual(bytesHex, bytesHex2) {
-					t.Fatalf("expected %v with type %T but got %v with type %T", bytesHex, bytesHex, bytesHex2, bytesHex2)
-				}
+				return
 			}
-		}
+
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
+
+			if fmt.Sprintf("%X", bytes) != test.expectedValue {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, bytes, bytes)
+			}
+
+			bytesHex, err := f.GetBytesHex("bytes")
+			if err != nil {
+				t.Fatal("got an error from GetBytesHex():", err)
+			}
+			if fmt.Sprintf("%X", bytesHex) != test.expectedValue {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", bytesHex, bytesHex, test.expectedValue, test.expectedValue)
+			}
+
+			bytesHexGet, err := f.Get("bytes")
+			if err != nil {
+				t.Fatal("got an error from Get():", err)
+			}
+			if fmt.Sprintf("%X", bytesHexGet) != test.expectedValue {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", bytesHex, bytesHex, bytesHexGet, bytesHexGet)
+			}
+		})
 	}
 }
 
-func setUpBytesBase64(bytesBase64 *[]byte) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.BytesBase64Var(bytesBase64, "bytes", []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}, "Some bytes in Base64")
-	f.BytesBase64Var(bytesBase64, "bytes2", []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}, "Some bytes in Base64", zflag.OptShorthand('B'))
-	return f
-}
-
-func TestBytesBase64(t *testing.T) {
-	testCases := []struct {
-		input    string
-		success  bool
-		expected string
+func TestBytesB64(t *testing.T) {
+	tests := []struct {
+		name          string
+		flagDefault   []byte
+		input         []string
+		expectedErr   string
+		expectedValue []byte
 	}{
-		// Positive cases
-		{"", true, ""}, // Is empty string OK ?
-		{"AQ==", true, "AQ=="},
-
-		// Negative cases
-		{"AQ", false, ""}, // Padding removed
-		{"ï", false, ""},  // non-base64 characters
+		{
+			name:          "no value passed",
+			input:         []string{},
+			flagDefault:   []byte{},
+			expectedValue: []byte{},
+		},
+		{
+			name:          "empty value passed",
+			input:         []string{""},
+			flagDefault:   []byte{},
+			expectedValue: []byte{},
+		},
+		{
+			name:        "invalid byte base64 short string",
+			input:       []string{"A"},
+			flagDefault: []byte{},
+			expectedErr: `invalid argument "A" for "--bytes" flag: illegal base64 data at input byte 0`,
+		},
+		{
+			name:        "invalid byte hex non-hex char",
+			input:       []string{"Aï=="},
+			flagDefault: []byte{},
+			expectedErr: `invalid argument "Aï==" for "--bytes" flag: illegal base64 data at input byte 1`,
+		},
+		{
+			name:        "no csv",
+			input:       []string{"AQ==,AQ=="},
+			flagDefault: []byte{},
+			expectedErr: `invalid argument "AQ==,AQ==" for "--bytes" flag: illegal base64 data at input byte 4`,
+		},
+		{
+			name:          "default value gets returned when none passed",
+			input:         []string{},
+			flagDefault:   []byte("bye"),
+			expectedValue: []byte("bye"),
+		},
+		{
+			name:          "repeated value gets the last call",
+			input:         []string{"aGk=", "Ynll"},
+			flagDefault:   []byte{},
+			expectedValue: []byte("bye"),
+		},
+		{
+			name:          "default values get overwritten",
+			input:         []string{"Ynll"},
+			flagDefault:   []byte("aGk="),
+			expectedValue: []byte("bye"),
+		},
+		{
+			name:          "trims input",
+			input:         []string{" Ynll "},
+			expectedValue: []byte("bye"),
+		},
+		{
+			name:          "test valid",
+			input:         []string{"Ynll"},
+			expectedValue: []byte("bye"),
+		},
 	}
 
-	devnull, _ := os.Open(os.DevNull)
-	os.Stderr = devnull
-
-	for i := range testCases {
-		var bytesBase64 []byte
-		f := setUpBytesBase64(&bytesBase64)
-
-		tc := &testCases[i]
-
-		// --bytes
-		args := []string{
-			fmt.Sprintf("--bytes=%s", tc.input),
-			fmt.Sprintf("-B  %s", tc.input),
-			fmt.Sprintf("--bytes2=%s", tc.input),
-		}
-
-		for _, arg := range args {
-			err := f.Parse([]string{arg})
-
-			if err != nil && tc.success == true {
-				t.Errorf("expected success, got %q", err)
-				continue
-			} else if err == nil && tc.success == false {
-				// bytesBase64, err := f.GetBytesBase64("bytes")
-				t.Errorf("expected failure while processing %q", tc.input)
-				continue
-			} else if tc.success {
-				bytesBase64, err := f.GetBytesBase64("bytes")
-				if err != nil {
-					t.Errorf("Got error trying to fetch the 'bytes' flag: %v", err)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var bytes []byte
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.BytesBase64Var(&bytes, "bytes", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--bytes", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
 				}
-				if base64.StdEncoding.EncodeToString(bytesBase64) != tc.expected {
-					t.Errorf("expected %q, got '%X'", tc.expected, bytesBase64)
+				if test.expectedErr != "" && err.Error() != test.expectedErr {
+					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
 				}
-				bytesBase64_2, err := f.Get("bytes")
-				if err != nil {
-					t.Fatal("got an error from Get():", err)
-				}
-				if !reflect.DeepEqual(bytesBase64, bytesBase64_2) {
-					t.Fatalf("expected %v with type %T but got %v with type %T", bytesBase64, bytesBase64, bytesBase64_2, bytesBase64_2)
-				}
+				return
 			}
-		}
+
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
+
+			if !reflect.DeepEqual(bytes, test.expectedValue) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, bytes, bytes)
+			}
+
+			bytesB64, err := f.GetBytesBase64("bytes")
+			if err != nil {
+				t.Fatal("got an error from GetBytesHex():", err)
+			}
+			if !reflect.DeepEqual(bytesB64, test.expectedValue) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, bytesB64, bytesB64)
+			}
+
+			bytesB64Get, err := f.Get("bytes")
+			if err != nil {
+				t.Fatal("got an error from Get():", err)
+			}
+			if !reflect.DeepEqual(bytesB64Get, test.expectedValue) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, bytesB64Get, bytesB64Get)
+			}
+		})
 	}
 }

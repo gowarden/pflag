@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"strings"
 )
 
 // -- net.IPMask value
@@ -18,10 +19,11 @@ func newIPMaskValue(val net.IPMask, p *net.IPMask) *ipMaskValue {
 }
 
 func (i *ipMaskValue) String() string { return net.IPMask(*i).String() }
-func (i *ipMaskValue) Set(s string) error {
-	ip := ParseIPv4Mask(s)
+func (i *ipMaskValue) Set(val string) error {
+	val = strings.TrimSpace(val)
+	ip := ParseIPv4Mask(val)
 	if ip == nil {
-		return fmt.Errorf("failed to parse IP mask: %q", s)
+		return fmt.Errorf("failed to parse IP mask: %q", val)
 	}
 	*i = ipMaskValue(ip)
 	return nil

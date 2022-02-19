@@ -6,7 +6,10 @@
 
 package zflag
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 // -- complex128 Value
 type complex128Value complex128
@@ -20,8 +23,9 @@ func (f *complex128Value) Get() interface{} {
 	return complex128(*f)
 }
 
-func (f *complex128Value) Set(s string) error {
-	v, err := strconv.ParseComplex(s, 128)
+func (f *complex128Value) Set(val string) error {
+	val = strings.TrimSpace(val)
+	v, err := strconv.ParseComplex(val, 128)
 	*f = complex128Value(v)
 	return err
 }

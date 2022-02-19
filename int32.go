@@ -3,7 +3,10 @@
 
 package zflag
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 // -- int32 Value
 type int32Value int32
@@ -13,8 +16,9 @@ func newInt32Value(val int32, p *int32) *int32Value {
 	return (*int32Value)(p)
 }
 
-func (i *int32Value) Set(s string) error {
-	v, err := strconv.ParseInt(s, 0, 32)
+func (i *int32Value) Set(val string) error {
+	val = strings.TrimSpace(val)
+	v, err := strconv.ParseInt(val, 0, 32)
 	*i = int32Value(v)
 	return err
 }

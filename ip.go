@@ -18,13 +18,14 @@ func newIPValue(val net.IP, p *net.IP) *ipValue {
 }
 
 func (i *ipValue) String() string { return net.IP(*i).String() }
-func (i *ipValue) Set(s string) error {
-	if s == "" {
-		return nil
+func (i *ipValue) Set(val string) error {
+	val = strings.TrimSpace(val)
+	if val == "" {
+		return fmt.Errorf("failed to parse IP: %q", val)
 	}
-	ip := net.ParseIP(strings.TrimSpace(s))
+	ip := net.ParseIP(val)
 	if ip == nil {
-		return fmt.Errorf("failed to parse IP: %q", s)
+		return fmt.Errorf("failed to parse IP: %q", val)
 	}
 	*i = ipValue(ip)
 	return nil

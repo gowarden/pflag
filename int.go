@@ -3,7 +3,10 @@
 
 package zflag
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 // -- int Value
 type intValue int
@@ -13,8 +16,9 @@ func newIntValue(val int, p *int) *intValue {
 	return (*intValue)(p)
 }
 
-func (i *intValue) Set(s string) error {
-	v, err := strconv.ParseInt(s, 0, 64)
+func (i *intValue) Set(val string) error {
+	val = strings.TrimSpace(val)
+	v, err := strconv.ParseInt(val, 0, 64)
 	*i = intValue(v)
 	return err
 }

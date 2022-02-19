@@ -30,6 +30,7 @@ func (s *stringToInt64Value) Set(val string) error {
 	}
 	key, val := kv[0], kv[1]
 
+	val = strings.TrimSpace(val)
 	v, err := strconv.ParseInt(val, 10, 64)
 	if err != nil {
 		return err

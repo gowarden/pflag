@@ -3,7 +3,10 @@
 
 package zflag
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 // optional interface to indicate boolean flags that can be
 // supplied without "=value" text
@@ -24,8 +27,9 @@ func (b *boolValue) Get() interface{} {
 	return bool(*b)
 }
 
-func (b *boolValue) Set(s string) error {
-	v, err := strconv.ParseBool(s)
+func (b *boolValue) Set(val string) error {
+	val = strings.TrimSpace(val)
+	v, err := strconv.ParseBool(val)
 	*b = boolValue(v)
 	return err
 }

@@ -7,24 +7,11 @@
 package zflag_test
 
 import (
-	"fmt"
-	"strconv"
+	"reflect"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
-
-func setUpC128SFlagSet(c128sp *[]complex128) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Complex128SliceVar(c128sp, "c128s", []complex128{}, "Command separated list!")
-	return f
-}
-
-func setUpC128SFlagSetWithDefault(c128sp *[]complex128) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Complex128SliceVar(c128sp, "c128s", []complex128{0.0, 1.0}, "Command separated list!")
-	return f
-}
 
 func TestC128SliceValueImplementsGetter(t *testing.T) {
 	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
@@ -36,168 +23,117 @@ func TestC128SliceValueImplementsGetter(t *testing.T) {
 	}
 }
 
-func TestEmptyC128S(t *testing.T) {
-	var c128s []complex128
-	f := setUpC128SFlagSet(&c128s)
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
+func TestC128Slice(t *testing.T) {
+	tests := []struct {
+		name           string
+		flagDefault    []complex128
+		input          []string
+		expectedErr    string
+		expectedValues []complex128
+		visitor        func(f *zflag.Flag)
+	}{
+		{
+			name:           "no value passed",
+			input:          []string{},
+			flagDefault:    []complex128{},
+			expectedErr:    "",
+			expectedValues: []complex128{},
+		},
+		{
+			name:        "empty value passed",
+			input:       []string{""},
+			flagDefault: []complex128{},
+			expectedErr: `invalid argument "" for "--c128s" flag: strconv.ParseComplex: parsing "": invalid syntax`,
+		},
+		{
+			name:        "invalid c128s",
+			input:       []string{"blabla"},
+			flagDefault: []complex128{},
+			expectedErr: `invalid argument "blabla" for "--c128s" flag: strconv.ParseComplex: parsing "blabla": invalid syntax`,
+		},
+		{
+			name:        "no csv",
+			input:       []string{"1.0,2.0"},
+			flagDefault: []complex128{},
+			expectedErr: `invalid argument "1.0,2.0" for "--c128s" flag: strconv.ParseComplex: parsing "1.0,2.0": invalid syntax`,
+		},
+		{
+			name:           "multiple values passed",
+			input:          []string{"1.0", "2.0"},
+			flagDefault:    []complex128{},
+			expectedValues: []complex128{1.0, 2.0},
+		},
+		{
+			name:           "with default values",
+			input:          []string{"1.0", "2.0"},
+			flagDefault:    []complex128{2.0, 1.0},
+			expectedValues: []complex128{1.0, 2.0},
+		},
+		{
+			name:  "replace values",
+			input: []string{"1.0", "2.0"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					_ = val.Replace([]string{"0+2i"})
+				}
+			},
+			expectedValues: []complex128{complex(0, 2)},
+		},
+		{
+			name:           "valid c128s",
+			input:          []string{"1.0", "2.0", "3.0", "0+2i", "1", "2i", "2.5+3.1i"},
+			expectedValues: []complex128{1.0, 2.0, 3.0, complex(0, 2), complex(1, 0), complex(0, 2), complex(2.5, 3.1)},
+		},
+		{
+			name:           "trims input",
+			input:          []string{" 1.0 ", "   2.0", "3.0   ", "  0+2i", "1"},
+			expectedValues: []complex128{1.0, 2.0, 3.0, complex(0, 2), complex(1, 0)},
+		},
 	}
 
-	getC128S, err := f.GetComplex128Slice("c128s")
-	if err != nil {
-		t.Fatal("got an error from GetComplex128Slice():", err)
-	}
-	if len(getC128S) != 0 {
-		t.Fatalf("got c128s %v with len=%d but expected length=0", getC128S, len(getC128S))
-	}
-	getC128S2, err := f.Get("c128s")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if len(getC128S2.([]complex128)) != 0 {
-		t.Fatalf("got bs %v with len=%d but expected length=0", getC128S2.([]complex128), len(getC128S2.([]complex128)))
-	}
-}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var c128s []complex128
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.Complex128SliceVar(&c128s, "c128s", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--c128s", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && err.Error() != test.expectedErr {
+					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+				}
+				return
+			}
 
-func TestC128S(t *testing.T) {
-	var c128s []complex128
-	f := setUpC128SFlagSet(&c128s)
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
 
-	vals := []string{"1.0", "2.0", "4.0", "3.0"}
-	err := f.Parse(repeatFlag("--c128s", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range c128s {
-		d, err := strconv.ParseComplex(vals[i], 128)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected c128s[%d] to be %s but got: %f", i, vals[i], v)
-		}
-	}
-	getC128S, err := f.GetComplex128Slice("c128s")
-	if err != nil {
-		t.Fatalf("got error: %v", err)
-	}
-	for i, v := range getC128S {
-		d, err := strconv.ParseComplex(vals[i], 128)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected c128s[%d] to be %s but got: %f from GetComplex128Slice", i, vals[i], v)
-		}
-	}
-}
+			if test.visitor != nil {
+				f.VisitAll(test.visitor)
+			}
 
-func TestC128SDefault(t *testing.T) {
-	var c128s []complex128
-	f := setUpC128SFlagSetWithDefault(&c128s)
+			if !reflect.DeepEqual(test.expectedValues, c128s) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, c128s, c128s)
+			}
 
-	vals := []string{"0.0", "1.0"}
+			getC128s, err := f.GetComplex128Slice("c128s")
+			if err != nil {
+				t.Fatal("got an error from GetComplex128Slice():", err)
+			}
+			if !reflect.DeepEqual(test.expectedValues, getC128s) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, getC128s, getC128s)
+			}
 
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range c128s {
-		d, err := strconv.ParseComplex(vals[i], 128)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected c128s[%d] to be %f but got: %f", i, d, v)
-		}
-	}
-
-	getC128S, err := f.GetComplex128Slice("c128s")
-	if err != nil {
-		t.Fatal("got an error from GetComplex128Slice():", err)
-	}
-	for i, v := range getC128S {
-		d, err := strconv.ParseComplex(vals[i], 128)
-		if err != nil {
-			t.Fatal("got an error from GetComplex128Slice():", err)
-		}
-		if d != v {
-			t.Fatalf("expected c128s[%d] to be %f from GetComplex128Slice but got: %f", i, d, v)
-		}
-	}
-}
-
-func TestC128SWithDefault(t *testing.T) {
-	var c128s []complex128
-	f := setUpC128SFlagSetWithDefault(&c128s)
-
-	vals := []string{"1.0", "2.0"}
-	err := f.Parse(repeatFlag("--c128s", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range c128s {
-		d, err := strconv.ParseComplex(vals[i], 128)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected c128s[%d] to be %f but got: %f", i, d, v)
-		}
-	}
-
-	getC128S, err := f.GetComplex128Slice("c128s")
-	if err != nil {
-		t.Fatal("got an error from GetComplex128Slice():", err)
-	}
-	for i, v := range getC128S {
-		d, err := strconv.ParseComplex(vals[i], 128)
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected c128s[%d] to be %f from GetComplex128Slice but got: %f", i, d, v)
-		}
-	}
-}
-
-func TestC128SAsSliceValue(t *testing.T) {
-	var c128s []complex128
-	f := setUpC128SFlagSet(&c128s)
-
-	in := []string{"1.0", "2.0"}
-	argfmt := "--c128s=%s"
-	arg1 := fmt.Sprintf(argfmt, in[0])
-	arg2 := fmt.Sprintf(argfmt, in[1])
-	err := f.Parse([]string{arg1, arg2})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-
-	f.VisitAll(func(f *zflag.Flag) {
-		if val, ok := f.Value.(zflag.SliceValue); ok {
-			_ = val.Replace([]string{"3.1"})
-		}
-	})
-	if len(c128s) != 1 || c128s[0] != 3.1 {
-		t.Fatalf("Expected ss to be overwritten with '3.1', but got: %v", c128s)
-	}
-}
-
-func TestC128SCalledTwice(t *testing.T) {
-	var c128s []complex128
-	f := setUpC128SFlagSet(&c128s)
-
-	in := []string{"1.0", "2.0", "3.0", "0+2i", "1", "2i", "2.5+3.1i"}
-	expected := []complex128{1.0, 2.0, 3.0, complex(0, 2), complex(1, 0), complex(0, 2), complex(2.5, 3.1)}
-	err := f.Parse(repeatFlag("--c128s", in...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range c128s {
-		if expected[i] != v {
-			t.Fatalf("expected c128s[%d] to be %f but got: %f", i, expected[i], v)
-		}
+			getC128sGet, err := f.Get("c128s")
+			if err != nil {
+				t.Fatal("got an error from Get():", err)
+			}
+			if !reflect.DeepEqual(getC128sGet, c128s) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, getC128sGet, getC128sGet)
+			}
+		})
 	}
 }

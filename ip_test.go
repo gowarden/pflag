@@ -4,20 +4,13 @@
 package zflag_test
 
 import (
-	"fmt"
 	"net"
-	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
-
-func setUpIP(ip *net.IP) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.IPVar(ip, "address", net.ParseIP("0.0.0.0"), "IP Address")
-	return f
-}
 
 func TestIPValueImplementsGetter(t *testing.T) {
 	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
@@ -30,57 +23,109 @@ func TestIPValueImplementsGetter(t *testing.T) {
 }
 
 func TestIP(t *testing.T) {
-	testCases := []struct {
-		input    string
-		success  bool
-		expected string
+	tests := []struct {
+		name        string
+		flagDefault net.IP
+		input       []string
+		expectedErr string
+		expectedIPs net.IP
 	}{
-		{"0.0.0.0", true, "0.0.0.0"},
-		{" 0.0.0.0 ", true, "0.0.0.0"},
-		{"1.2.3.4", true, "1.2.3.4"},
-		{"127.0.0.1", true, "127.0.0.1"},
-		{"255.255.255.255", true, "255.255.255.255"},
-		{"", true, "0.0.0.0"},
-		{"0", false, ""},
-		{"localhost", false, ""},
-		{"0.0.0", false, ""},
-		{"0.0.0.", false, ""},
-		{"0.0.0.0.", false, ""},
-		{"0.0.0.256", false, ""},
-		{"0 . 0 . 0 . 0", false, ""},
+		{
+			name:        "no value passed",
+			input:       []string{},
+			flagDefault: net.IP{},
+			expectedErr: "",
+			expectedIPs: net.IP{},
+		},
+		{
+			name:        "empty value passed",
+			input:       []string{""},
+			flagDefault: net.IP{},
+			expectedErr: `invalid argument "" for "--ip" flag: failed to parse IP: ""`,
+		},
+		{
+			name:        "invalid ip",
+			input:       []string{"blabla"},
+			flagDefault: net.IP{},
+			expectedErr: `invalid argument "blabla" for "--ip" flag: failed to parse IP: "blabla"`,
+		},
+		{
+			name:        "no csv",
+			input:       []string{"192.168.1.1,172.16.1.1"},
+			flagDefault: net.IP{},
+			expectedErr: `invalid argument "192.168.1.1,172.16.1.1" for "--ip" flag: failed to parse IP: "192.168.1.1,172.16.1.1"`,
+		},
+		{
+			name:        "multiple value passed",
+			input:       []string{"192.168.1.1", "10.0.0.1"},
+			flagDefault: net.IP{},
+			expectedIPs: net.ParseIP("10.0.0.1"),
+		},
+		{
+			name:        "overrides default values",
+			input:       []string{"0:0:0:0:0:0:0:2"},
+			flagDefault: net.ParseIP("192.168.1.1"),
+			expectedIPs: net.ParseIP("0:0:0:0:0:0:0:2"),
+		},
+		{
+			name:        "with default values",
+			input:       []string{},
+			flagDefault: net.ParseIP("192.168.1.1"),
+			expectedIPs: net.ParseIP("192.168.1.1"),
+		},
+		{
+			name:        "trims input",
+			input:       []string{"    192.168.1.1    "},
+			flagDefault: net.IP{},
+			expectedIPs: net.ParseIP("192.168.1.1"),
+		},
+		{
+			name:        "trims input",
+			input:       []string{"    0:0:0:0:0:0:0:2    "},
+			flagDefault: net.IP{},
+			expectedIPs: net.ParseIP("0:0:0:0:0:0:0:2"),
+		},
 	}
 
-	devnull, _ := os.Open(os.DevNull)
-	os.Stderr = devnull
-	for i := range testCases {
-		var addr net.IP
-		f := setUpIP(&addr)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var ip net.IP
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.IPVar(&ip, "ip", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--ip", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && !strings.Contains(err.Error(), test.expectedErr) {
+					t.Fatalf("expected error to contain %q, but was: %s", test.expectedErr, err)
+				}
+				return
+			}
 
-		tc := &testCases[i]
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
 
-		arg := fmt.Sprintf("--address=%s", tc.input)
-		err := f.Parse([]string{arg})
-		if err != nil && tc.success == true {
-			t.Errorf("expected success, got %q", err)
-			continue
-		} else if err == nil && tc.success == false {
-			t.Errorf("expected failure")
-			continue
-		} else if tc.success {
-			ip, err := f.GetIP("address")
+			if !reflect.DeepEqual(test.expectedIPs, ip) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedIPs, test.expectedIPs, ip, ip)
+			}
+
+			getIPS, err := f.GetIP("ip")
 			if err != nil {
-				t.Errorf("Got error trying to fetch the IP flag: %v", err)
+				t.Fatal("got an error from GetIP():", err)
 			}
-			if ip.String() != tc.expected {
-				t.Errorf("expected %q, got %q", tc.expected, ip.String())
+			if !reflect.DeepEqual(test.expectedIPs, getIPS) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", getIPS, getIPS, test.expectedIPs, test.expectedIPs)
 			}
-			ip2, err := f.Get("address")
+
+			getIPSGet, err := f.Get("ip")
 			if err != nil {
-				t.Errorf("Got error trying to fetch the IP flag: %v", err)
+				t.Fatal("got an error from Get():", err)
 			}
-			if !reflect.DeepEqual(ip, ip2) {
-				t.Errorf("expected %q, got %q", ip.String(), ip2.(net.IP).String())
+			if !reflect.DeepEqual(getIPSGet, getIPS) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", getIPS, getIPS, getIPSGet, getIPSGet)
 			}
-		}
+		})
 	}
 }

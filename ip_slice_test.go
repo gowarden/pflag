@@ -6,27 +6,11 @@ package zflag_test
 import (
 	"net"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
-
-func setUpIPSFlagSet(ipsp *[]net.IP) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.IPSliceVar(ipsp, "ips", []net.IP{}, "Command separated list!")
-	return f
-}
-
-func setUpIPSFlagSetWithDefault(ipsp *[]net.IP) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.IPSliceVar(ipsp, "ips",
-		[]net.IP{
-			net.ParseIP("192.168.1.1"),
-			net.ParseIP("0:0:0:0:0:0:0:1"),
-		},
-		"Command separated list!")
-	return f
-}
 
 func TestIPSValueImplementsGetter(t *testing.T) {
 	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
@@ -38,246 +22,117 @@ func TestIPSValueImplementsGetter(t *testing.T) {
 	}
 }
 
-func TestEmptyIP(t *testing.T) {
-	var ips []net.IP
-	f := setUpIPSFlagSet(&ips)
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-
-	getIPS, err := f.GetIPSlice("ips")
-	if err != nil {
-		t.Fatal("got an error from GetIPSlice():", err)
-	}
-	if len(getIPS) != 0 {
-		t.Fatalf("got ips %v with len=%d but expected length=0", getIPS, len(getIPS))
-	}
-	getIPS_2, err := f.Get("ips")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getIPS_2, getIPS) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getIPS, getIPS, getIPS_2, getIPS_2)
-	}
-}
-
-func TestEmptyIPValue(t *testing.T) {
-	var ips []net.IP
-	f := setUpIPSFlagSet(&ips)
-	err := f.Parse([]string{"--ips="})
-	if err == nil {
-		t.Fatal("expected an error; got none")
-	}
-}
-
-func TestIPS(t *testing.T) {
-	var ips []net.IP
-	f := setUpIPSFlagSet(&ips)
-
-	vals := []string{"192.168.1.1", "10.0.0.1", "0:0:0:0:0:0:0:2"}
-	err := f.Parse(repeatFlag("--ips", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range ips {
-		if ip := net.ParseIP(vals[i]); ip == nil {
-			t.Fatalf("invalid string being converted to IP address: %s", vals[i])
-		} else if !ip.Equal(v) {
-			t.Fatalf("expected ips[%d] to be %s but got: %s from GetIPSlice", i, vals[i], v)
-		}
-	}
-	getIPS, err := f.GetIPSlice("ips")
-	if err != nil {
-		t.Fatalf("got error: %v", err)
-	}
-	for i, v := range getIPS {
-		if ip := net.ParseIP(vals[i]); ip == nil {
-			t.Fatalf("invalid string being converted to IP address: %s", vals[i])
-		} else if !ip.Equal(v) {
-			t.Fatalf("expected ips[%d] to be %s but got: %s from GetIPSlice", i, vals[i], v)
-		}
-	}
-	getIPS_2, err := f.Get("ips")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getIPS_2, getIPS) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getIPS, getIPS, getIPS_2, getIPS_2)
-	}
-}
-
-func TestIPSDefault(t *testing.T) {
-	var ips []net.IP
-	f := setUpIPSFlagSetWithDefault(&ips)
-
-	vals := []string{"192.168.1.1", "0:0:0:0:0:0:0:1"}
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range ips {
-		if ip := net.ParseIP(vals[i]); ip == nil {
-			t.Fatalf("invalid string being converted to IP address: %s", vals[i])
-		} else if !ip.Equal(v) {
-			t.Fatalf("expected ips[%d] to be %s but got: %s", i, vals[i], v)
-		}
-	}
-
-	getIPS, err := f.GetIPSlice("ips")
-	if err != nil {
-		t.Fatal("got an error from GetIPSlice")
-	}
-	for i, v := range getIPS {
-		if ip := net.ParseIP(vals[i]); ip == nil {
-			t.Fatalf("invalid string being converted to IP address: %s", vals[i])
-		} else if !ip.Equal(v) {
-			t.Fatalf("expected ips[%d] to be %s but got: %s", i, vals[i], v)
-		}
-	}
-	getIPS_2, err := f.Get("ips")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getIPS_2, getIPS) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getIPS, getIPS, getIPS_2, getIPS_2)
-	}
-}
-
-func TestIPSWithDefault(t *testing.T) {
-	var ips []net.IP
-	f := setUpIPSFlagSetWithDefault(&ips)
-
-	vals := []string{"192.168.1.1", "0:0:0:0:0:0:0:1"}
-	err := f.Parse(repeatFlag("--ips", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range ips {
-		if ip := net.ParseIP(vals[i]); ip == nil {
-			t.Fatalf("invalid string being converted to IP address: %s", vals[i])
-		} else if !ip.Equal(v) {
-			t.Fatalf("expected ips[%d] to be %s but got: %s", i, vals[i], v)
-		}
-	}
-
-	getIPS, err := f.GetIPSlice("ips")
-	if err != nil {
-		t.Fatal("got an error from GetIPSlice")
-	}
-	for i, v := range getIPS {
-		if ip := net.ParseIP(vals[i]); ip == nil {
-			t.Fatalf("invalid string being converted to IP address: %s", vals[i])
-		} else if !ip.Equal(v) {
-			t.Fatalf("expected ips[%d] to be %s but got: %s", i, vals[i], v)
-		}
-	}
-	getIPS_2, err := f.Get("ips")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getIPS_2, getIPS) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getIPS, getIPS, getIPS_2, getIPS_2)
-	}
-}
-
-func TestIPSAsSliceValue(t *testing.T) {
-	var ips []net.IP
-	f := setUpIPSFlagSet(&ips)
-
-	in := []string{"192.168.1.1", "0:0:0:0:0:0:0:1"}
-	err := f.Parse(repeatFlag("--ips", in...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-
-	f.VisitAll(func(f *zflag.Flag) {
-		if val, ok := f.Value.(zflag.SliceValue); ok {
-			_ = val.Replace([]string{"192.168.1.2"})
-		}
-	})
-	if len(ips) != 1 || !ips[0].Equal(net.ParseIP("192.168.1.2")) {
-		t.Fatalf("Expected ss to be overwritten with '192.168.1.2', but got: %v", ips)
-	}
-}
-
-func TestIPSBadSpacing(t *testing.T) {
-
+func TestIPSlice(t *testing.T) {
 	tests := []struct {
-		Want    []net.IP
-		FlagArg []string
+		name           string
+		flagDefault    []net.IP
+		input          []string
+		expectedErr    string
+		expectedValues []net.IP
+		visitor        func(f *zflag.Flag)
 	}{
 		{
-			Want: []net.IP{
-				net.ParseIP("a4ab:61d:f03e:5d7d:fad7:d4c2:a1a5:568"),
-				net.ParseIP("203.107.49.208"),
-				net.ParseIP("14.57.204.90"),
-			},
-			FlagArg: []string{
-				"a4ab:61d:f03e:5d7d:fad7:d4c2:a1a5:568",
-				"203.107.49.208",
-				"14.57.204.90",
-			},
+			name:           "no value passed",
+			input:          []string{},
+			flagDefault:    []net.IP{},
+			expectedErr:    "",
+			expectedValues: []net.IP{},
 		},
 		{
-			Want: []net.IP{
-				net.ParseIP("204.228.73.195"),
-				net.ParseIP("86.141.15.94"),
-			},
-			FlagArg: []string{
-				"204.228.73.195",
-				"86.141.15.94",
-			},
+			name:        "empty value passed",
+			input:       []string{""},
+			flagDefault: []net.IP{},
+			expectedErr: `invalid argument "" for "--ips" flag: invalid string being converted to IP address`,
 		},
 		{
-			Want: []net.IP{
-				net.ParseIP("c70c:db36:3001:890f:c6ea:3f9b:7a39:cc3f"),
-				net.ParseIP("4d17:1d6e:e699:bd7a:88c5:5e7e:ac6a:4472"),
-			},
-			FlagArg: []string{
-				"c70c:db36:3001:890f:c6ea:3f9b:7a39:cc3f",
-				"4d17:1d6e:e699:bd7a:88c5:5e7e:ac6a:4472",
-			},
+			name:        "invalid ip",
+			input:       []string{"blabla"},
+			flagDefault: []net.IP{},
+			expectedErr: `invalid argument "blabla" for "--ips" flag: invalid string being converted to IP address`,
 		},
 		{
-			Want: []net.IP{
-				net.ParseIP("5170:f971:cfac:7be3:512a:af37:952c:bc33"),
-				net.ParseIP("93.21.145.140"),
-				net.ParseIP("2cac:61d3:c5ff:6caf:73e0:1b1a:c336:c1ca"),
-			},
-			FlagArg: []string{
-				" 5170:f971:cfac:7be3:512a:af37:952c:bc33  ",
-				" 93.21.145.140     ",
-				"2cac:61d3:c5ff:6caf:73e0:1b1a:c336:c1ca",
-			},
+			name:        "no csv",
+			input:       []string{"192.168.1.1,172.16.1.1"},
+			flagDefault: []net.IP{},
+			expectedErr: `invalid argument "192.168.1.1,172.16.1.1" for "--ips" flag: invalid string being converted to IP address`,
 		},
 		{
-			Want: []net.IP{
-				net.ParseIP("2e5e:66b2:6441:848:5b74:76ea:574c:3a7b"),
-				net.ParseIP("2e5e:66b2:6441:848:5b74:76ea:574c:3a7b"),
-				net.ParseIP("2e5e:66b2:6441:848:5b74:76ea:574c:3a7b"),
-				net.ParseIP("2e5e:66b2:6441:848:5b74:76ea:574c:3a7b"),
+			name:           "empty value passed",
+			input:          []string{"192.168.1.1", "10.0.0.1", "0:0:0:0:0:0:0:2"},
+			flagDefault:    []net.IP{},
+			expectedValues: []net.IP{net.ParseIP("192.168.1.1"), net.ParseIP("10.0.0.1"), net.ParseIP("0:0:0:0:0:0:0:2")},
+		},
+		{
+			name:           "with default values",
+			input:          []string{"192.168.1.1", "0:0:0:0:0:0:0:2"},
+			flagDefault:    []net.IP{net.ParseIP("192.168.1.1"), net.ParseIP("0:0:0:0:0:0:0:1")},
+			expectedValues: []net.IP{net.ParseIP("192.168.1.1"), net.ParseIP("0:0:0:0:0:0:0:2")},
+		},
+		{
+			name:  "as slice values",
+			input: []string{"192.168.1.1", "0:0:0:0:0:0:0:2"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					_ = val.Replace([]string{"192.168.1.2"})
+				}
 			},
-			FlagArg: []string{
-				"2e5e:66b2:6441:848:5b74:76ea:574c:3a7b",
-				"        2e5e:66b2:6441:848:5b74:76ea:574c:3a7b",
-				"2e5e:66b2:6441:848:5b74:76ea:574c:3a7b     ",
-				" 2e5e:66b2:6441:848:5b74:76ea:574c:3a7b"},
+			expectedValues: []net.IP{net.ParseIP("192.168.1.2")},
+		},
+		{
+			name:           "trims input ipv4",
+			input:          []string{"204.228.73.195", "86.141.15.94"},
+			expectedValues: []net.IP{net.ParseIP("204.228.73.195"), net.ParseIP("86.141.15.94")},
+		},
+		{
+			name:           "trims input ipv6",
+			input:          []string{"2e5e:66b2:6441:848:5b74:76ea:574c:3a7b", "        2e5e:66b2:6441:848:5b74:76ea:574c:3a7b", "2e5e:66b2:6441:848:5b74:76ea:574c:3a7b     ", "   2e5e:66b2:6441:848:5b74:76ea:574c:3a7b  "},
+			expectedValues: []net.IP{net.ParseIP("2e5e:66b2:6441:848:5b74:76ea:574c:3a7b"), net.ParseIP("2e5e:66b2:6441:848:5b74:76ea:574c:3a7b"), net.ParseIP("2e5e:66b2:6441:848:5b74:76ea:574c:3a7b"), net.ParseIP("2e5e:66b2:6441:848:5b74:76ea:574c:3a7b")},
 		},
 	}
 
-	for i, test := range tests {
-		var ips []net.IP
-		f := setUpIPSFlagSet(&ips)
-
-		if err := f.Parse(repeatFlag("--ips", test.FlagArg...)); err != nil {
-			t.Fatalf("flag parsing failed with error: %s\nparsing:\t%#v\nwant:\t\t%s", err, test.FlagArg, test.Want[i])
-		}
-
-		for j, b := range ips {
-			if !b.Equal(test.Want[j]) {
-				t.Fatalf("bad value parsed for test %d on net.IP %d:\nwant:\t%s\ngot:\t%s", i, j, test.Want[j], b)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var ips []net.IP
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.IPSliceVar(&ips, "ips", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--ips", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && !strings.Contains(err.Error(), test.expectedErr) {
+					t.Fatalf("expected error to contain %q, but was: %s", test.expectedErr, err)
+				}
+				return
 			}
-		}
+
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
+
+			if test.visitor != nil {
+				f.VisitAll(test.visitor)
+			}
+
+			if !reflect.DeepEqual(test.expectedValues, ips) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, ips, ips)
+			}
+
+			getIPS, err := f.GetIPSlice("ips")
+			if err != nil {
+				t.Fatal("got an error from GetIPSlice():", err)
+			}
+			if !reflect.DeepEqual(test.expectedValues, getIPS) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, getIPS, getIPS)
+			}
+
+			getIPSGet, err := f.Get("ips")
+			if err != nil {
+				t.Fatal("got an error from Get():", err)
+			}
+			if !reflect.DeepEqual(getIPSGet, getIPS) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, getIPS, getIPS)
+			}
+		})
 	}
 }

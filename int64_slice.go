@@ -6,6 +6,7 @@ package zflag
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // -- int64Slice Value
@@ -22,6 +23,7 @@ func newInt64SliceValue(val []int64, p *[]int64) *int64SliceValue {
 }
 
 func (s *int64SliceValue) Set(val string) error {
+	val = strings.TrimSpace(val)
 	out, err := strconv.ParseInt(val, 0, 64)
 	if err != nil {
 		return err

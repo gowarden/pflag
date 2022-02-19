@@ -4,12 +4,84 @@
 package zflag_test
 
 import (
+	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
+
+func TestFunc(t *testing.T) {
+	tests := []struct {
+		name           string
+		input          []string
+		expectedErr    string
+		expectedValues []string
+	}{
+		{
+			name:           "no value passed",
+			input:          []string{},
+			expectedErr:    "",
+			expectedValues: []string{},
+		},
+		{
+			name:        "empty value passed",
+			input:       []string{""},
+			expectedErr: `invalid argument "" for "--fn" flag: func error`,
+		},
+		{
+			name:           "no csv",
+			input:          []string{"1,5"},
+			expectedValues: []string{"1,5"},
+		},
+		{
+			name:           "keeps spacing",
+			input:          []string{"somestring", "        somestring", "somestring     ", "   somestring  "},
+			expectedValues: []string{"somestring", "        somestring", "somestring     ", "   somestring  "},
+		},
+		{
+			name:           "keeps new lines",
+			input:          []string{"foo\nbar\nbaz\n\n\nasdasd\n\n"},
+			expectedValues: []string{"foo\nbar\nbaz\n\n\nasdasd\n\n"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			vals := make([]string, 0)
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.Func("fn", "usage", func(s string) error {
+				if s == "" {
+					return errors.New("func error")
+				}
+
+				vals = append(vals, s)
+
+				return nil
+			})
+			err := f.Parse(repeatFlag("--fn", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && err.Error() != test.expectedErr {
+					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
+
+			if !reflect.DeepEqual(test.expectedValues, vals) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, vals, vals)
+			}
+		})
+	}
+}
 
 // Copyright 2009 The Go Authors. All rights reserved.
 func TestUserDefinedFunc(t *testing.T) {

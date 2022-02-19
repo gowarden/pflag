@@ -22,15 +22,15 @@ import (
 )
 
 var (
-	testBool                     = zflag.Bool("test_bool", false, "bool value")
-	testInt                      = zflag.Int("test_int", 0, "int value")
-	testInt64                    = zflag.Int64("test_int64", 0, "int64 value")
-	testUint                     = zflag.Uint("test_uint", 0, "uint value")
-	testUint64                   = zflag.Uint64("test_uint64", 0, "uint64 value")
-	testString                   = zflag.String("test_string", "0", "string value")
-	testFloat                    = zflag.Float64("test_float64", 0, "float64 value")
-	testDuration                 = zflag.Duration("test_duration", 0, "time.Duration value")
-	testOptionalInt              = zflag.Int("test_optional_int", 0, "optional int value")
+	_                            = zflag.Bool("test_bool", false, "bool value")
+	_                            = zflag.Int("test_int", 0, "int value")
+	_                            = zflag.Int64("test_int64", 0, "int64 value")
+	_                            = zflag.Uint("test_uint", 0, "uint value")
+	_                            = zflag.Uint64("test_uint64", 0, "uint64 value")
+	_                            = zflag.String("test_string", "0", "string value")
+	_                            = zflag.Float64("test_float64", 0, "float64 value")
+	_                            = zflag.Duration("test_duration", 0, "time.Duration value")
+	_                            = zflag.Int("test_optional_int", 0, "optional int value")
 	normalizeFlagNameInvocations = 0
 )
 
@@ -1466,8 +1466,8 @@ type customValue int
 
 func (cv *customValue) String() string { return fmt.Sprintf("%v", *cv) }
 
-func (cv *customValue) Set(s string) error {
-	v, err := strconv.ParseInt(s, 0, 64)
+func (cv *customValue) Set(val string) error {
+	v, err := strconv.ParseInt(val, 0, 64)
 	*cv = customValue(v)
 	return err
 }

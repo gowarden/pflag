@@ -6,6 +6,7 @@ package zflag
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // -- float32Slice Value
@@ -22,6 +23,7 @@ func newFloat32SliceValue(val []float32, p *[]float32) *float32SliceValue {
 }
 
 func (s *float32SliceValue) Set(val string) error {
+	val = strings.TrimSpace(val)
 	temp64, err := strconv.ParseFloat(val, 32)
 	if err != nil {
 		return err

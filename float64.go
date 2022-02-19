@@ -3,7 +3,10 @@
 
 package zflag
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 // -- float64 Value
 type float64Value float64
@@ -13,8 +16,9 @@ func newFloat64Value(val float64, p *float64) *float64Value {
 	return (*float64Value)(p)
 }
 
-func (f *float64Value) Set(s string) error {
-	v, err := strconv.ParseFloat(s, 64)
+func (f *float64Value) Set(val string) error {
+	val = strings.TrimSpace(val)
+	v, err := strconv.ParseFloat(val, 64)
 	*f = float64Value(v)
 	return err
 }

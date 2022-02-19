@@ -4,33 +4,11 @@
 package zflag_test
 
 import (
-	"fmt"
 	"reflect"
-	"strconv"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
-
-func setUpS2I64FlagSet(s2ip *map[string]int64) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.StringToInt64Var(s2ip, "s2i", map[string]int64{}, "Command separated ls2it!")
-	return f
-}
-
-func setUpS2I64FlagSetWithDefault(s2ip *map[string]int64) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.StringToInt64Var(s2ip, "s2i", map[string]int64{"a": 1, "b": 2}, "Command separated ls2it!")
-	return f
-}
-
-func createS2I64Flag(vals map[string]int64) []string {
-	var r []string
-	for k, v := range vals {
-		r = append(r, fmt.Sprintf("%s=%s", k, strconv.FormatInt(v, 10)))
-	}
-	return r
-}
 
 func TestS2I64ValueImplementsGetter(t *testing.T) {
 	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
@@ -42,142 +20,121 @@ func TestS2I64ValueImplementsGetter(t *testing.T) {
 	}
 }
 
-func TestEmptyS2I64(t *testing.T) {
-	var s2i map[string]int64
-	f := setUpS2I64FlagSet(&s2i)
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
+func TestStringToInt64(t *testing.T) {
+	tests := []struct {
+		name           string
+		flagDefault    map[string]int64
+		input          []string
+		expectedErr    string
+		expectedValues map[string]int64
+		visitor        func(f *zflag.Flag)
+	}{
+		{
+			name:           "no value passed",
+			input:          []string{},
+			flagDefault:    map[string]int64{},
+			expectedErr:    "",
+			expectedValues: map[string]int64{},
+		},
+		{
+			name:        "empty value passed",
+			input:       []string{""},
+			flagDefault: map[string]int64{},
+			expectedErr: `invalid argument "" for "--s2i64" flag:  must be formatted as key=value`,
+		},
+		{
+			name:        "invalid int64",
+			input:       []string{"blabla"},
+			flagDefault: map[string]int64{},
+			expectedErr: `invalid argument "blabla" for "--s2i64" flag: blabla must be formatted as key=value`,
+		},
+		{
+			name:        "no csv",
+			input:       []string{"test=1,5"},
+			flagDefault: map[string]int64{},
+			expectedErr: `invalid argument "test=1,5" for "--s2i64" flag: strconv.ParseInt: parsing "1,5": invalid syntax`,
+		},
+		{
+			name:        "single key value pair per arg",
+			input:       []string{"test=1=1"},
+			flagDefault: map[string]int64{},
+			expectedErr: `invalid argument "test=1=1" for "--s2i64" flag: strconv.ParseInt: parsing "1=1": invalid syntax`,
+		},
+		{
+			name:           "overrides multiple calls",
+			input:          []string{"test=1", "test=5"},
+			flagDefault:    map[string]int64{},
+			expectedValues: map[string]int64{"test": 5},
+		},
+		{
+			name:           "empty defaults",
+			input:          []string{"test=1", "test2=5"},
+			flagDefault:    map[string]int64{},
+			expectedValues: map[string]int64{"test": 1, "test2": 5},
+		},
+		{
+			name:           "overrides default values",
+			input:          []string{"test=1", "test2=5"},
+			flagDefault:    map[string]int64{"test2": 1, "test": 5},
+			expectedValues: map[string]int64{"test": 1, "test2": 5},
+		},
+		{
+			name:           "returns default values",
+			input:          []string{},
+			flagDefault:    map[string]int64{"test2": 1, "test": 5},
+			expectedValues: map[string]int64{"test2": 1, "test": 5},
+		},
+		{
+			name:           "trims input",
+			input:          []string{"test=    1", "test2=5     ", "test3=     9     "},
+			flagDefault:    map[string]int64{},
+			expectedValues: map[string]int64{"test": 1, "test2": 5, "test3": 9},
+		},
 	}
 
-	getS2I, err := f.GetStringToInt64("s2i")
-	if err != nil {
-		t.Fatal("got an error from GetStringToInt64():", err)
-	}
-	if len(getS2I) != 0 {
-		t.Fatalf("got s2i %v with len=%d but expected length=0", getS2I, len(getS2I))
-	}
-	getS2I_2, err := f.Get("s2i")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getS2I_2, getS2I) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getS2I_2, getS2I, getS2I_2, getS2I_2)
-	}
-}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var s2i64 map[string]int64
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.StringToInt64Var(&s2i64, "s2i64", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--s2i64", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && err.Error() != test.expectedErr {
+					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+				}
+				return
+			}
 
-func TestS2I64(t *testing.T) {
-	var s2i map[string]int64
-	f := setUpS2I64FlagSet(&s2i)
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
 
-	vals := map[string]int64{"a": 1, "b": 2, "d": 4, "c": 3}
-	err := f.Parse(repeatFlag("--s2i", createS2I64Flag(vals)...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for k, v := range s2i {
-		if vals[k] != v {
-			t.Fatalf("expected s2i[%s] to be %d but got: %d", k, vals[k], v)
-		}
-	}
-	getS2I, err := f.GetStringToInt64("s2i")
-	if err != nil {
-		t.Fatalf("got error: %v", err)
-	}
-	for k, v := range getS2I {
-		if vals[k] != v {
-			t.Fatalf("expected s2i[%s] to be %d but got: %d from GetStringToInt64", k, vals[k], v)
-		}
-	}
-	getS2I_2, err := f.Get("s2i")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getS2I_2, getS2I) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getS2I, getS2I, getS2I_2, getS2I_2)
-	}
-}
+			if test.visitor != nil {
+				f.VisitAll(test.visitor)
+			}
 
-func TestS2I64Default(t *testing.T) {
-	var s2i map[string]int64
-	f := setUpS2I64FlagSetWithDefault(&s2i)
+			if !reflect.DeepEqual(test.expectedValues, s2i64) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, s2i64, s2i64)
+			}
 
-	vals := map[string]int64{"a": 1, "b": 2}
+			int16Slice, err := f.GetStringToInt64("s2i64")
+			if err != nil {
+				t.Fatal("got an error from GetStringToInt64():", err)
+			}
+			if !reflect.DeepEqual(test.expectedValues, int16Slice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, int16Slice, int16Slice)
+			}
 
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for k, v := range s2i {
-		if vals[k] != v {
-			t.Fatalf("expected s2i[%s] to be %d but got: %d", k, vals[k], v)
-		}
-	}
-
-	getS2I, err := f.GetStringToInt64("s2i")
-	if err != nil {
-		t.Fatal("got an error from GetStringToInt64():", err)
-	}
-	for k, v := range getS2I {
-		if vals[k] != v {
-			t.Fatalf("expected s2i[%s] to be %d from GetStringToInt64 but got: %d", k, vals[k], v)
-		}
-	}
-	getS2I_2, err := f.Get("s2i")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getS2I_2, getS2I) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getS2I, getS2I, getS2I_2, getS2I_2)
-	}
-}
-
-func TestS2I64WithDefault(t *testing.T) {
-	var s2i map[string]int64
-	f := setUpS2I64FlagSetWithDefault(&s2i)
-
-	vals := map[string]int64{"a": 1, "b": 2}
-	err := f.Parse(repeatFlag("--s2i", createS2I64Flag(vals)...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for k, v := range s2i {
-		if vals[k] != v {
-			t.Fatalf("expected s2i[%s] to be %d but got: %d", k, vals[k], v)
-		}
-	}
-
-	getS2I, err := f.GetStringToInt64("s2i")
-	if err != nil {
-		t.Fatal("got an error from GetStringToInt64():", err)
-	}
-	for k, v := range getS2I {
-		if vals[k] != v {
-			t.Fatalf("expected s2i[%s] to be %d from GetStringToInt64 but got: %d", k, vals[k], v)
-		}
-	}
-	getS2I_2, err := f.Get("s2i")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
-	if !reflect.DeepEqual(getS2I_2, getS2I) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getS2I, getS2I, getS2I_2, getS2I_2)
-	}
-}
-
-func TestS2I64CalledTwice(t *testing.T) {
-	var s2i map[string]int64
-	f := setUpS2I64FlagSet(&s2i)
-
-	in := []string{"a=1", "b=2", "b=3"}
-	expected := map[string]int64{"a": 1, "b": 3}
-	err := f.Parse(repeatFlag("--s2i", in...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range s2i {
-		if expected[i] != v {
-			t.Fatalf("expected s2i[%s] to be %d but got: %d", i, expected[i], v)
-		}
+			int16SliceGet, err := f.Get("s2i64")
+			if err != nil {
+				t.Fatal("got an error from Get():", err)
+			}
+			if !reflect.DeepEqual(int16SliceGet, int16Slice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, int16SliceGet, int16SliceGet)
+			}
+		})
 	}
 }

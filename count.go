@@ -3,7 +3,10 @@
 
 package zflag
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 // -- count Value
 type countValue int
@@ -13,13 +16,15 @@ func newCountValue(val int, p *int) *countValue {
 	return (*countValue)(p)
 }
 
-func (i *countValue) Set(s string) error {
+func (i *countValue) Set(val string) error {
+	val = strings.TrimSpace(val)
+
 	// "+1" means that no specific value was passed, so increment
-	if s == "+1" {
-		*i = countValue(*i + 1)
+	if val == "+1" {
+		*i = *i + 1
 		return nil
 	}
-	v, err := strconv.ParseInt(s, 0, 0)
+	v, err := strconv.ParseInt(val, 0, 0)
 	*i = countValue(v)
 	return err
 }

@@ -3,7 +3,10 @@
 
 package zflag
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 // -- int16 Value
 type int16Value int16
@@ -13,8 +16,9 @@ func newInt16Value(val int16, p *int16) *int16Value {
 	return (*int16Value)(p)
 }
 
-func (i *int16Value) Set(s string) error {
-	v, err := strconv.ParseInt(s, 0, 16)
+func (i *int16Value) Set(val string) error {
+	val = strings.TrimSpace(val)
+	v, err := strconv.ParseInt(val, 0, 16)
 	*i = int16Value(v)
 	return err
 }

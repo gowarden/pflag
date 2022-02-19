@@ -11,8 +11,8 @@ func newFuncValue(fn func(string) error) *funcValue {
 	return &funcVal
 }
 
-func (i *funcValue) Set(s string) error {
-	return (*i)(s)
+func (i *funcValue) Set(val string) error {
+	return (*i)(val)
 }
 
 func (i *funcValue) Type() string {

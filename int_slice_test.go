@@ -5,23 +5,10 @@ package zflag_test
 
 import (
 	"reflect"
-	"strconv"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
-
-func setUpISFlagSet(isp *[]int) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.IntSliceVar(isp, "is", []int{}, "Command separated list!")
-	return f
-}
-
-func setUpISFlagSetWithDefault(isp *[]int) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.IntSliceVar(isp, "is", []int{0, 1}, "Command separated list!")
-	return f
-}
 
 func TestISValueImplementsGetter(t *testing.T) {
 	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
@@ -33,154 +20,113 @@ func TestISValueImplementsGetter(t *testing.T) {
 	}
 }
 
-func TestEmptyIS(t *testing.T) {
-	var is []int
-	f := setUpISFlagSet(&is)
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
+func TestIntSlice(t *testing.T) {
+	tests := []struct {
+		name           string
+		flagDefault    []int
+		input          []string
+		expectedErr    string
+		expectedValues []int
+		visitor        func(f *zflag.Flag)
+	}{
+		{
+			name:           "no value passed",
+			input:          []string{},
+			flagDefault:    []int{},
+			expectedErr:    "",
+			expectedValues: []int{},
+		},
+		{
+			name:        "empty value passed",
+			input:       []string{""},
+			flagDefault: []int{},
+			expectedErr: `invalid argument "" for "--is" flag: strconv.Atoi: parsing "": invalid syntax`,
+		},
+		{
+			name:        "invalid int",
+			input:       []string{"blabla"},
+			flagDefault: []int{},
+			expectedErr: `invalid argument "blabla" for "--is" flag: strconv.Atoi: parsing "blabla": invalid syntax`,
+		},
+		{
+			name:        "no csv",
+			input:       []string{"1,5"},
+			flagDefault: []int{},
+			expectedErr: `invalid argument "1,5" for "--is" flag: strconv.Atoi: parsing "1,5": invalid syntax`,
+		},
+		{
+			name:           "empty defaults",
+			input:          []string{"1", "5"},
+			flagDefault:    []int{},
+			expectedValues: []int{1, 5},
+		},
+		{
+			name:           "with default values",
+			input:          []string{"5", "1"},
+			flagDefault:    []int{1, 5},
+			expectedValues: []int{5, 1},
+		},
+		{
+			name:           "trims input",
+			input:          []string{"    1", "2    ", "   3  "},
+			flagDefault:    []int{},
+			expectedValues: []int{1, 2, 3},
+		},
+		{
+			name:  "replace values",
+			input: []string{"5", "1"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					_ = val.Replace([]string{"3"})
+				}
+			},
+			expectedValues: []int{3},
+		},
 	}
 
-	getIS, err := f.GetIntSlice("is")
-	if err != nil {
-		t.Fatal("got an error from GetIntSlice():", err)
-	}
-	if len(getIS) != 0 {
-		t.Fatalf("got is %v with len=%d but expected length=0", getIS, len(getIS))
-	}
-	getIS_2, err := f.Get("is")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var is []int
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.IntSliceVar(&is, "is", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--is", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && err.Error() != test.expectedErr {
+					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+				}
+				return
+			}
 
-	if !reflect.DeepEqual(getIS_2, getIS) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getIS, getIS, getIS_2, getIS_2)
-	}
-}
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
 
-func TestIS(t *testing.T) {
-	var is []int
-	f := setUpISFlagSet(&is)
+			if test.visitor != nil {
+				f.VisitAll(test.visitor)
+			}
 
-	vals := []string{"1", "2", "4", "3"}
-	err := f.Parse(repeatFlag("--is", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		d, err := strconv.Atoi(vals[i])
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %s but got: %d", i, vals[i], v)
-		}
-	}
-	getIS, err := f.GetIntSlice("is")
-	if err != nil {
-		t.Fatalf("got error: %v", err)
-	}
-	for i, v := range getIS {
-		d, err := strconv.Atoi(vals[i])
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %s but got: %d from GetIntSlice", i, vals[i], v)
-		}
-	}
-	getIS_2, err := f.Get("is")
-	if err != nil {
-		t.Fatal("got an error from Get():", err)
-	}
+			if !reflect.DeepEqual(test.expectedValues, is) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, is, is)
+			}
 
-	if !reflect.DeepEqual(getIS_2, getIS) {
-		t.Fatalf("expected %v with type %T but got %v with type %T ", getIS, getIS, getIS_2, getIS_2)
-	}
-}
+			intSlice, err := f.GetIntSlice("is")
+			if err != nil {
+				t.Fatal("got an error from GetIntSlice():", err)
+			}
+			if !reflect.DeepEqual(test.expectedValues, intSlice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, intSlice, intSlice)
+			}
 
-func TestISDefault(t *testing.T) {
-	var is []int
-	f := setUpISFlagSetWithDefault(&is)
-
-	vals := []string{"0", "1"}
-
-	err := f.Parse([]string{})
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		d, err := strconv.Atoi(vals[i])
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d but got: %d", i, d, v)
-		}
-	}
-
-	getIS, err := f.GetIntSlice("is")
-	if err != nil {
-		t.Fatal("got an error from GetIntSlice():", err)
-	}
-	for i, v := range getIS {
-		d, err := strconv.Atoi(vals[i])
-		if err != nil {
-			t.Fatal("got an error from GetIntSlice():", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d from GetIntSlice but got: %d", i, d, v)
-		}
-	}
-}
-
-func TestISWithDefault(t *testing.T) {
-	var is []int
-	f := setUpISFlagSetWithDefault(&is)
-
-	vals := []string{"1", "2"}
-	err := f.Parse(repeatFlag("--is", vals...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		d, err := strconv.Atoi(vals[i])
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d but got: %d", i, d, v)
-		}
-	}
-
-	getIS, err := f.GetIntSlice("is")
-	if err != nil {
-		t.Fatal("got an error from GetIntSlice():", err)
-	}
-	for i, v := range getIS {
-		d, err := strconv.Atoi(vals[i])
-		if err != nil {
-			t.Fatalf("got error: %v", err)
-		}
-		if d != v {
-			t.Fatalf("expected is[%d] to be %d from GetIntSlice but got: %d", i, d, v)
-		}
-	}
-}
-
-func TestISCalledTwice(t *testing.T) {
-	var is []int
-	f := setUpISFlagSet(&is)
-
-	in := []string{"1", "2", "3"}
-	expected := []int{1, 2, 3}
-	err := f.Parse(repeatFlag("--is", in...))
-	if err != nil {
-		t.Fatal("expected no error; got", err)
-	}
-	for i, v := range is {
-		if expected[i] != v {
-			t.Fatalf("expected is[%d] to be %d but got: %d", i, expected[i], v)
-		}
+			intSliceGet, err := f.Get("is")
+			if err != nil {
+				t.Fatal("got an error from Get():", err)
+			}
+			if !reflect.DeepEqual(intSliceGet, intSlice) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, intSliceGet, intSliceGet)
+			}
+		})
 	}
 }
