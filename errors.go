@@ -5,14 +5,14 @@ package zflag
 
 import "fmt"
 
-type errUnknownFlag struct {
+type UnknownFlagError struct {
 	name string
 }
 
 func NewUnknownFlagError(name string) error {
-	return errUnknownFlag{name: name}
+	return UnknownFlagError{name: name}
 }
 
-func (e errUnknownFlag) Error() string {
+func (e UnknownFlagError) Error() string {
 	return fmt.Sprintf("unknown flag: %s", getFlagWithDashes(e.name))
 }
