@@ -65,11 +65,11 @@ func (v *flagValueWrapper) Type() string {
 	return v.flagType
 }
 
-// ZFlagFromGoFlag will return a *zflag.Flag given a *flag.Flag
+// FromGoFlag will return a *zflag.Flag given a *flag.Flag
 // If the *flag.Flag.Name was a single character (ex: `v`) it will be accessible
 // with both `-v` and `--v` in flags. If the golang flag was more than a single
 // character (ex: `verbose`) it will only be accessible via `--verbose`
-func ZFlagFromGoFlag(goflag *goflag.Flag) *Flag {
+func FromGoFlag(goflag *goflag.Flag) *Flag {
 	// Remember the default value as a string; it won't change.
 	flag := &Flag{
 		Name:  goflag.Name,
@@ -95,7 +95,7 @@ func (f *FlagSet) AddGoFlag(goflag *goflag.Flag) {
 	if f.Lookup(goflag.Name) != nil {
 		return
 	}
-	newflag := ZFlagFromGoFlag(goflag)
+	newflag := FromGoFlag(goflag)
 	f.AddFlag(newflag)
 }
 

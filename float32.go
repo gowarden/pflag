@@ -23,8 +23,8 @@ func (f *float32Value) Set(val string) error {
 	return err
 }
 
-func (s *float32Value) Get() interface{} {
-	return float32(*s)
+func (f *float32Value) Get() interface{} {
+	return float32(*f)
 }
 
 func (f *float32Value) Type() string {
