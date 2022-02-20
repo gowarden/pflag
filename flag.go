@@ -130,14 +130,14 @@ type SliceValue interface {
 	GetSlice() []string
 }
 
-// boolFlag is an optional interface to indicate boolean flags that can be
+// BoolFlag is an optional interface to indicate boolean flags that can be
 // supplied without a value text
-type boolFlag interface {
+type BoolFlag interface {
 	Value
 	IsBoolFlag() bool
 }
 
-type optionalValue interface {
+type OptionalValue interface {
 	Value
 	IsOptional() bool
 }
@@ -526,7 +526,7 @@ func (f *FlagSet) PrintDefaults() {
 // a zero value.
 func (f *Flag) DefaultIsZeroValue() bool {
 	switch f.Value.(type) {
-	case boolFlag:
+	case BoolFlag:
 		return f.DefValue == "false"
 	case SliceValue:
 		return f.DefValue == "[]"
@@ -994,7 +994,7 @@ func (f *FlagSet) parseLongArg(s string, args []string, fn parseFunc) (outArgs [
 
 	if !exists && len(name) > 3 && hasNoPrefix {
 		bFlag, bExists := f.formal[f.normalizeFlagName(name[3:])]
-		if _, ok := bFlag.Value.(boolFlag); bExists && ok {
+		if _, ok := bFlag.Value.(BoolFlag); bExists && ok {
 			flag = bFlag
 			exists = bExists
 			name = name[3:]
@@ -1022,8 +1022,8 @@ func (f *FlagSet) parseLongArg(s string, args []string, fn parseFunc) (outArgs [
 		}
 	}
 
-	_, flagIsBool := flag.Value.(boolFlag)
-	_, isOptional := flag.Value.(optionalValue)
+	_, flagIsBool := flag.Value.(BoolFlag)
+	_, isOptional := flag.Value.(OptionalValue)
 	nextArgIsFlagValue := len(outArgs) > 0 && len(outArgs[0]) > 0 && outArgs[0][0] != '-'
 
 	var value string
@@ -1088,8 +1088,8 @@ func (f *FlagSet) parseSingleShortArg(shorthands string, args []string, fn parse
 		}
 	}
 
-	_, flagIsBool := flag.Value.(boolFlag)
-	_, isOptional := flag.Value.(optionalValue)
+	_, flagIsBool := flag.Value.(BoolFlag)
+	_, isOptional := flag.Value.(OptionalValue)
 	nextArgIsFlagValue := len(outArgs) > 0 && len(outArgs[0]) > 0 && outArgs[0][0] != '-'
 
 	nextShortArgIsFlagValue := len(shorthands) > 1

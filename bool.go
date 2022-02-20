@@ -14,8 +14,8 @@ type boolValue bool
 var _ Value = (*boolValue)(nil)
 var _ Getter = (*boolValue)(nil)
 var _ Typed = (*boolValue)(nil)
-var _ optionalValue = (*boolValue)(nil)
-var _ boolFlag = (*boolValue)(nil)
+var _ OptionalValue = (*boolValue)(nil)
+var _ BoolFlag = (*boolValue)(nil)
 
 func newBoolValue(val bool, p *bool) *boolValue {
 	*p = val

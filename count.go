@@ -13,7 +13,7 @@ type countValue int
 var _ Value = (*countValue)(nil)
 var _ Getter = (*countValue)(nil)
 var _ Typed = (*countValue)(nil)
-var _ optionalValue = (*boolValue)(nil)
+var _ OptionalValue = (*boolValue)(nil)
 
 func newCountValue(val int, p *int) *countValue {
 	*p = val
