@@ -4,6 +4,7 @@
 package zflag_test
 
 import (
+	"io/ioutil"
 	"reflect"
 	"testing"
 
@@ -88,6 +89,7 @@ func TestInt8Slice(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var i8s []int8
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.SetOutput(ioutil.Discard)
 			f.Int8SliceVar(&i8s, "i8s", test.flagDefault, "usage")
 			err := f.Parse(repeatFlag("--i8s", test.input...))
 			if test.expectedErr != "" {

@@ -5,6 +5,7 @@ package zflag_test
 
 import (
 	"fmt"
+	"io/ioutil"
 	"reflect"
 	"testing"
 
@@ -118,6 +119,7 @@ func TestBytesHex(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var bytes []byte
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.SetOutput(ioutil.Discard)
 			f.BytesHexVar(&bytes, "bytes", test.flagDefault, "usage")
 			err := f.Parse(repeatFlag("--bytes", test.input...))
 			if test.expectedErr != "" {
@@ -229,6 +231,7 @@ func TestBytesB64(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var bytes []byte
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.SetOutput(ioutil.Discard)
 			f.BytesBase64Var(&bytes, "bytes", test.flagDefault, "usage")
 			err := f.Parse(repeatFlag("--bytes", test.input...))
 			if test.expectedErr != "" {

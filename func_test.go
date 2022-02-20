@@ -6,6 +6,7 @@ package zflag_test
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"reflect"
 	"strings"
 	"testing"
@@ -52,6 +53,7 @@ func TestFunc(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			vals := make([]string, 0)
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.SetOutput(ioutil.Discard)
 			f.Func("fn", "usage", func(s string) error {
 				if s == "" {
 					return errors.New("func error")

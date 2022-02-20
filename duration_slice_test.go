@@ -4,6 +4,7 @@
 package zflag_test
 
 import (
+	"io/ioutil"
 	"reflect"
 	"testing"
 	"time"
@@ -99,6 +100,7 @@ func TestDurationSlice(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var ds []time.Duration
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.SetOutput(ioutil.Discard)
 			f.DurationSliceVar(&ds, "ds", test.flagDefault, "usage")
 			err := f.Parse(repeatFlag("--ds", test.input...))
 			if test.expectedErr != "" {

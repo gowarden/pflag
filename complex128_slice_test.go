@@ -7,6 +7,7 @@
 package zflag_test
 
 import (
+	"io/ioutil"
 	"reflect"
 	"testing"
 
@@ -95,6 +96,7 @@ func TestC128Slice(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var c128s []complex128
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.SetOutput(ioutil.Discard)
 			f.Complex128SliceVar(&c128s, "c128s", test.flagDefault, "usage")
 			err := f.Parse(repeatFlag("--c128s", test.input...))
 			if test.expectedErr != "" {

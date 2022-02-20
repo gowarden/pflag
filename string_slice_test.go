@@ -4,6 +4,7 @@
 package zflag_test
 
 import (
+	"io/ioutil"
 	"reflect"
 	"strings"
 	"testing"
@@ -99,6 +100,7 @@ func TestStringSlice(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var ss []string
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.SetOutput(ioutil.Discard)
 			f.StringSliceVar(&ss, "ss", test.flagDefault, "usage")
 			err := f.Parse(repeatFlag("--ss", test.input...))
 			if test.expectedErr != "" {

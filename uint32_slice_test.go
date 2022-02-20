@@ -4,6 +4,7 @@
 package zflag_test
 
 import (
+	"io/ioutil"
 	"reflect"
 	"testing"
 
@@ -94,6 +95,7 @@ func TestUint32Slice(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var ui32s []uint32
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.SetOutput(ioutil.Discard)
 			f.Uint32SliceVar(&ui32s, "ui32s", test.flagDefault, "usage")
 			err := f.Parse(repeatFlag("--ui32s", test.input...))
 			if test.expectedErr != "" {

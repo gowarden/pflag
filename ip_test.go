@@ -4,6 +4,7 @@
 package zflag_test
 
 import (
+	"io/ioutil"
 	"net"
 	"reflect"
 	"strings"
@@ -91,6 +92,7 @@ func TestIP(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var ip net.IP
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.SetOutput(ioutil.Discard)
 			f.IPVar(&ip, "ip", test.flagDefault, "usage")
 			err := f.Parse(repeatFlag("--ip", test.input...))
 			if test.expectedErr != "" {

@@ -4,6 +4,7 @@
 package zflag_test
 
 import (
+	"io/ioutil"
 	"reflect"
 	"testing"
 
@@ -96,6 +97,7 @@ func TestStringToInt64(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var s2i64 map[string]int64
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.SetOutput(ioutil.Discard)
 			f.StringToInt64Var(&s2i64, "s2i64", test.flagDefault, "usage")
 			err := f.Parse(repeatFlag("--s2i64", test.input...))
 			if test.expectedErr != "" {

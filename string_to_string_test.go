@@ -4,6 +4,7 @@
 package zflag_test
 
 import (
+	"io/ioutil"
 	"reflect"
 	"testing"
 
@@ -96,6 +97,7 @@ func TestStringToString(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var s2s map[string]string
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.SetOutput(ioutil.Discard)
 			f.StringToStringVar(&s2s, "s2s", test.flagDefault, "usage")
 			err := f.Parse(repeatFlag("--s2s", test.input...))
 			if test.expectedErr != "" {

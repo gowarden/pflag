@@ -5,6 +5,7 @@ package zflag_test
 
 import (
 	"fmt"
+	"io/ioutil"
 	"reflect"
 	"testing"
 
@@ -93,6 +94,7 @@ func TestBoolSlice(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var bs []bool
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.SetOutput(ioutil.Discard)
 			f.BoolSliceVar(&bs, "bs", test.flagDefault, "usage")
 			err := f.Parse(repeatFlag("--bs", test.input...))
 			if test.expectedErr != "" {
