@@ -76,14 +76,6 @@ func OptDefValue(defValue string) Opt {
 	}
 }
 
-// OptNoOptDefVal default value (as text); if the flag is on the command line without any options
-func OptNoOptDefVal(noOptDefVal string) Opt {
-	return func(f *Flag) error {
-		f.NoOptDefVal = noOptDefVal
-		return nil
-	}
-}
-
 // OptDeprecated indicated that a flag is deprecated in your program. It will
 // continue to function but will not show up in help or usage messages. Using
 // this flag will also print the given usageMessage.

@@ -89,24 +89,25 @@ system by running `godoc -http=:6060` and browsing to
 [http://localhost:6060/pkg/github.com/gowarden/zflag](http://localhost:6060/pkg/github.com/gowarden/zflag)
 after installation.
 
-### Set a custom default for flags passed without values
+### Bool Values
 
-If a flag has a NoOptDefVal and the flag is set on the command line
-without an option, the flag will be set to the NoOptDefVal.
+If a bool flag is added, both `--flag-name` and `--no-flag-name` will be accepted.
+When using `--flag-name` the value is set to true, when using `--no-flag-name` the
+value is set to false.
 
 **Example**:
 
 ```go
-var ip = flag.Int("flagname", 1234, "help message", flag.OptShorthand('f'), flag.OptNoOptDefVal("4321"))
+var enable = flag.Bool("enable", false, "help message", flag.OptShorthand('f'))
 ```
 
 **Results**:
 
 | Parsed Arguments | Resulting Value |
-| -------------    | -------------   |
-| --flagname=1357  | ip=1357         |
-| --flagname       | ip=4321         |
-| [nothing]        | ip=1234         |
+|------------------|-----------------|
+| --enable         | enable=true     |
+| --no-enable      | enable=false    |
+| [nothing]        | enable=false    |
 
 ### Mutating or "Normalizing" Flag names
 

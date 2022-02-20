@@ -19,13 +19,6 @@ type flagValueWrapper struct {
 	flagType string
 }
 
-// We are just copying the boolFlag interface out of goflag as that is what
-// they use to decide if a flag should get "true" when no arg is given.
-type goBoolFlag interface {
-	goflag.Value
-	IsBoolFlag() bool
-}
-
 func wrapFlagValue(v goflag.Value) Value {
 	// If the flag.Value happens to also be a zflag.Value, just use it directly.
 	if pv, ok := v.(Value); ok {
@@ -83,9 +76,6 @@ func FromGoFlag(goflag *goflag.Flag) *Flag {
 	if utf8.RuneCountInString(flag.Name) == 1 {
 		short, _ := utf8.DecodeRuneInString(flag.Name)
 		flag.Shorthand = short
-	}
-	if fv, ok := goflag.Value.(goBoolFlag); ok && fv.IsBoolFlag() {
-		flag.NoOptDefVal = "true"
 	}
 	return flag
 }

@@ -11,12 +11,12 @@ import (
 	"github.com/gowarden/zflag"
 )
 
-const expectedOutput = `      --long-form    Some description
-      --long-form2   Some description
-                       with multiline
-  -s, --long-name    Some description
-  -t, --long-name2   Some description with
-                       multiline
+const expectedOutput = `      --[no-]long-form    Some description
+      --[no-]long-form2   Some description
+                            with multiline
+  -s, --[no-]long-name    Some description
+  -t, --[no-]long-name2   Some description with
+                            multiline
 `
 
 func setUpZFlagSet(buf io.Writer) *zflag.FlagSet {
@@ -52,11 +52,11 @@ func setUpZFlagSet2(buf io.Writer) *zflag.FlagSet {
 	return f
 }
 
-const expectedOutput2 = `      --long-form                    Some description
-      --long-form2                   Some description
+const expectedOutput2 = `      --[no-]long-form               Some description
+      --[no-]long-form2              Some description
                                        with multiline
-  -s, --long-name                    Some description
-  -t, --long-name2                   Some description with
+  -s, --[no-]long-name               Some description
+  -t, --[no-]long-name2              Some description with
                                        multiline
   -o, --other-very-long-arg string   Some very long description having
                                      break the limit (default

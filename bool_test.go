@@ -4,7 +4,7 @@
 package zflag_test
 
 import (
-	"reflect"
+	"io/ioutil"
 	"testing"
 
 	"github.com/gowarden/zflag"
@@ -17,6 +17,107 @@ func TestBoolValueImplementsGetter(t *testing.T) {
 
 	if _, ok := v.(zflag.Getter); !ok {
 		t.Fatalf("%T should implement the Getter interface", v)
+	}
+}
+
+func TestNoBool(t *testing.T) {
+	tests := []struct {
+		name          string
+		flagDefault   bool
+		input         []string
+		expectedErr   string
+		expectedValue bool
+	}{
+		{
+			name:          "flag prefixed with `no-` is found",
+			input:         []string{"--no-bs"},
+			flagDefault:   true,
+			expectedValue: false,
+		},
+		{
+			name:        "no- prefix does not accept a value",
+			input:       []string{"--no-bs=true"},
+			expectedErr: "flag cannot have a value: --no-bs=true",
+		},
+		{
+			name:          "accepts separate value without no-",
+			input:         []string{"--bs", "true"},
+			flagDefault:   false,
+			expectedValue: true,
+		},
+		{
+			name:          "accepts value without no-",
+			input:         []string{"--bs=true"},
+			flagDefault:   false,
+			expectedValue: true,
+		},
+		{
+			name:          "short opt",
+			input:         []string{"-b"},
+			flagDefault:   false,
+			expectedValue: true,
+		},
+		{
+			name:          "short opt with value false",
+			input:         []string{"-b=0"},
+			flagDefault:   true,
+			expectedValue: false,
+		},
+		{
+			name:          "short opt with value",
+			input:         []string{"-b=1"},
+			flagDefault:   false,
+			expectedValue: true,
+		},
+		{
+			name:          "short opt with value",
+			input:         []string{"-b=true"},
+			flagDefault:   false,
+			expectedValue: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var bs bool
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.SetOutput(ioutil.Discard)
+			f.BoolVar(&bs, "bs", test.flagDefault, "usage", zflag.OptShorthand('b'))
+			err := f.Parse(test.input)
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && err.Error() != test.expectedErr {
+					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
+
+			if bs != test.expectedValue {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, bs, bs)
+			}
+
+			getBS, err := f.GetBool("bs")
+			if err != nil {
+				t.Fatal("got an error from GetBool():", err)
+			}
+			if getBS != test.expectedValue {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, getBS, getBS)
+			}
+
+			getBSGet, err := f.Get("bs")
+			if err != nil {
+				t.Fatal("got an error from Get():", err)
+			}
+			if getBSGet != test.expectedValue {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, getBS, getBS)
+			}
+		})
 	}
 }
 
@@ -36,10 +137,10 @@ func TestBool(t *testing.T) {
 			expectedValue: false,
 		},
 		{
-			name:        "empty value passed",
-			input:       []string{""},
-			flagDefault: false,
-			expectedErr: `invalid argument "" for "--bs" flag: strconv.ParseBool: parsing "": invalid syntax`,
+			name:          "empty value passed",
+			input:         []string{""},
+			flagDefault:   false,
+			expectedValue: true,
 		},
 		{
 			name:        "invalid bool",
@@ -151,6 +252,7 @@ func TestBool(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var bs bool
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.SetOutput(ioutil.Discard)
 			f.BoolVar(&bs, "bs", test.flagDefault, "usage")
 			err := f.Parse(repeatFlag("--bs", test.input...))
 			if test.expectedErr != "" {
@@ -167,7 +269,7 @@ func TestBool(t *testing.T) {
 				t.Fatalf("expected no error; got %q", err)
 			}
 
-			if !reflect.DeepEqual(test.expectedValue, bs) {
+			if bs != test.expectedValue {
 				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, bs, bs)
 			}
 
@@ -175,7 +277,7 @@ func TestBool(t *testing.T) {
 			if err != nil {
 				t.Fatal("got an error from GetBool():", err)
 			}
-			if !reflect.DeepEqual(test.expectedValue, getBS) {
+			if getBS != test.expectedValue {
 				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, getBS, getBS)
 			}
 
@@ -183,8 +285,8 @@ func TestBool(t *testing.T) {
 			if err != nil {
 				t.Fatal("got an error from Get():", err)
 			}
-			if !reflect.DeepEqual(getBSGet, getBS) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, getBS, getBS)
+			if getBSGet != test.expectedValue {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, getBSGet, getBSGet)
 			}
 		})
 	}

@@ -4,18 +4,11 @@
 package zflag_test
 
 import (
-	"os"
-	"reflect"
+	"io/ioutil"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
-
-func setUpCount(c *int) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.CountVar(c, "verbose", "a counter", zflag.OptShorthand('v'))
-	return f
-}
 
 func TestCountValueImplementsGetter(t *testing.T) {
 	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
@@ -28,54 +21,100 @@ func TestCountValueImplementsGetter(t *testing.T) {
 }
 
 func TestCount(t *testing.T) {
-	testCases := []struct {
-		input    []string
-		success  bool
-		expected int
+	tests := []struct {
+		name          string
+		input         []string
+		expectedErr   string
+		expectedValue int
 	}{
-		{[]string{}, true, 0},
-		{[]string{"-v"}, true, 1},
-		{[]string{"-vvv"}, true, 3},
-		{[]string{"-v", "-v", "-v"}, true, 3},
-		{[]string{"-v", "--verbose", "-v"}, true, 3},
-		{[]string{"-v=3", "-v"}, true, 4},
-		{[]string{"--verbose=0"}, true, 0},
-		{[]string{"-v=0"}, true, 0},
-		{[]string{"-v=a"}, false, 0},
+		{
+			name:          "no flags",
+			input:         []string{},
+			expectedValue: 0,
+		},
+		{
+			name:          "single count",
+			input:         []string{"-v"},
+			expectedValue: 1,
+		},
+		{
+			name:          "multiple times",
+			input:         []string{"-vvv"},
+			expectedValue: 3,
+		},
+		{
+			name:          "multiple times separated",
+			input:         []string{"-v", "-v", "-v"},
+			expectedValue: 3,
+		},
+		{
+			name:          "multiple times interchanged and separated",
+			input:         []string{"-v", "--verbose", "-v"},
+			expectedValue: 3,
+		},
+		{
+			name:          "multiple times with value",
+			input:         []string{"-v=3", "-v"},
+			expectedValue: 4,
+		},
+		{
+			name:          "long opt with value",
+			input:         []string{"--verbose=0"},
+			expectedValue: 0,
+		},
+		{
+			name:          "single with value",
+			input:         []string{"-v=0"},
+			expectedValue: 0,
+		},
+		{
+			name:          "",
+			input:         []string{"-v=a"},
+			expectedErr:   `invalid argument "a" for "-v, --verbose" flag: strconv.ParseInt: parsing "a": invalid syntax`,
+			expectedValue: 0,
+		},
 	}
 
-	devnull, _ := os.Open(os.DevNull)
-	os.Stderr = devnull
-	for i := range testCases {
-		var count int
-		f := setUpCount(&count)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var verbose int
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.SetOutput(ioutil.Discard)
+			f.CountVar(&verbose, "verbose", "usage", zflag.OptShorthand('v'))
+			err := f.Parse(test.input)
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && err.Error() != test.expectedErr {
+					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+				}
+				return
+			}
 
-		tc := &testCases[i]
-
-		err := f.Parse(tc.input)
-		if err != nil && tc.success == true {
-			t.Errorf("expected success, got %q", err)
-			continue
-		} else if err == nil && tc.success == false {
-			t.Errorf("expected failure, got success")
-			continue
-		} else if tc.success {
-			c, err := f.GetCount("verbose")
 			if err != nil {
-				t.Errorf("Got error trying to fetch the counter flag")
-			}
-			if c != tc.expected {
-				t.Errorf("expected %d, got %d", tc.expected, c)
+				t.Fatalf("expected no error; got %q", err)
 			}
 
-			c2, err := f.Get("verbose")
+			if verbose != test.expectedValue {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, verbose, verbose)
+			}
+
+			getVerbose, err := f.GetCount("verbose")
+			if err != nil {
+				t.Fatal("got an error from GetCount():", err)
+			}
+			if getVerbose != test.expectedValue {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, getVerbose, getVerbose)
+			}
+
+			getVerboseGet, err := f.Get("verbose")
 			if err != nil {
 				t.Fatal("got an error from Get():", err)
 			}
-
-			if !reflect.DeepEqual(c, c2) {
-				t.Fatalf("expected %v with type %T but got %v with type %T", c, c, c2, c2)
+			if getVerboseGet != test.expectedValue {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, getVerboseGet, getVerboseGet)
 			}
-		}
+		})
 	}
 }

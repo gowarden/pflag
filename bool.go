@@ -8,13 +8,6 @@ import (
 	"strings"
 )
 
-// optional interface to indicate boolean flags that can be
-// supplied without "=value" text
-type boolFlag interface {
-	Value
-	IsBoolFlag() bool
-}
-
 // -- bool Value
 type boolValue bool
 
@@ -28,10 +21,22 @@ func (b *boolValue) Get() interface{} {
 }
 
 func (b *boolValue) Set(val string) error {
-	val = strings.TrimSpace(val)
-	v, err := strconv.ParseBool(val)
+	v := true
+	if val != "" {
+		val = strings.TrimSpace(val)
+		var err error
+		v, err = strconv.ParseBool(val)
+		if err != nil {
+			return err
+		}
+	}
 	*b = boolValue(v)
-	return err
+	return nil
+}
+
+func isBool(v string) bool {
+	_, err := strconv.ParseBool(v)
+	return err == nil
 }
 
 func (b *boolValue) Type() string {
@@ -41,6 +46,8 @@ func (b *boolValue) Type() string {
 func (b *boolValue) String() string { return strconv.FormatBool(bool(*b)) }
 
 func (b *boolValue) IsBoolFlag() bool { return true }
+
+func (b *boolValue) IsOptional() bool { return true }
 
 // GetBool return the bool value of a flag with the given name
 func (f *FlagSet) GetBool(name string) (bool, error) {
@@ -63,7 +70,7 @@ func (f *FlagSet) MustGetBool(name string) bool {
 // BoolVar defines a bool flag with specified name, default value, and usage string.
 // The argument p points to a bool variable in which to store the value of the flag.
 func (f *FlagSet) BoolVar(p *bool, name string, value bool, usage string, opts ...Opt) {
-	f.Var(newBoolValue(value, p), name, usage, append(opts, OptNoOptDefVal("true"))...)
+	f.Var(newBoolValue(value, p), name, usage, opts...)
 }
 
 // BoolVar defines a bool flag with specified name, default value, and usage string.

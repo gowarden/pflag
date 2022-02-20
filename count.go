@@ -5,7 +5,6 @@ package zflag
 
 import (
 	"strconv"
-	"strings"
 )
 
 // -- count Value
@@ -17,15 +16,14 @@ func newCountValue(val int, p *int) *countValue {
 }
 
 func (i *countValue) Set(val string) error {
-	val = strings.TrimSpace(val)
-
-	// "+1" means that no specific value was passed, so increment
-	if val == "+1" {
+	if val == "" {
 		*i = *i + 1
 		return nil
 	}
+
 	v, err := strconv.ParseInt(val, 0, 0)
 	*i = countValue(v)
+
 	return err
 }
 
@@ -38,6 +36,8 @@ func (i *countValue) Type() string {
 }
 
 func (i *countValue) String() string { return strconv.Itoa(int(*i)) }
+
+func (i *countValue) IsOptional() bool { return true }
 
 // GetCount return the int value of a flag with the given name
 func (f *FlagSet) GetCount(name string) (int, error) {
@@ -61,7 +61,7 @@ func (f *FlagSet) MustGetCount(name string) int {
 // The argument p points to an int variable in which to store the value of the flag.
 // A count flag will add 1 to its value every time it is found on the command line
 func (f *FlagSet) CountVar(p *int, name string, usage string, opts ...Opt) {
-	f.Var(newCountValue(0, p), name, usage, append(opts, OptNoOptDefVal("+1"))...)
+	f.Var(newCountValue(0, p), name, usage, opts...)
 }
 
 // CountVar like CountVar only the flag is placed on the CommandLine instead of a given flag set

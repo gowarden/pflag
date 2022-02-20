@@ -194,10 +194,6 @@ func testParse(f *zflag.FlagSet, t *testing.T) {
 	ipFlag := f.IP("ip", net.ParseIP("127.0.0.1"), "ip value")
 	maskFlag := f.IPMask("mask", zflag.ParseIPv4Mask("0.0.0.0"), "mask value")
 	durationFlag := f.Duration("duration", 5*time.Second, "time.Duration value")
-	optionalIntNoValueFlag := f.Int("optional-int-no-value", 0, "int value")
-	f.Lookup("optional-int-no-value").NoOptDefVal = "9"
-	optionalIntWithValueFlag := f.Int("optional-int-with-value", 0, "int value")
-	f.Lookup("optional-int-no-value").NoOptDefVal = "9"
 	extra := "one-extra-argument"
 	args := []string{
 		"--bool",
@@ -219,8 +215,6 @@ func testParse(f *zflag.FlagSet, t *testing.T) {
 		"--ip=10.11.12.13",
 		"--mask=255.255.255.0",
 		"--duration=2m",
-		"--optional-int-no-value",
-		"--optional-int-with-value=42",
 		extra,
 	}
 	if err := f.Parse(args); err != nil {
@@ -391,12 +385,6 @@ func testParse(f *zflag.FlagSet, t *testing.T) {
 	if _, err := f.GetInt("duration"); err == nil {
 		t.Error("GetInt parsed a time.Duration?!?!")
 	}
-	if *optionalIntNoValueFlag != 9 {
-		t.Error("optional int flag should be the default value, is ", *optionalIntNoValueFlag)
-	}
-	if *optionalIntWithValueFlag != 42 {
-		t.Error("optional int flag should be 42, is ", *optionalIntWithValueFlag)
-	}
 	if len(f.Args()) != 1 {
 		t.Error("expected one argument, got", len(f.Args()))
 	} else if f.Args()[0] != extra {
@@ -414,26 +402,22 @@ func testParseAll(f *zflag.FlagSet, t *testing.T) {
 	f.Bool("boold", false, "bool4 value", zflag.OptShorthand('d'))
 	f.String("stringa", "0", "string value", zflag.OptShorthand('s'))
 	f.String("stringz", "0", "string value", zflag.OptShorthand('z'))
-	f.String("stringx", "0", "string value", zflag.OptShorthand('x'))
 	f.String("stringy", "0", "string value", zflag.OptShorthand('y'))
-	f.Lookup("stringx").NoOptDefVal = "1"
 	args := []string{
 		"-ab",
 		"-cs=xx",
 		"--stringz=something",
 		"-d=true",
-		"-x",
 		"-y",
 		"ee",
 	}
 	want := []string{
-		"boola", "true",
-		"boolb", "true",
-		"boolc", "true",
+		"boola",
+		"boolb",
+		"boolc",
 		"stringa", "xx",
 		"stringz", "something",
 		"boold", "true",
-		"stringx", "1",
 		"stringy", "ee",
 	}
 	got := []string{}
@@ -470,10 +454,8 @@ func testParseWithUnknownFlags(f *zflag.FlagSet, t *testing.T) {
 	f.Bool("boole", false, "bool4 value", zflag.OptShorthand('e'))
 	f.String("stringa", "0", "string value", zflag.OptShorthand('s'))
 	f.String("stringz", "0", "string value", zflag.OptShorthand('z'))
-	f.String("stringx", "0", "string value", zflag.OptShorthand('x'))
 	f.String("stringy", "0", "string value", zflag.OptShorthand('y'))
 	f.String("stringo", "0", "string value", zflag.OptShorthand('o'))
-	f.Lookup("stringx").NoOptDefVal = "1"
 	args := []string{
 		"-ab",
 		"-cs=xx",
@@ -481,7 +463,6 @@ func testParseWithUnknownFlags(f *zflag.FlagSet, t *testing.T) {
 		"--unknown1",
 		"unknown1Value",
 		"-d=true",
-		"-x",
 		"--unknown2=unknown2Value",
 		"-u=unknown3Value",
 		"-p",
@@ -501,13 +482,12 @@ func testParseWithUnknownFlags(f *zflag.FlagSet, t *testing.T) {
 		"--unknown11",
 	}
 	want := []string{
-		"boola", "true",
-		"boolb", "true",
-		"boolc", "true",
+		"boola",
+		"boolb",
+		"boolc",
 		"stringa", "xx",
 		"stringz", "something",
 		"boold", "true",
-		"stringx", "1",
 		"stringy", "ee",
 		"stringo", "ovalue",
 		"boole", "true",
@@ -578,7 +558,7 @@ func TestShorthand(t *testing.T) {
 	}
 	f.SetOutput(ioutil.Discard)
 	if err := f.Parse(args); err != nil {
-		t.Error("expected no error, got ", err)
+		t.Error("expected no error, got", err)
 	}
 	if !f.Parsed() {
 		t.Error("f.Parse() = false after Parse")
@@ -1438,11 +1418,10 @@ func TestHiddenFlagUsage(t *testing.T) {
 	}
 }
 
-const defaultOutput = `      --A                     for bootstrapping, allow 'any' type
-      --Alongflagname         disable bounds checking
-  -C, --CCC                   a boolean defaulting to true (default true)
+const defaultOutput = `      --[no-]A                for bootstrapping, allow 'any' type
+      --[no-]Alongflagname    disable bounds checking
+  -C, --[no-]CCC              a boolean defaulting to true (default true)
       --D path                set relative path for local imports
-  -E, --EEE num[=1234]        a num with NoOptDefVal (default 4321)
       --F number              a non-zero number (default 2.7)
       --G float               a float that defaults to zero
       --IP ip                 IP address with no default
@@ -1450,8 +1429,6 @@ const defaultOutput = `      --A                     for bootstrapping, allow 'a
       --IPNet ipNet           IP network with no default
       --Ints ints             int slice with zero default
       --N int                 a non-zero int (default 27)
-      --ND1 string[="bar"]    a string with NoOptDefVal (default "foo")
-      --ND2 num[=4321]        a num with NoOptDefVal (default 1234)
       --StringSlice strings   string slice with zero default
       --Z int                 an int that defaults to zero
       --custom custom         custom Value implementation
@@ -1491,12 +1468,6 @@ func TestPrintDefaults(t *testing.T) {
 	fs.IPNet("IPNet", net.IPNet{}, "IP network with no default")
 	fs.Int("Z", 0, "an int that defaults to zero")
 	fs.Duration("maxT", 0, "set `timeout` for dial")
-	fs.String("ND1", "foo", "a string with NoOptDefVal")
-	fs.Lookup("ND1").NoOptDefVal = "bar"
-	fs.Int("ND2", 1234, "a `num` with NoOptDefVal")
-	fs.Lookup("ND2").NoOptDefVal = "4321"
-	fs.Int("EEE", 4321, "a `num` with NoOptDefVal", zflag.OptShorthand('E'))
-	fs.ShorthandLookup('E').NoOptDefVal = "1234"
 	fs.StringSlice("StringSlice", []string{}, "string slice with zero default")
 	fs.Count("verbose", "verbosity", zflag.OptShorthand('v'))
 	fs.Int("disableDefault", -1, "A non-zero int with DisablePrintDefault")

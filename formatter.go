@@ -10,7 +10,6 @@ type FlagUsageFormatter interface {
 	Usage(*Flag, string) string
 	UsageVarName(*Flag, string) string
 	DefaultValue(*Flag) string
-	NoOptDefValue(*Flag) string
 	Deprecated(*Flag) string
 }
 
@@ -28,7 +27,11 @@ func (d DefaultFlagUsageFormatter) Name(flag *Flag) string {
 	} else {
 		name += "    "
 	}
-	name += fmt.Sprintf("--%s", flag.Name)
+	name += "--"
+	if _, ok := flag.Value.(boolFlag); ok {
+		name += "[no-]"
+	}
+	name += flag.Name
 
 	return name
 }
@@ -47,28 +50,6 @@ func (d DefaultFlagUsageFormatter) DefaultValue(flag *Flag) string {
 	}
 
 	return fmt.Sprintf(" (default %s)", flag.DefValue)
-}
-
-func (d DefaultFlagUsageFormatter) NoOptDefValue(flag *Flag) string {
-	if v, ok := flag.Value.(Typed); ok {
-		switch v.Type() {
-		case "string":
-			return fmt.Sprintf("[=\"%s\"]", flag.NoOptDefVal)
-		case "bool":
-			if flag.NoOptDefVal != "true" {
-				return fmt.Sprintf("[=%s]", flag.NoOptDefVal)
-			}
-		case "count":
-			if flag.NoOptDefVal != "+1" {
-				return fmt.Sprintf("[=%s]", flag.NoOptDefVal)
-			}
-		default:
-			return fmt.Sprintf("[=%s]", flag.NoOptDefVal)
-		}
-		return ""
-	}
-
-	return fmt.Sprintf("[=%s]", flag.NoOptDefVal)
 }
 
 func (d DefaultFlagUsageFormatter) Deprecated(flag *Flag) string {

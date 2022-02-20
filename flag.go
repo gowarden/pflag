@@ -94,7 +94,6 @@ type Flag struct {
 	Value               Value               // value as set
 	DefValue            string              // default value (as text); for usage message
 	Changed             bool                // If the user set the value (or if left to default)
-	NoOptDefVal         string              // default value (as text); if the flag is on the command line without any options
 	Deprecated          string              // If this flag is deprecated, this string is the new or now thing to use
 	Hidden              bool                // used by zulu.Command to allow flags to be hidden from help/usage text
 	ShorthandDeprecated string              // If the shorthand of this flag is deprecated, this string is the new or now thing to use
@@ -129,6 +128,18 @@ type SliceValue interface {
 	Replace([]string) error
 	// GetSlice returns the flag value list as an array of strings.
 	GetSlice() []string
+}
+
+// boolFlag is an optional interface to indicate boolean flags that can be
+// supplied without a value text
+type boolFlag interface {
+	Value
+	IsBoolFlag() bool
+}
+
+type optionalValue interface {
+	Value
+	IsOptional() bool
 }
 
 // sortFlags returns the flags as a slice in lexicographical sorted order.
@@ -511,32 +522,25 @@ func (f *FlagSet) PrintDefaults() {
 	fmt.Fprint(f.Output(), usages)
 }
 
-// defaultIsZeroValue returns true if the default value for this flag represents
+// DefaultIsZeroValue returns true if the default value for this flag represents
 // a zero value.
-func (f *Flag) defaultIsZeroValue() bool {
+func (f *Flag) DefaultIsZeroValue() bool {
 	switch f.Value.(type) {
 	case boolFlag:
 		return f.DefValue == "false"
+	case SliceValue:
+		return f.DefValue == "[]"
 	case *durationValue:
-		// Beginning in Go 1.7, duration zero values are "0s"
-		return f.DefValue == "0" || f.DefValue == "0s"
+		return f.DefValue == "0s"
 	case *intValue, *int8Value, *int32Value, *int64Value, *uintValue, *uint8Value, *uint16Value, *uint32Value, *uint64Value, *countValue, *float32Value, *float64Value:
 		return f.DefValue == "0"
 	case *stringValue:
 		return f.DefValue == ""
 	case *ipValue, *ipMaskValue, *ipNetValue:
 		return f.DefValue == "<nil>"
-	case *intSliceValue, *stringSliceValue:
-		return f.DefValue == "[]"
 	default:
 		switch f.DefValue {
-		case "false":
-			return true
-		case "<nil>":
-			return true
-		case "":
-			return true
-		case "0":
+		case "false", "<nil>", "", "0":
 			return true
 		}
 		return false
@@ -712,9 +716,6 @@ func (f *FlagSet) FlagUsagesForGroupWrapped(group string, cols int) string {
 		varname, usage := UnquoteUsage(flag)
 		if varname != "" {
 			line += " " + usageFormatter.UsageVarName(flag, varname)
-		}
-		if flag.NoOptDefVal != "" {
-			line += usageFormatter.NoOptDefValue(flag)
 		}
 
 		// This special character will be replaced with spacing once the
@@ -997,9 +998,19 @@ func (f *FlagSet) parseLongArg(s string, args []string, fn parseFunc) (outArgs [
 		return
 	}
 
+	hasNoPrefix := strings.HasPrefix(name, "no-")
 	split := strings.SplitN(name, "=", 2)
 	name = split[0]
 	flag, exists := f.formal[f.normalizeFlagName(name)]
+
+	if !exists && len(name) > 3 && hasNoPrefix {
+		bFlag, bExists := f.formal[f.normalizeFlagName(name[3:])]
+		if _, ok := bFlag.Value.(boolFlag); bExists && ok {
+			flag = bFlag
+			exists = bExists
+			name = name[3:]
+		}
+	}
 
 	if !exists || (flag != nil && flag.ShorthandOnly) {
 		switch {
@@ -1022,19 +1033,26 @@ func (f *FlagSet) parseLongArg(s string, args []string, fn parseFunc) (outArgs [
 		}
 	}
 
+	_, flagIsBool := flag.Value.(boolFlag)
+	_, isOptional := flag.Value.(optionalValue)
+	nextArgIsFlagValue := len(outArgs) > 0 && len(outArgs[0]) > 0 && outArgs[0][0] != '-'
+
 	var value string
-	if len(split) == 2 {
-		// '--flag=arg'
+	switch {
+	case len(split) == 2: // '--flag=arg'
 		value = split[1]
-	} else if flag.NoOptDefVal != "" {
-		// '--flag' (arg was optional)
-		value = flag.NoOptDefVal
-	} else if len(outArgs) > 0 {
-		// '--flag arg'
+		if hasNoPrefix && flagIsBool {
+			err = f.failf("flag cannot have a value: %s", s)
+			return
+		}
+	case flagIsBool: // '--[no-]flag' (arg was optional)
+		value = fmt.Sprintf("%t", !hasNoPrefix)
+	case isOptional: // '--flag' (arg was optional)
+		value = ""
+	case nextArgIsFlagValue && (!flagIsBool || (flagIsBool && isBool(outArgs[0]))): // '--flag arg'
 		value = outArgs[0]
 		outArgs = outArgs[1:]
-	} else {
-		// '--flag' (arg was required)
+	default: // '--flag' (arg was required)
 		err = f.failf("flag needs an argument: %s", s)
 		return
 	}
@@ -1081,23 +1099,34 @@ func (f *FlagSet) parseSingleShortArg(shorthands string, args []string, fn parse
 		}
 	}
 
+	_, flagIsBool := flag.Value.(boolFlag)
+	_, isOptional := flag.Value.(optionalValue)
+	nextArgIsFlagValue := len(outArgs) > 0 && len(outArgs[0]) > 0 && outArgs[0][0] != '-'
+
+	nextShortArgIsFlagValue := len(shorthands) > 1
+	if len(shorthands) > 1 {
+		_, nextFlagExists := f.shorthands[rune(shorthands[1])]
+		nextShortArgIsFlagValue = !nextFlagExists
+	}
+
 	var value string
-	if len(shorthands) > 2 && shorthands[1] == '=' {
+	switch {
+	case len(shorthands) > 2 && shorthands[1] == '=':
 		// '-f=arg'
 		value = shorthands[2:]
 		outShorts = ""
-	} else if flag.NoOptDefVal != "" {
-		// '-f' (arg was optional)
-		value = flag.NoOptDefVal
-	} else if len(shorthands) > 1 {
+	case nextShortArgIsFlagValue && (!flagIsBool || (flagIsBool && isBool(shorthands[1:]))):
 		// '-farg'
 		value = shorthands[1:]
 		outShorts = ""
-	} else if len(args) > 0 {
+	case nextArgIsFlagValue && (!flagIsBool || (flagIsBool && isBool(outArgs[0]))):
 		// '-f arg'
 		value = args[0]
 		outArgs = args[1:]
-	} else {
+	case flagIsBool, isOptional:
+		// '-f' (arg was optional)
+		value = ""
+	default:
 		// '-f' (arg was required)
 		err = f.failf("flag needs an argument: %q in -%s", char, shorthands)
 		return
