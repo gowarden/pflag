@@ -91,8 +91,11 @@ func TestUintSlice(t *testing.T) {
 		},
 	}
 
+	t.Parallel()
 	for _, test := range tests {
+		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			var uis []uint
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 			f.SetOutput(ioutil.Discard)

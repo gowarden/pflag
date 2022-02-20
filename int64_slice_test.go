@@ -85,8 +85,11 @@ func TestInt64Slice(t *testing.T) {
 		},
 	}
 
+	t.Parallel()
 	for _, test := range tests {
+		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			var i64s []int64
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 			f.SetOutput(ioutil.Discard)

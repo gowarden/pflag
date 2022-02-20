@@ -115,8 +115,11 @@ func TestBytesHex(t *testing.T) {
 		},
 	}
 
+	t.Parallel()
 	for _, test := range tests {
+		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			var bytes []byte
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 			f.SetOutput(ioutil.Discard)
@@ -227,8 +230,11 @@ func TestBytesB64(t *testing.T) {
 		},
 	}
 
+	t.Parallel()
 	for _, test := range tests {
+		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			var bytes []byte
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 			f.SetOutput(ioutil.Discard)

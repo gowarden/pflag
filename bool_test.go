@@ -77,8 +77,11 @@ func TestNoBool(t *testing.T) {
 		},
 	}
 
+	t.Parallel()
 	for _, test := range tests {
+		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			var bs bool
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 			f.SetOutput(ioutil.Discard)
@@ -248,8 +251,11 @@ func TestBool(t *testing.T) {
 		},
 	}
 
+	t.Parallel()
 	for _, test := range tests {
+		test := test
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			var bs bool
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 			f.SetOutput(ioutil.Discard)
