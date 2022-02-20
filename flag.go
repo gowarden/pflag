@@ -681,11 +681,11 @@ func wrap(i, w int, s string) string {
 }
 
 func (f *FlagSet) flagUsageFormatter() FlagUsageFormatter {
-	if f.FlagUsageFormatter == nil {
-		return DefaultFlagUsageFormatter{}
+	if f.FlagUsageFormatter != nil {
+		return f.FlagUsageFormatter
 	}
 
-	return f.FlagUsageFormatter
+	return defaultUsageFormatter
 }
 
 // FlagUsagesWrapped returns a string containing the usage information
@@ -711,12 +711,7 @@ func (f *FlagSet) FlagUsagesForGroupWrapped(group string, cols int) string {
 			return
 		}
 
-		line := usageFormatter.Name(flag)
-
-		varname, usage := UnquoteUsage(flag)
-		if varname != "" {
-			line += " " + usageFormatter.UsageVarName(flag, varname)
-		}
+		line, right := usageFormatter(flag)
 
 		// This special character will be replaced with spacing once the
 		// correct alignment is calculated
@@ -725,13 +720,7 @@ func (f *FlagSet) FlagUsagesForGroupWrapped(group string, cols int) string {
 			maxlen = len(line)
 		}
 
-		line += usageFormatter.Usage(flag, usage)
-		if !flag.DisablePrintDefault && !flag.defaultIsZeroValue() {
-			line += usageFormatter.DefaultValue(flag)
-		}
-		if len(flag.Deprecated) != 0 {
-			line += usageFormatter.Deprecated(flag)
-		}
+		line += right
 
 		group := flag.Group
 		if _, ok := lines[group]; !ok {

@@ -302,31 +302,23 @@ _Note: This unquoting behavior can be disabled with `Flag.DisableUnquoteUsage`, 
 ### Customizing flag usages
 
 You can customize the flag usages by overriding the `FlagSet.FlagUsageFormatter` field
-with a struct that implements [`FlagUsageFormatter`](./formatter.go).
-You can re-implement the whole interface or embed the `DefaultFlagUsageFormatter` to only
-re-implement some some functions.
+with function that returns two strings. By default, it uses the [`defaultUsageFormatter`](./formatter.go).
+The function must return two strings, one that contains the "left" side of the usage,
+and one that returns the "right" side of the usage. The sides are there to calculate
+how far to indent usage.
 
 For example:
-
 ```go
-type myFlagFormatter struct {
-  zflag.DefaultFlagUsageFormatter
-}
-
-func (f myFlagFormatter) Name(flag *zflag.Flag) string {
-  return "--not-hello"
-}
-
-
 flagSet := zflag.NewFlagSet("myapp", zflag.ExitOnError)
 flagSet.String("hello", "", "myusage")
 
-flagSet.FlagUsageFormatter = myFlagFormatter{}
+flagSet.FlagUsageFormatter = func (flag *zflag.Flag) (string, string) {
+  return "--not-hello string", "different usage text"
+}
 flagSet.PrintDefaults()
 ```
 
 Which will print:
-
 ```
 --not-hello string   myusage
 ```
@@ -338,7 +330,7 @@ The printing of a flag's default value can be suppressed with `Flag.DisablePrint
 **Example**:
 
 ```go
-flag.Int("in", -1, "help message", zflag.OptDisablePrintDefault(true))
+flag.Int("in", -1, "help message", zflag.OptDisablePrintDefault())
 ```
 
 **Output**:
@@ -346,6 +338,8 @@ flag.Int("in", -1, "help message", zflag.OptDisablePrintDefault(true))
 ```plain
   --in int   help message
 ```
+
+Note: if you override the usage formatter, you'll need to take the field `Flag.DisablePrintDefault` into account.
 
 ### Disable built-in help flags
 

@@ -48,7 +48,7 @@ func OptShorthandOnly() Opt {
 func OptUsageType(usageType string) Opt {
 	return func(f *Flag) error {
 		f.UsageType = usageType
-		return nil
+		return OptDisableUnquoteUsage()(f)
 	}
 }
 

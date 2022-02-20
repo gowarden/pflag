@@ -3,55 +3,44 @@
 
 package zflag
 
-import "fmt"
+import (
+	"fmt"
+)
 
-type FlagUsageFormatter interface {
-	Name(*Flag) string
-	Usage(*Flag, string) string
-	UsageVarName(*Flag, string) string
-	DefaultValue(*Flag) string
-	Deprecated(*Flag) string
-}
+type FlagUsageFormatter func(*Flag) (string, string)
 
-type DefaultFlagUsageFormatter struct{}
-
-var _ FlagUsageFormatter = (*DefaultFlagUsageFormatter)(nil)
-
-func (d DefaultFlagUsageFormatter) Name(flag *Flag) string {
-	name := "  "
+func defaultUsageFormatter(flag *Flag) (string, string) {
+	left := "  "
 	if flag.Shorthand != 0 && flag.ShorthandDeprecated == "" {
-		name += fmt.Sprintf("-%c", flag.Shorthand)
+		left += fmt.Sprintf("-%c", flag.Shorthand)
 		if !flag.ShorthandOnly {
-			name += ", "
+			left += ", "
 		}
 	} else {
-		name += "    "
+		left += "    "
 	}
-	name += "--"
+	left += "--"
 	if _, ok := flag.Value.(boolFlag); ok {
-		name += "[no-]"
+		left += "[no-]"
 	}
-	name += flag.Name
+	left += flag.Name
 
-	return name
-}
-
-func (d DefaultFlagUsageFormatter) Usage(flag *Flag, s string) string {
-	return s
-}
-
-func (d DefaultFlagUsageFormatter) UsageVarName(flag *Flag, s string) string {
-	return s
-}
-
-func (d DefaultFlagUsageFormatter) DefaultValue(flag *Flag) string {
-	if v, ok := flag.Value.(Typed); ok && v.Type() == "string" {
-		return fmt.Sprintf(" (default %q)", flag.DefValue)
+	varname, usage := UnquoteUsage(flag)
+	if varname != "" {
+		left += " " + varname
 	}
 
-	return fmt.Sprintf(" (default %s)", flag.DefValue)
-}
+	right := usage
+	if !flag.DisablePrintDefault && !flag.defaultIsZeroValue() {
+		if v, ok := flag.Value.(Typed); ok && v.Type() == "string" {
+			right += fmt.Sprintf(" (default %q)", flag.DefValue)
+		} else {
+			right += fmt.Sprintf(" (default %s)", flag.DefValue)
+		}
+	}
+	if len(flag.Deprecated) != 0 {
+		right += fmt.Sprintf(" (DEPRECATED: %s)", flag.Deprecated)
+	}
 
-func (d DefaultFlagUsageFormatter) Deprecated(flag *Flag) string {
-	return fmt.Sprintf(" (DEPRECATED: %s)", flag.Deprecated)
+	return left, right
 }
