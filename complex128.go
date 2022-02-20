@@ -14,6 +14,10 @@ import (
 // -- complex128 Value
 type complex128Value complex128
 
+var _ Value = (*complex128Value)(nil)
+var _ Getter = (*complex128Value)(nil)
+var _ Typed = (*complex128Value)(nil)
+
 func newComplex128Value(val complex128, p *complex128) *complex128Value {
 	*p = val
 	return (*complex128Value)(p)

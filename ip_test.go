@@ -13,16 +13,6 @@ import (
 	"github.com/gowarden/zflag"
 )
 
-func TestIPValueImplementsGetter(t *testing.T) {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.IP("address", net.ParseIP("0.0.0.0"), "IP Address")
-	v := f.Lookup("address").Value
-
-	if _, ok := v.(zflag.Getter); !ok {
-		t.Fatalf("%T should implement the Getter interface", v)
-	}
-}
-
 func TestIP(t *testing.T) {
 	tests := []struct {
 		name        string

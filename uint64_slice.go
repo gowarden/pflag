@@ -15,6 +15,11 @@ type uint64SliceValue struct {
 	changed bool
 }
 
+var _ Value = (*uint64SliceValue)(nil)
+var _ Getter = (*uint64SliceValue)(nil)
+var _ SliceValue = (*uint64SliceValue)(nil)
+var _ Typed = (*uint64SliceValue)(nil)
+
 func newUint64SliceValue(val []uint64, p *[]uint64) *uint64SliceValue {
 	isv := new(uint64SliceValue)
 	isv.value = p

@@ -12,16 +12,6 @@ import (
 	"github.com/gowarden/zflag"
 )
 
-func TestBoolSliceValueImplementsGetter(t *testing.T) {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.BoolSlice("bs", []bool{false, true}, "Command separated list!")
-	var v = f.Lookup("bs").Value
-
-	if _, ok := v.(zflag.Getter); !ok {
-		t.Fatalf("%T should implement the Getter interface", v)
-	}
-}
-
 func TestBoolSlice(t *testing.T) {
 	tests := []struct {
 		name           string

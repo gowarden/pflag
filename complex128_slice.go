@@ -18,6 +18,11 @@ type complex128SliceValue struct {
 	changed bool
 }
 
+var _ Value = (*complex128SliceValue)(nil)
+var _ Getter = (*complex128SliceValue)(nil)
+var _ SliceValue = (*complex128SliceValue)(nil)
+var _ Typed = (*complex128SliceValue)(nil)
+
 func newComplex128SliceValue(val []complex128, p *[]complex128) *complex128SliceValue {
 	isv := new(complex128SliceValue)
 	isv.value = p

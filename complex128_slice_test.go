@@ -14,16 +14,6 @@ import (
 	"github.com/gowarden/zflag"
 )
 
-func TestC128SliceValueImplementsGetter(t *testing.T) {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Complex128Slice("c128s", []complex128{0.0, 1.0}, "Command separated list!")
-	v := f.Lookup("c128s").Value
-
-	if _, ok := v.(zflag.Getter); !ok {
-		t.Fatalf("%T should implement the Getter interface", v)
-	}
-}
-
 func TestC128Slice(t *testing.T) {
 	tests := []struct {
 		name           string

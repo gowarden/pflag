@@ -13,6 +13,10 @@ import (
 // -- net.IPMask value
 type ipMaskValue net.IPMask
 
+var _ Value = (*ipMaskValue)(nil)
+var _ Getter = (*ipMaskValue)(nil)
+var _ Typed = (*ipMaskValue)(nil)
+
 func newIPMaskValue(val net.IPMask, p *net.IPMask) *ipMaskValue {
 	*p = val
 	return (*ipMaskValue)(p)

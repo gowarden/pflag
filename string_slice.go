@@ -13,6 +13,11 @@ type stringSliceValue struct {
 	changed bool
 }
 
+var _ Value = (*stringSliceValue)(nil)
+var _ Getter = (*stringSliceValue)(nil)
+var _ SliceValue = (*stringSliceValue)(nil)
+var _ Typed = (*stringSliceValue)(nil)
+
 func newStringSliceValue(val []string, p *[]string) *stringSliceValue {
 	ssv := new(stringSliceValue)
 	ssv.value = p

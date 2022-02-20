@@ -11,6 +11,10 @@ import (
 // -- uint8 Value
 type uint8Value uint8
 
+var _ Value = (*uint8Value)(nil)
+var _ Getter = (*uint8Value)(nil)
+var _ Typed = (*uint8Value)(nil)
+
 func newUint8Value(val uint8, p *uint8) *uint8Value {
 	*p = val
 	return (*uint8Value)(p)

@@ -15,6 +15,11 @@ type durationSliceValue struct {
 	changed bool
 }
 
+var _ Value = (*durationSliceValue)(nil)
+var _ Getter = (*durationSliceValue)(nil)
+var _ SliceValue = (*durationSliceValue)(nil)
+var _ Typed = (*durationSliceValue)(nil)
+
 func newDurationSliceValue(val []time.Duration, p *[]time.Duration) *durationSliceValue {
 	dsv := new(durationSliceValue)
 	dsv.value = p

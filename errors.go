@@ -9,6 +9,8 @@ type UnknownFlagError struct {
 	name string
 }
 
+var _ error = (*UnknownFlagError)(nil)
+
 func NewUnknownFlagError(name string) error {
 	return UnknownFlagError{name: name}
 }

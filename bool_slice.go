@@ -15,6 +15,11 @@ type boolSliceValue struct {
 	changed bool
 }
 
+var _ Value = (*boolSliceValue)(nil)
+var _ Getter = (*boolSliceValue)(nil)
+var _ SliceValue = (*boolSliceValue)(nil)
+var _ Typed = (*boolSliceValue)(nil)
+
 func newBoolSliceValue(val []bool, p *[]bool) *boolSliceValue {
 	bsv := new(boolSliceValue)
 	bsv.value = p

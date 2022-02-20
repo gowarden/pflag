@@ -19,16 +19,6 @@ func getCIDR(val string) net.IPNet {
 	return *cidr
 }
 
-func TestIPNetsValueImplementsGetter(t *testing.T) {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.IPNetSlice("cidrs", []net.IPNet{}, "Command separated list!")
-	v := f.Lookup("cidrs").Value
-
-	if _, ok := v.(zflag.Getter); !ok {
-		t.Fatalf("%T should implement the Getter interface", v)
-	}
-}
-
 func TestIPNetSlice(t *testing.T) {
 	tests := []struct {
 		name           string

@@ -15,6 +15,11 @@ type uint32SliceValue struct {
 	changed bool
 }
 
+var _ Value = (*uint32SliceValue)(nil)
+var _ Getter = (*uint32SliceValue)(nil)
+var _ SliceValue = (*uint32SliceValue)(nil)
+var _ Typed = (*uint32SliceValue)(nil)
+
 func newUint32SliceValue(val []uint32, p *[]uint32) *uint32SliceValue {
 	isv := new(uint32SliceValue)
 	isv.value = p

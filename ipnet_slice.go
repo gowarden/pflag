@@ -15,6 +15,11 @@ type ipNetSliceValue struct {
 	changed bool
 }
 
+var _ Value = (*ipNetSliceValue)(nil)
+var _ Getter = (*ipNetSliceValue)(nil)
+var _ SliceValue = (*ipNetSliceValue)(nil)
+var _ Typed = (*ipNetSliceValue)(nil)
+
 func newIPNetSliceValue(val []net.IPNet, p *[]net.IPNet) *ipNetSliceValue {
 	ipnsv := new(ipNetSliceValue)
 	ipnsv.value = p

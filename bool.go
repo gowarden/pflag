@@ -11,6 +11,12 @@ import (
 // -- bool Value
 type boolValue bool
 
+var _ Value = (*boolValue)(nil)
+var _ Getter = (*boolValue)(nil)
+var _ Typed = (*boolValue)(nil)
+var _ optionalValue = (*boolValue)(nil)
+var _ boolFlag = (*boolValue)(nil)
+
 func newBoolValue(val bool, p *bool) *boolValue {
 	*p = val
 	return (*boolValue)(p)

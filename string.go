@@ -6,6 +6,10 @@ package zflag
 // -- string Value
 type stringValue string
 
+var _ Value = (*stringValue)(nil)
+var _ Getter = (*stringValue)(nil)
+var _ Typed = (*stringValue)(nil)
+
 func newStringValue(val string, p *string) *stringValue {
 	*p = val
 	return (*stringValue)(p)
@@ -15,9 +19,11 @@ func (s *stringValue) Set(val string) error {
 	*s = stringValue(val)
 	return nil
 }
+
 func (s *stringValue) Get() interface{} {
 	return string(*s)
 }
+
 func (s *stringValue) Type() string {
 	return "string"
 }

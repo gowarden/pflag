@@ -12,16 +12,6 @@ import (
 	"github.com/gowarden/zflag"
 )
 
-func TestDSValueImplementsGetter(t *testing.T) {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.DurationSlice("ds", []time.Duration{0, 1}, "Command separated list!")
-	v := f.Lookup("ds").Value
-
-	if _, ok := v.(zflag.Getter); !ok {
-		t.Fatalf("%T should implement the Getter interface", v)
-	}
-}
-
 func TestDurationSlice(t *testing.T) {
 	tests := []struct {
 		name           string

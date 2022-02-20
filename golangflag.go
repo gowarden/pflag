@@ -19,6 +19,10 @@ type flagValueWrapper struct {
 	flagType string
 }
 
+var _ Value = (*flagValueWrapper)(nil)
+var _ Getter = (*flagValueWrapper)(nil)
+var _ Typed = (*flagValueWrapper)(nil)
+
 func wrapFlagValue(v goflag.Value) Value {
 	// If the flag.Value happens to also be a zflag.Value, just use it directly.
 	if pv, ok := v.(Value); ok {

@@ -15,6 +15,10 @@ type stringToIntValue struct {
 	changed bool
 }
 
+var _ Value = (*stringToIntValue)(nil)
+var _ Getter = (*stringToIntValue)(nil)
+var _ Typed = (*stringToIntValue)(nil)
+
 func newStringToIntValue(val map[string]int, p *map[string]int) *stringToIntValue {
 	ssv := new(stringToIntValue)
 	ssv.value = p

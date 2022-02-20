@@ -11,16 +11,6 @@ import (
 	"github.com/gowarden/zflag"
 )
 
-func TestUI32SliceValueImplementsGetter(t *testing.T) {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Uint32Slice("is", []uint32{}, "Command separated list!")
-	v := f.Lookup("is").Value
-
-	if _, ok := v.(zflag.Getter); !ok {
-		t.Fatalf("%T should implement the Getter interface", v)
-	}
-}
-
 func TestUint32Slice(t *testing.T) {
 	tests := []struct {
 		name           string

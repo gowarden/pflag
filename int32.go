@@ -11,6 +11,10 @@ import (
 // -- int32 Value
 type int32Value int32
 
+var _ Value = (*int32Value)(nil)
+var _ Getter = (*int32Value)(nil)
+var _ Typed = (*int32Value)(nil)
+
 func newInt32Value(val int32, p *int32) *int32Value {
 	*p = val
 	return (*int32Value)(p)

@@ -10,16 +10,6 @@ import (
 	"github.com/gowarden/zflag"
 )
 
-func TestBoolValueImplementsGetter(t *testing.T) {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Bool("bool", false, "bool")
-	v := f.Lookup("bool").Value
-
-	if _, ok := v.(zflag.Getter); !ok {
-		t.Fatalf("%T should implement the Getter interface", v)
-	}
-}
-
 func TestNoBool(t *testing.T) {
 	tests := []struct {
 		name          string

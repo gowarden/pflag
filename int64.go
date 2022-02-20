@@ -11,6 +11,10 @@ import (
 // -- int64 Value
 type int64Value int64
 
+var _ Value = (*int64Value)(nil)
+var _ Getter = (*int64Value)(nil)
+var _ Typed = (*int64Value)(nil)
+
 func newInt64Value(val int64, p *int64) *int64Value {
 	*p = val
 	return (*int64Value)(p)

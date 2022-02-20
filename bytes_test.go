@@ -12,24 +12,6 @@ import (
 	"github.com/gowarden/zflag"
 )
 
-func TestBytesValueImplementsGetter(t *testing.T) {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.BytesBase64("b64", []byte{}, "b64")
-	f.BytesHex("hex", []byte{}, "hex")
-
-	v := f.Lookup("b64").Value
-
-	if _, ok := v.(zflag.Getter); !ok {
-		t.Fatalf("%T should implement the Getter interface", v)
-	}
-
-	v2 := f.Lookup("b64").Value
-
-	if _, ok := v2.(zflag.Getter); !ok {
-		t.Fatalf("%T should implement the Getter interface", v2)
-	}
-}
-
 func TestBytesHex(t *testing.T) {
 	tests := []struct {
 		name          string

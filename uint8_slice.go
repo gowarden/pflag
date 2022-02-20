@@ -15,6 +15,11 @@ type uint8SliceValue struct {
 	changed bool
 }
 
+var _ Value = (*uint8SliceValue)(nil)
+var _ Getter = (*uint8SliceValue)(nil)
+var _ SliceValue = (*uint8SliceValue)(nil)
+var _ Typed = (*uint8SliceValue)(nil)
+
 func newUint8SliceValue(val []uint8, p *[]uint8) *uint8SliceValue {
 	isv := new(uint8SliceValue)
 	isv.value = p

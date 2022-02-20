@@ -11,16 +11,6 @@ import (
 	"github.com/gowarden/zflag"
 )
 
-func TestI16SliceValueImplementsGetter(t *testing.T) {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Int16Slice("is", []int16{0, 1}, "Command separated list!")
-	v := f.Lookup("is").Value
-
-	if _, ok := v.(zflag.Getter); !ok {
-		t.Fatalf("%T should implement the Getter interface", v)
-	}
-}
-
 func TestInt16Slice(t *testing.T) {
 	tests := []struct {
 		name           string

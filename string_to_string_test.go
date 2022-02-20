@@ -11,16 +11,6 @@ import (
 	"github.com/gowarden/zflag"
 )
 
-func TestS2SValueImplementsGetter(t *testing.T) {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.StringToString("s2s", map[string]string{}, "Command separated ls2st!")
-	v := f.Lookup("s2s").Value
-
-	if _, ok := v.(zflag.Getter); !ok {
-		t.Fatalf("%T should implement the Getter interface", v)
-	}
-}
-
 func TestStringToString(t *testing.T) {
 	tests := []struct {
 		name           string

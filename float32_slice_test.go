@@ -11,16 +11,6 @@ import (
 	"github.com/gowarden/zflag"
 )
 
-func TestF32SValueImplementsGetter(t *testing.T) {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Float32Slice("f32s", []float32{0.0, 1.0}, "Command separated list!")
-	v := f.Lookup("f32s").Value
-
-	if _, ok := v.(zflag.Getter); !ok {
-		t.Fatalf("%T should implement the Getter interface", v)
-	}
-}
-
 func TestFloat32Slice(t *testing.T) {
 	tests := []struct {
 		name           string

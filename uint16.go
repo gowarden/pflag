@@ -11,6 +11,10 @@ import (
 // -- uint16 value
 type uint16Value uint16
 
+var _ Value = (*uint16Value)(nil)
+var _ Getter = (*uint16Value)(nil)
+var _ Typed = (*uint16Value)(nil)
+
 func newUint16Value(val uint16, p *uint16) *uint16Value {
 	*p = val
 	return (*uint16Value)(p)

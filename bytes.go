@@ -13,6 +13,10 @@ import (
 // BytesHex adapts []byte for use as a flag. Value of flag is HEX encoded
 type bytesHexValue []byte
 
+var _ Value = (*bytesHexValue)(nil)
+var _ Getter = (*bytesHexValue)(nil)
+var _ Typed = (*bytesHexValue)(nil)
+
 // String implements zflag.Value.String.
 func (bytesHex bytesHexValue) String() string {
 	return fmt.Sprintf("%X", []byte(bytesHex))
@@ -93,6 +97,10 @@ func BytesHex(name string, value []byte, usage string, opts ...Opt) *[]byte {
 
 // BytesBase64 adapts []byte for use as a flag. Value of flag is Base64 encoded
 type bytesBase64Value []byte
+
+var _ Value = (*bytesBase64Value)(nil)
+var _ Getter = (*bytesBase64Value)(nil)
+var _ Typed = (*bytesBase64Value)(nil)
 
 // String implements zflag.Value.String.
 func (bytesBase64 bytesBase64Value) String() string {

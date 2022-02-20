@@ -11,6 +11,10 @@ import (
 // IPNet adapts net.IPNet for use as a flag.
 type ipNetValue net.IPNet
 
+var _ Value = (*ipNetValue)(nil)
+var _ Getter = (*ipNetValue)(nil)
+var _ Typed = (*ipNetValue)(nil)
+
 func (ipnet ipNetValue) String() string {
 	n := net.IPNet(ipnet)
 	return n.String()

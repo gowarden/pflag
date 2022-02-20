@@ -12,6 +12,10 @@ import (
 // -- net.IP value
 type ipValue net.IP
 
+var _ Value = (*ipValue)(nil)
+var _ Getter = (*ipValue)(nil)
+var _ Typed = (*ipValue)(nil)
+
 func newIPValue(val net.IP, p *net.IP) *ipValue {
 	*p = val
 	return (*ipValue)(p)

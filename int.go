@@ -11,6 +11,10 @@ import (
 // -- int Value
 type intValue int
 
+var _ Value = (*intValue)(nil)
+var _ Getter = (*intValue)(nil)
+var _ Typed = (*intValue)(nil)
+
 func newIntValue(val int, p *int) *intValue {
 	*p = val
 	return (*intValue)(p)

@@ -16,6 +16,11 @@ type ipSliceValue struct {
 	changed bool
 }
 
+var _ Value = (*ipSliceValue)(nil)
+var _ Getter = (*ipSliceValue)(nil)
+var _ SliceValue = (*ipSliceValue)(nil)
+var _ Typed = (*ipSliceValue)(nil)
+
 func newIPSliceValue(val []net.IP, p *[]net.IP) *ipSliceValue {
 	ipsv := new(ipSliceValue)
 	ipsv.value = p

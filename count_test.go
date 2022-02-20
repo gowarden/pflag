@@ -10,16 +10,6 @@ import (
 	"github.com/gowarden/zflag"
 )
 
-func TestCountValueImplementsGetter(t *testing.T) {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.Count("verbose", "a counter")
-	v := f.Lookup("verbose").Value
-
-	if _, ok := v.(zflag.Getter); !ok {
-		t.Fatalf("%T should implement the Getter interface", v)
-	}
-}
-
 func TestCount(t *testing.T) {
 	tests := []struct {
 		name          string

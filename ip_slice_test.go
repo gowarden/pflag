@@ -13,16 +13,6 @@ import (
 	"github.com/gowarden/zflag"
 )
 
-func TestIPSValueImplementsGetter(t *testing.T) {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.IPSlice("ips", []net.IP{}, "Command separated list!")
-	v := f.Lookup("ips").Value
-
-	if _, ok := v.(zflag.Getter); !ok {
-		t.Fatalf("%T should implement the Getter interface", v)
-	}
-}
-
 func TestIPSlice(t *testing.T) {
 	tests := []struct {
 		name           string

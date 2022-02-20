@@ -11,6 +11,10 @@ import (
 // -- float32 Value
 type float32Value float32
 
+var _ Value = (*float32Value)(nil)
+var _ Getter = (*float32Value)(nil)
+var _ Typed = (*float32Value)(nil)
+
 func newFloat32Value(val float32, p *float32) *float32Value {
 	*p = val
 	return (*float32Value)(p)

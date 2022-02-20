@@ -15,6 +15,10 @@ type stringToInt64Value struct {
 	changed bool
 }
 
+var _ Value = (*stringToInt64Value)(nil)
+var _ Getter = (*stringToInt64Value)(nil)
+var _ Typed = (*stringToInt64Value)(nil)
+
 func newStringToInt64Value(val map[string]int64, p *map[string]int64) *stringToInt64Value {
 	ssv := new(stringToInt64Value)
 	ssv.value = p

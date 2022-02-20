@@ -11,6 +11,10 @@ import (
 // -- uint Value
 type uintValue uint
 
+var _ Value = (*uintValue)(nil)
+var _ Getter = (*uintValue)(nil)
+var _ Typed = (*uintValue)(nil)
+
 func newUintValue(val uint, p *uint) *uintValue {
 	*p = val
 	return (*uintValue)(p)

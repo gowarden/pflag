@@ -11,6 +11,10 @@ import (
 // -- uint64 Value
 type uint64Value uint64
 
+var _ Value = (*uint64Value)(nil)
+var _ Getter = (*uint64Value)(nil)
+var _ Typed = (*uint64Value)(nil)
+
 func newUint64Value(val uint64, p *uint64) *uint64Value {
 	*p = val
 	return (*uint64Value)(p)

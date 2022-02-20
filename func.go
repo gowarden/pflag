@@ -6,6 +6,9 @@ package zflag
 // -- int Value
 type funcValue func(string) error
 
+var _ Value = (*funcValue)(nil)
+var _ Typed = (*funcValue)(nil)
+
 func newFuncValue(fn func(string) error) *funcValue {
 	funcVal := funcValue(fn)
 	return &funcVal

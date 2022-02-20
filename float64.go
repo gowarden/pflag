@@ -11,6 +11,10 @@ import (
 // -- float64 Value
 type float64Value float64
 
+var _ Value = (*float64Value)(nil)
+var _ Getter = (*float64Value)(nil)
+var _ Typed = (*float64Value)(nil)
+
 func newFloat64Value(val float64, p *float64) *float64Value {
 	*p = val
 	return (*float64Value)(p)

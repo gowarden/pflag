@@ -20,15 +20,6 @@ func setUpIPNet(ip *net.IPNet) *zflag.FlagSet {
 	return f
 }
 
-func TestIPNetValueImplementsGetter(t *testing.T) {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	f.IPNet("address", net.IPNet{}, "IP Address")
-	v := f.Lookup("address").Value
-
-	if _, ok := v.(zflag.Getter); !ok {
-		t.Fatalf("%T should implement the Getter interface", v)
-	}
-}
 func TestIPNet(t *testing.T) {
 	testCases := []struct {
 		input    string

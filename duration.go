@@ -11,6 +11,10 @@ import (
 // -- time.Duration Value
 type durationValue time.Duration
 
+var _ Value = (*durationValue)(nil)
+var _ Getter = (*durationValue)(nil)
+var _ Typed = (*durationValue)(nil)
+
 func newDurationValue(val time.Duration, p *time.Duration) *durationValue {
 	*p = val
 	return (*durationValue)(p)
