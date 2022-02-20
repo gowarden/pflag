@@ -32,3 +32,11 @@ repos:
       - id: go-unit-tests
       - id: go-build
       - id: go-mod-tidy
+
+  - repo: local
+    hooks:
+      - id: mdtoc
+        name: Markdown Table of Contents
+        language: system
+        entry: go run sigs.k8s.io/mdtoc@latest --inplace
+        files: ^README.md$
