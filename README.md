@@ -1,7 +1,5 @@
 # zflag
 
-***This is a fork of [cornfeedhobo/pflag](https://github.com/cornfeedhobo/pflag), which in turn is a fork of [spf13/pflag](https://github.com/spf13/pflag) due to poor maintenance***
-
 [![GoDoc](https://godoc.org/github.com/gowarden/zflag?status.svg)](https://godoc.org/github.com/gowarden/zflag)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gowarden/zflag)](https://goreportcard.com/report/github.com/gowarden/zflag)
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/gowarden/zflag?sort=semver)](https://github.com/gowarden/zflag/releases)
@@ -10,7 +8,9 @@
 <!-- toc -->
 - [Installation](#installation)
 - [Supported Syntax](#supported-syntax)
+- [Fork from pflag](#fork-from-pflag)
 - [Documentation](#documentation)
+  - [Quick start](#quick-start)
   - [Bool Values](#bool-values)
   - [Mutating or &quot;Normalizing&quot; Flag names](#mutating-or-normalizing-flag-names)
   - [Deprecating a flag or its shorthand](#deprecating-a-flag-or-its-shorthand)
@@ -39,8 +39,9 @@ go get github.com/gowarden/zflag
 ## Supported Syntax
 
 ```plain
---flag    // boolean flags, or flags with no option default values
---flag x  // only on flags without a default value
+--flag       // boolean flags, or flags with no option default values
+--no-flag    // boolean flags
+--flag x
 --flag=x
 ```
 
@@ -53,9 +54,8 @@ or a flag with a default value
 // boolean or flags where the 'no option default value' is set
 -f
 -f=true
+-f true
 -abc
-but
--b true is INVALID
 
 // non-boolean and flags without a 'no option default value'
 -n 1234
@@ -74,14 +74,51 @@ Slice flags can be specified multiple times.
 --sliceVal one --sliceVal=two
 ```
 
+Mapped flags can be specified.
+
+```plain
+--map-val key1=value --map-val key2=value
+```
+
 Integer flags accept 1234, 0664, 0x1234 and may be negative.
-Boolean flags (in their long form) accept 1, 0, t, f, true, false,
+Boolean flags accept 1, 0, t, f, true, false,
 TRUE, FALSE, True, False.
 Duration flags accept any input valid for time.ParseDuration.
 
 Flag parsing stops after the terminator "--". Unlike the flag package,
 flags can be interspersed with arguments anywhere on the command line
 before this terminator.
+
+## Fork from pflag
+
+This is a fork of [cornfeedhobo/pflag](https://github.com/cornfeedhobo/pflag), which in turn is a fork of [spf13/pflag](https://github.com/spf13/pflag).
+
+Both repos haven't had any updates or maintenance. I'm sure for many that's fine, but I needed changes
+that weren't available.
+
+The following are differences between zflag and pflag:
+
+A bunch of PRs have been merged:
+- Add support for flag groups.
+- Switched from "whitelist" terminology to "allowlist".
+- Improve flag errors dashes.
+- Move Type() into its own interface.
+- Use `DefValue` for usage.
+- Store shorthand flag as a single UTF-8 character (`rune`).
+- Refactored flag parsing to be based on a Getter interface.
+
+In addition to the above PRs, the following changes have been made:
+- A new flag usage formatter has been added to customize the usage output.
+- Unknown flag errors are now consistent.
+- Removed all the CSV parsing in slice types and others. These were causing more head-ache than needed,
+  as it is hard to get this right for a wide variety of use cases. If you need this, please use either
+  use the `Func` flag type, or creating your own custom flag type.
+- Improved go `flag` compatibility:
+  - Standardized the flag API. This follows the `flag` closer. Additional options can be added using `Opt*` method calls.
+  - Added a `Func` flag type.
+  - The `Getter` interface was implemented.
+- Restructured the tests to be based on test tables and enable `t.Parallel()` where possible.
+- Removed the `NoOptDefVal` in favour of interfaces.
 
 ## Documentation
 
@@ -91,6 +128,38 @@ You can see the full reference documentation of the zflag package
 system by running `godoc -http=:6060` and browsing to
 [http://localhost:6060/pkg/github.com/gowarden/zflag](http://localhost:6060/pkg/github.com/gowarden/zflag)
 after installation.
+
+### Quick start
+To quickly create a parser, you can simply use the package global flag set by calling
+the relevant functions:
+```go
+zflag.Bool("mybool", false, "my usage")
+zflag.Parse()
+
+v, err := zflag.Get("mybool")
+mybool := v.(bool)
+// alternatively you can also interact directly with zflag.CommandLine
+mybool, err := zflag.CommandLine.GetBool("mybool")
+
+// or
+
+var mybool bool
+zflag.BoolVar(&mybool, "mybool", false, "my usage")
+zflag.Parse()
+
+// do something with mybool
+```
+
+You can also create a custom `FlagSet` instead, this allows you not rely on global states
+and allows for easier writing of co-routine safe code.
+
+```go
+f := zflag.NewFlagSet("mycustomapp", zflag.ExitOnError)
+f.Bool("mybool", false, "My bool")
+err := f.Parse(os.Args[1:])
+
+mybool := f.GetBool("mybool")
+```
 
 ### Bool Values
 
@@ -191,7 +260,7 @@ only and don't want it showing up in help text, or for its usage text to be avai
 
 ```go
 // hide a flag by specifying its name
-flags.Bool("secretFlag", false, "this does something", zflag.Hidden())
+flags.Bool("secretFlag", false, "this does something", zflag.OptHidden())
 ```
 
 ### Disable sorting of flags
