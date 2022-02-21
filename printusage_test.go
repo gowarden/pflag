@@ -11,12 +11,15 @@ import (
 	"github.com/gowarden/zflag"
 )
 
-const expectedOutput = `      --[no-]long-form    Some description
-      --[no-]long-form2   Some description
-                            with multiline
-  -s, --[no-]long-name    Some description
-  -t, --[no-]long-name2   Some description with
-                            multiline
+const expectedOutput = `      --long-form                 Some description
+      --long-form2                Some description
+                                    with multiline
+  -s, --long-name                 Some description
+      --[no-]long-name-negated    Some description
+  -l, --[no-]long-name-negated2   Some description with
+                                    multiline
+  -t, --long-name2                Some description with
+                                    multiline
 `
 
 func setUpZFlagSet(buf io.Writer) *zflag.FlagSet {
@@ -25,6 +28,8 @@ func setUpZFlagSet(buf io.Writer) *zflag.FlagSet {
 	f.Bool("long-form2", false, "Some description\n  with multiline")
 	f.Bool("long-name", false, "Some description", zflag.OptShorthand('s'))
 	f.Bool("long-name2", false, "Some description with\n  multiline", zflag.OptShorthand('t'))
+	f.Bool("long-name-negated", false, "Some description", zflag.OptAddNegative())
+	f.Bool("long-name-negated2", false, "Some description with\n  multiline", zflag.OptAddNegative(), zflag.OptShorthand('l'))
 	f.SetOutput(buf)
 	return f
 }
@@ -41,8 +46,8 @@ func TestPrintUsage(t *testing.T) {
 
 func setUpZFlagSet2(buf io.Writer) *zflag.FlagSet {
 	f := zflag.NewFlagSet("test", zflag.ExitOnError)
-	f.Bool("long-form", false, "Some description")
-	f.Bool("long-form2", false, "Some description\n  with multiline")
+	f.Bool("long-form", false, "Some description", zflag.OptAddNegative())
+	f.Bool("long-form2", false, "Some description\n  with multiline", zflag.OptAddNegative())
 	f.Bool("long-name", false, "Some description", zflag.OptShorthand('s'))
 	f.Bool("long-name2", false, "Some description with\n  multiline", zflag.OptShorthand('t'))
 	f.String("some-very-long-arg", "test", "Some very long description having break the limit", zflag.OptShorthand('l'))
@@ -55,8 +60,8 @@ func setUpZFlagSet2(buf io.Writer) *zflag.FlagSet {
 const expectedOutput2 = `      --[no-]long-form               Some description
       --[no-]long-form2              Some description
                                        with multiline
-  -s, --[no-]long-name               Some description
-  -t, --[no-]long-name2              Some description with
+  -s, --long-name                    Some description
+  -t, --long-name2                   Some description with
                                        multiline
   -o, --other-very-long-arg string   Some very long description having
                                      break the limit (default

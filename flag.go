@@ -92,6 +92,7 @@ type Flag struct {
 	DisableUnquoteUsage bool                // toggle unquoting and extraction of type from usage
 	DisablePrintDefault bool                // toggle printing of the default value in usage message
 	Value               Value               // value as set
+	AddNegative         bool                // AddNegative automatically add a --no-<flag> option for boolean flags.
 	DefValue            string              // default value (as text); for usage message
 	Changed             bool                // If the user set the value (or if left to default)
 	Deprecated          string              // If this flag is deprecated, this string is the new or now thing to use
@@ -994,7 +995,7 @@ func (f *FlagSet) parseLongArg(s string, args []string, fn parseFunc) (outArgs [
 
 	if !exists && len(name) > 3 && hasNoPrefix {
 		bFlag, bExists := f.formal[f.normalizeFlagName(name[3:])]
-		if _, ok := bFlag.Value.(BoolFlag); bExists && ok {
+		if _, isBoolFlag := bFlag.Value.(BoolFlag); bExists && isBoolFlag && bFlag.AddNegative {
 			flag = bFlag
 			exists = bExists
 			name = name[3:]

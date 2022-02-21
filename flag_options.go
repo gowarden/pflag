@@ -18,6 +18,14 @@ func applyFlagOptions(f *Flag, options ...Opt) error {
 	return nil
 }
 
+// OptAddNegative automatically adds a --no-<flag> option for boolean flags.
+func OptAddNegative() Opt {
+	return func(f *Flag) error {
+		f.AddNegative = true
+		return nil
+	}
+}
+
 // OptShorthand one-letter abbreviated flag
 func OptShorthand(shorthand rune) Opt {
 	return func(f *Flag) error {

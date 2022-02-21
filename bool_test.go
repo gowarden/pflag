@@ -10,110 +10,6 @@ import (
 	"github.com/gowarden/zflag"
 )
 
-func TestNoBool(t *testing.T) {
-	tests := []struct {
-		name          string
-		flagDefault   bool
-		input         []string
-		expectedErr   string
-		expectedValue bool
-	}{
-		{
-			name:          "flag prefixed with `no-` is found",
-			input:         []string{"--no-bs"},
-			flagDefault:   true,
-			expectedValue: false,
-		},
-		{
-			name:        "no- prefix does not accept a value",
-			input:       []string{"--no-bs=true"},
-			expectedErr: "flag cannot have a value: --no-bs=true",
-		},
-		{
-			name:          "accepts separate value without no-",
-			input:         []string{"--bs", "true"},
-			flagDefault:   false,
-			expectedValue: true,
-		},
-		{
-			name:          "accepts value without no-",
-			input:         []string{"--bs=true"},
-			flagDefault:   false,
-			expectedValue: true,
-		},
-		{
-			name:          "short opt",
-			input:         []string{"-b"},
-			flagDefault:   false,
-			expectedValue: true,
-		},
-		{
-			name:          "short opt with value false",
-			input:         []string{"-b=0"},
-			flagDefault:   true,
-			expectedValue: false,
-		},
-		{
-			name:          "short opt with value",
-			input:         []string{"-b=1"},
-			flagDefault:   false,
-			expectedValue: true,
-		},
-		{
-			name:          "short opt with value",
-			input:         []string{"-b=true"},
-			flagDefault:   false,
-			expectedValue: true,
-		},
-	}
-
-	t.Parallel()
-	for _, test := range tests {
-		test := test
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-			var bs bool
-			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-			f.SetOutput(ioutil.Discard)
-			f.BoolVar(&bs, "bs", test.flagDefault, "usage", zflag.OptShorthand('b'))
-			err := f.Parse(test.input)
-			if test.expectedErr != "" {
-				if err == nil {
-					t.Fatalf("expected an error; got none")
-				}
-				if test.expectedErr != "" && err.Error() != test.expectedErr {
-					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
-				}
-				return
-			}
-
-			if err != nil {
-				t.Fatalf("expected no error; got %q", err)
-			}
-
-			if bs != test.expectedValue {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, bs, bs)
-			}
-
-			getBS, err := f.GetBool("bs")
-			if err != nil {
-				t.Fatal("got an error from GetBool():", err)
-			}
-			if getBS != test.expectedValue {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, getBS, getBS)
-			}
-
-			getBSGet, err := f.Get("bs")
-			if err != nil {
-				t.Fatal("got an error from Get():", err)
-			}
-			if getBSGet != test.expectedValue {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, getBS, getBS)
-			}
-		})
-	}
-}
-
 func TestBool(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -121,6 +17,7 @@ func TestBool(t *testing.T) {
 		input         []string
 		expectedErr   string
 		expectedValue bool
+		extraOpts     []zflag.Opt
 	}{
 		{
 			name:          "no value passed",
@@ -131,112 +28,174 @@ func TestBool(t *testing.T) {
 		},
 		{
 			name:          "empty value passed",
-			input:         []string{""},
+			input:         repeatFlag("--bs", ""),
 			flagDefault:   false,
 			expectedValue: true,
 		},
 		{
 			name:        "invalid bool",
-			input:       []string{"blabla"},
+			input:       repeatFlag("--bs", "blabla"),
 			flagDefault: false,
 			expectedErr: `invalid argument "blabla" for "--bs" flag: strconv.ParseBool: parsing "blabla": invalid syntax`,
 		},
 		{
 			name:        "no csv",
-			input:       []string{"true,false"},
+			input:       repeatFlag("--bs", "true,false"),
 			flagDefault: false,
 			expectedErr: `invalid argument "true,false" for "--bs" flag: strconv.ParseBool: parsing "true,false": invalid syntax`,
 		},
 		{
+			name:        "flag prefixed with `no-` is not found",
+			input:       []string{"--no-bs"},
+			flagDefault: true,
+			expectedErr: "unknown flag: --no-bs",
+			extraOpts:   []zflag.Opt{zflag.OptShorthand('b')},
+		},
+		{
+			name:          "flag prefixed with `no-` is found when negative enabled",
+			input:         []string{"--no-bs"},
+			flagDefault:   true,
+			expectedValue: false,
+			extraOpts:     []zflag.Opt{zflag.OptShorthand('b'), zflag.OptAddNegative()},
+		},
+		{
+			name:        "no- prefix does not accept a value",
+			input:       []string{"--no-bs=true"},
+			expectedErr: "flag cannot have a value: --no-bs=true",
+			extraOpts:   []zflag.Opt{zflag.OptShorthand('b'), zflag.OptAddNegative()},
+		},
+		{
+			name:          "accepts separate value without no-",
+			input:         []string{"--bs", "true"},
+			flagDefault:   false,
+			expectedValue: true,
+			extraOpts:     []zflag.Opt{zflag.OptShorthand('b'), zflag.OptAddNegative()},
+		},
+		{
+			name:          "accepts value without no-",
+			input:         []string{"--bs=true"},
+			flagDefault:   false,
+			expectedValue: true,
+			extraOpts:     []zflag.Opt{zflag.OptShorthand('b'), zflag.OptAddNegative()},
+		},
+		{
+			name:          "short opt",
+			input:         []string{"-b"},
+			flagDefault:   false,
+			expectedValue: true,
+			extraOpts:     []zflag.Opt{zflag.OptShorthand('b'), zflag.OptAddNegative()},
+		},
+		{
+			name:          "short opt with value false",
+			input:         []string{"-b=0"},
+			flagDefault:   true,
+			expectedValue: false,
+			extraOpts:     []zflag.Opt{zflag.OptShorthand('b'), zflag.OptAddNegative()},
+		},
+		{
+			name:          "short opt with value",
+			input:         []string{"-b=1"},
+			flagDefault:   false,
+			expectedValue: true,
+			extraOpts:     []zflag.Opt{zflag.OptShorthand('b'), zflag.OptAddNegative()},
+		},
+		{
+			name:          "short opt with value",
+			input:         []string{"-b=true"},
+			flagDefault:   false,
+			expectedValue: true,
+			extraOpts:     []zflag.Opt{zflag.OptShorthand('b'), zflag.OptAddNegative()},
+		},
+		{
 			name:          "repeated value",
-			input:         []string{"true", "false"},
+			input:         repeatFlag("--bs", "true", "false"),
 			flagDefault:   true,
 			expectedValue: false,
 		},
 		{
 			name:          "with default values",
-			input:         []string{"false"},
+			input:         repeatFlag("--bs", "false"),
 			flagDefault:   true,
 			expectedValue: false,
 		},
 		{
 			name:          "trims input true",
-			input:         []string{" true "},
+			input:         repeatFlag("--bs", " true "),
 			expectedValue: true,
 		},
 		{
 			name:          "trims input false",
-			input:         []string{" false "},
+			input:         repeatFlag("--bs", " false "),
 			expectedValue: false,
 		},
 		{
 			name:          "test all valid bools",
-			input:         []string{"true"},
+			input:         repeatFlag("--bs", "true"),
 			expectedValue: true,
 		},
 		{
 			name:          "test all valid bools",
-			input:         []string{"false"},
+			input:         repeatFlag("--bs", "false"),
 			expectedValue: false,
 		},
 		{
 			name:          "test all valid bools",
-			input:         []string{"1"},
+			input:         repeatFlag("--bs", "1"),
 			expectedValue: true,
 		},
 		{
 			name:          "test all valid bools",
-			input:         []string{"0"},
+			input:         repeatFlag("--bs", "0"),
 			expectedValue: false,
 		},
 		{
 			name:          "test all valid bools",
-			input:         []string{"t"},
+			input:         repeatFlag("--bs", "t"),
 			expectedValue: true,
 		},
 		{
 			name:          "test all valid bools",
-			input:         []string{"f"},
+			input:         repeatFlag("--bs", "f"),
 			expectedValue: false,
 		},
 		{
 			name:          "test all valid bools",
-			input:         []string{"TRUE"},
+			input:         repeatFlag("--bs", "true"),
 			expectedValue: true,
 		},
 		{
 			name:          "test all valid bools",
-			input:         []string{"FALSE"},
+			input:         repeatFlag("--bs", "false"),
 			expectedValue: false,
 		},
 		{
 			name:          "test all valid bools",
-			input:         []string{"1"},
+			input:         repeatFlag("--bs", "1"),
 			expectedValue: true,
 		},
 		{
 			name:          "test all valid bools",
-			input:         []string{"0"},
+			input:         repeatFlag("--bs", "0"),
 			expectedValue: false,
 		},
 		{
 			name:          "test all valid bools",
-			input:         []string{"T"},
+			input:         repeatFlag("--bs", "t"),
 			expectedValue: true,
 		},
 		{
 			name:          "test all valid bools",
-			input:         []string{"F"},
+			input:         repeatFlag("--bs", "f"),
 			expectedValue: false,
 		},
 		{
 			name:          "test all valid bools",
-			input:         []string{"True"},
+			input:         repeatFlag("--bs", "true"),
 			expectedValue: true,
 		},
 		{
 			name:          "test all valid bools",
-			input:         []string{"False"},
+			input:         repeatFlag("--bs", "false"),
 			expectedValue: false,
 		},
 	}
@@ -249,8 +208,8 @@ func TestBool(t *testing.T) {
 			var bs bool
 			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
 			f.SetOutput(ioutil.Discard)
-			f.BoolVar(&bs, "bs", test.flagDefault, "usage")
-			err := f.Parse(repeatFlag("--bs", test.input...))
+			f.BoolVar(&bs, "bs", test.flagDefault, "usage", test.extraOpts...)
+			err := f.Parse(test.input)
 			if test.expectedErr != "" {
 				if err == nil {
 					t.Fatalf("expected an error; got none")

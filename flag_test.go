@@ -1418,7 +1418,7 @@ func TestHiddenFlagUsage(t *testing.T) {
 	}
 }
 
-const defaultOutput = `      --[no-]A                for bootstrapping, allow 'any' type
+const defaultOutput = `      --A                     for bootstrapping, allow 'any' type
       --[no-]Alongflagname    disable bounds checking
   -C, --[no-]CCC              a boolean defaulting to true (default true)
       --D path                set relative path for local imports
@@ -1456,8 +1456,8 @@ func TestPrintDefaults(t *testing.T) {
 	var buf bytes.Buffer
 	fs.SetOutput(&buf)
 	fs.Bool("A", false, "for bootstrapping, allow 'any' type")
-	fs.Bool("Alongflagname", false, "disable bounds checking")
-	fs.Bool("CCC", true, "a boolean defaulting to true", zflag.OptShorthand('C'))
+	fs.Bool("Alongflagname", false, "disable bounds checking", zflag.OptAddNegative())
+	fs.Bool("CCC", true, "a boolean defaulting to true", zflag.OptShorthand('C'), zflag.OptAddNegative())
 	fs.String("D", "", "set relative `path` for local imports")
 	fs.Float64("F", 2.7, "a non-zero `number`")
 	fs.Float64("G", 0, "a float that defaults to zero")

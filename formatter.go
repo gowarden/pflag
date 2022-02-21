@@ -20,7 +20,7 @@ func defaultUsageFormatter(flag *Flag) (string, string) {
 		left += "    "
 	}
 	left += "--"
-	if _, ok := flag.Value.(BoolFlag); ok {
+	if _, isBoolFlag := flag.Value.(BoolFlag); isBoolFlag && flag.AddNegative {
 		left += "[no-]"
 	}
 	left += flag.Name
