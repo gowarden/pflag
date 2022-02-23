@@ -110,7 +110,7 @@ func TestUserDefinedFunc(t *testing.T) {
 	// test usage
 	var buf strings.Builder
 	flags.SetOutput(&buf)
-	flags.Parse([]string{"-h"})
+	_ = flags.Parse([]string{"-h"})
 	if usage := buf.String(); !strings.Contains(usage, "usage") {
 		t.Errorf("usage string not included: %q", usage)
 	}

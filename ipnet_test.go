@@ -4,81 +4,202 @@
 package zflag_test
 
 import (
-	"fmt"
+	"io/ioutil"
 	"net"
-	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/gowarden/zflag"
 )
 
-func setUpIPNet(ip *net.IPNet) *zflag.FlagSet {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	_, def, _ := net.ParseCIDR("0.0.0.0/0")
-	f.IPNetVar(ip, "address", *def, "IP Address")
-	return f
-}
-
 func TestIPNet(t *testing.T) {
-	testCases := []struct {
-		input    string
-		success  bool
-		expected string
+	tests := []struct {
+		name           string
+		flagDefault    net.IPNet
+		input          []string
+		expectedErr    string
+		expectedValues net.IPNet
 	}{
-		{"0.0.0.0/0", true, "0.0.0.0/0"},
-		{" 0.0.0.0/0 ", true, "0.0.0.0/0"},
-		{"1.2.3.4/8", true, "1.0.0.0/8"},
-		{"127.0.0.1/16", true, "127.0.0.0/16"},
-		{"255.255.255.255/19", true, "255.255.224.0/19"},
-		{"255.255.255.255/32", true, "255.255.255.255/32"},
-		{"", false, ""},
-		{"/0", false, ""},
-		{"0", false, ""},
-		{"0/0", false, ""},
-		{"localhost/0", false, ""},
-		{"0.0.0/4", false, ""},
-		{"0.0.0./8", false, ""},
-		{"0.0.0.0./12", false, ""},
-		{"0.0.0.256/16", false, ""},
-		{"0.0.0.0 /20", false, ""},
-		{"0.0.0.0/ 24", false, ""},
-		{"0 . 0 . 0 . 0 / 28", false, ""},
-		{"0.0.0.0/33", false, ""},
+		{
+			name:           "valid cidr",
+			input:          []string{"0.0.0.0/0"},
+			expectedValues: getCIDR("0.0.0.0/0"),
+		},
+		{
+			name:           "valid cidr",
+			input:          []string{"1.2.3.4/8"},
+			expectedValues: getCIDR("1.0.0.0/8"),
+		},
+		{
+			name:           "valid cidr",
+			input:          []string{"127.0.0.1/16"},
+			expectedValues: getCIDR("127.0.0.0/16"),
+		},
+		{
+			name:           "valid mask",
+			input:          []string{"255.255.255.255/19"},
+			expectedValues: getCIDR("255.255.224.0/19"),
+		},
+		{
+			name:           "valid mask",
+			input:          []string{"255.255.255.255/32"},
+			expectedValues: getCIDR("255.255.255.255/32"),
+		},
+		{
+			name:        "invalid cidr",
+			input:       []string{"/0"},
+			expectedErr: "invalid CIDR address: /0",
+		},
+		{
+			name:        "invalid cidr",
+			input:       []string{"0"},
+			expectedErr: "invalid CIDR address: 0",
+		},
+		{
+			name:        "invalid cidr",
+			input:       []string{"0/0"},
+			expectedErr: "invalid CIDR address: 0/0",
+		},
+		{
+			name:        "invalid cidr",
+			input:       []string{"localhost/0"},
+			expectedErr: "invalid CIDR address: localhost/0",
+		},
+		{
+			name:        "invalid cidr",
+			input:       []string{"0.0.0/4"},
+			expectedErr: "invalid CIDR address: 0.0.0/4",
+		},
+		{
+			name:        "invalid cidr",
+			input:       []string{"0.0.0./8"},
+			expectedErr: "invalid CIDR address: 0.0.0./8",
+		},
+		{
+			name:        "invalid cidr",
+			input:       []string{"0.0.0.0./12"},
+			expectedErr: "invalid CIDR address: 0.0.0.0./12",
+		},
+		{
+			name:        "invalid cidr",
+			input:       []string{"0.0.0.256/16"},
+			expectedErr: "invalid CIDR address: 0.0.0.256/16",
+		},
+		{
+			name:        "invalid cidr",
+			input:       []string{"0.0.0.0 /20"},
+			expectedErr: "invalid CIDR address: 0.0.0.0 /20",
+		},
+		{
+			name:        "invalid cidr",
+			input:       []string{"0.0.0.0/ 24"},
+			expectedErr: "invalid CIDR address: 0.0.0.0/ 24",
+		},
+		{
+			name:        "invalid cidr",
+			input:       []string{"0 . 0 . 0 . 0 / 28"},
+			expectedErr: "invalid CIDR address: 0 . 0 . 0 . 0 / 28",
+		},
+		{
+			name:        "invalid cidr",
+			input:       []string{"0.0.0.0/33"},
+			expectedErr: `invalid argument "0.0.0.0/33" for "--ip" flag: invalid CIDR address: 0.0.0.0/33`,
+		},
+
+		{
+			name:           "no value passed",
+			input:          []string{},
+			flagDefault:    net.IPNet{},
+			expectedValues: net.IPNet{},
+		},
+		{
+			name:        "empty value passed",
+			input:       []string{""},
+			flagDefault: net.IPNet{},
+			expectedErr: `invalid argument "" for "--ip" flag: invalid CIDR address:`,
+		},
+		{
+			name:        "no csv",
+			input:       []string{"192.168.1.1/32,172.16.1.1/32"},
+			flagDefault: net.IPNet{},
+			expectedErr: `invalid argument "192.168.1.1/32,172.16.1.1/32" for "--ip" flag: invalid CIDR address: 192.168.1.1/32,172.16.1.1/32`,
+		},
+		{
+			name:           "multiple value passed",
+			input:          []string{"192.168.1.1/32", "10.0.0.1/32"},
+			flagDefault:    net.IPNet{},
+			expectedValues: getCIDR("10.0.0.1/32"),
+		},
+		{
+			name:           "overrides default values",
+			input:          []string{"0:0:0:0:0:0:0:2/64"},
+			flagDefault:    getCIDR("192.168.1.1/32"),
+			expectedValues: getCIDR("0:0:0:0:0:0:0:2/64"),
+		},
+		{
+			name:           "with default values",
+			input:          []string{},
+			flagDefault:    getCIDR("192.168.1.1/24"),
+			expectedValues: getCIDR("192.168.1.1/24"),
+		},
+		{
+			name:           "trims input",
+			input:          []string{"    192.168.1.1/24    "},
+			flagDefault:    net.IPNet{},
+			expectedValues: getCIDR("192.168.1.1/24"),
+		},
+		{
+			name:           "trims input",
+			input:          []string{"    0:0:0:0:0:0:0:2/64    "},
+			flagDefault:    net.IPNet{},
+			expectedValues: getCIDR("0:0:0:0:0:0:0:2/64"),
+		},
 	}
 
-	devnull, _ := os.Open(os.DevNull)
-	os.Stderr = devnull
-	for i := range testCases {
-		var addr net.IPNet
-		f := setUpIPNet(&addr)
+	t.Parallel()
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			var ip net.IPNet
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			f.SetOutput(ioutil.Discard)
+			f.IPNetVar(&ip, "ip", test.flagDefault, "usage")
+			err := f.Parse(repeatFlag("--ip", test.input...))
+			if test.expectedErr != "" {
+				if err == nil {
+					t.Fatalf("expected an error; got none")
+				}
+				if test.expectedErr != "" && !strings.Contains(err.Error(), test.expectedErr) {
+					t.Fatalf("expected error to contain %q, but was: %s", test.expectedErr, err)
+				}
+				return
+			}
 
-		tc := &testCases[i]
+			if err != nil {
+				t.Fatalf("expected no error; got %q", err)
+			}
 
-		arg := fmt.Sprintf("--address=%s", tc.input)
-		err := f.Parse([]string{arg})
-		if err != nil && tc.success == true {
-			t.Errorf("expected success, got %q", err)
-			continue
-		} else if err == nil && tc.success == false {
-			t.Errorf("expected failure")
-			continue
-		} else if tc.success {
-			ip, err := f.GetIPNet("address")
+			if !reflect.DeepEqual(test.expectedValues, ip) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, ip, ip)
+			}
+
+			getIPS, err := f.GetIPNet("ip")
 			if err != nil {
-				t.Errorf("Got error trying to fetch the IP flag: %v", err)
+				t.Fatal("got an error from GetIP():", err)
 			}
-			if ip.String() != tc.expected {
-				t.Errorf("expected %q, got %q", tc.expected, ip.String())
+			if !reflect.DeepEqual(test.expectedValues, getIPS) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", getIPS, getIPS, test.expectedValues, test.expectedValues)
 			}
-			ip2, err := f.Get("address")
+
+			getIPSGet, err := f.Get("ip")
 			if err != nil {
-				t.Errorf("Got error trying to fetch the IP flag: %v", err)
+				t.Fatal("got an error from Get():", err)
 			}
-			if !reflect.DeepEqual(ip, ip2) {
-				ip2 := ip2.(net.IPNet)
-				t.Errorf("expected %q, got %q", ip.String(), ip2.String())
+			if !reflect.DeepEqual(getIPSGet, getIPS) {
+				t.Fatalf("expected %v with type %T but got %v with type %T ", getIPS, getIPS, getIPSGet, getIPSGet)
 			}
-		}
+		})
 	}
 }

@@ -559,21 +559,7 @@ func UnquoteUsage(flag *Flag) (name string, usage string) {
 
 	// Look for a back-quoted name, but avoid the strings package.
 	if !flag.DisableUnquoteUsage {
-		for i := 0; i < len(usage); i++ {
-			if usage[i] == '`' {
-				for j := i + 1; j < len(usage); j++ {
-					if usage[j] == '`' {
-						extracted := usage[i+1 : j]
-						if name == "" {
-							name = extracted
-						}
-						usage = usage[:i] + extracted + usage[j+1:]
-						return
-					}
-				}
-				break // Only one back quote; use type name.
-			}
-		}
+		name, usage = unquoteBacktickFromUsage(name, usage)
 	}
 
 	if name == "" {
@@ -612,6 +598,27 @@ func UnquoteUsage(flag *Flag) (name string, usage string) {
 	return
 }
 
+func unquoteBacktickFromUsage(name string, usage string) (string, string) {
+	start := strings.IndexByte(usage, '`')
+	if start == -1 {
+		return name, usage
+	}
+
+	end := strings.IndexByte(usage[start+1:], '`')
+	if end == -1 {
+		return name, usage
+	}
+	end += start + 1 // to skip the backtick
+
+	extracted := usage[start+1 : end]
+	if name == "" {
+		name = extracted
+	}
+	usage = usage[:start] + extracted + usage[end+1:]
+
+	return name, usage
+}
+
 // Splits the string `s` on whitespace into an initial substring up to
 // `i` runes in length and the remainder. Will go `slop` over `i` if
 // that encompasses the entire string (which allows the caller to
@@ -637,7 +644,7 @@ func wrapN(i, slop int, s string) (string, string) {
 // caller). Pass `w` == 0 to do no wrapping
 func wrap(i, w int, s string) string {
 	if w == 0 {
-		return strings.Replace(s, "\n", "\n"+strings.Repeat(" ", i), -1)
+		return strings.ReplaceAll(s, "\n", "\n"+strings.Repeat(" ", i))
 	}
 
 	// space between indent i and end of line width w into which
@@ -655,30 +662,29 @@ func wrap(i, w int, s string) string {
 	}
 	// If still not enough space then don't even try to wrap.
 	if wrap < 24 {
-		return strings.Replace(s, "\n", r, -1)
+		return strings.ReplaceAll(s, "\n", r)
 	}
 
 	// Try to avoid short orphan words on the final line, by
 	// allowing wrapN to go a bit over if that would fit in the
 	// remainder of the line.
 	slop := 5
-	wrap = wrap - slop
+	wrap -= slop
 
 	// Handle first line, which is indented by the caller (or the
 	// special case above)
 	l, s = wrapN(wrap, slop, s)
-	r = r + strings.Replace(l, "\n", "\n"+strings.Repeat(" ", i), -1)
+	r += strings.ReplaceAll(l, "\n", "\n"+strings.Repeat(" ", i))
 
 	// Now wrap the rest
 	for s != "" {
 		var t string
 
 		t, s = wrapN(wrap, slop, s)
-		r = r + "\n" + strings.Repeat(" ", i) + strings.Replace(t, "\n", "\n"+strings.Repeat(" ", i), -1)
+		r += "\n" + strings.Repeat(" ", i) + strings.ReplaceAll(t, "\n", "\n"+strings.Repeat(" ", i))
 	}
 
 	return r
-
 }
 
 func (f *FlagSet) flagUsageFormatter() FlagUsageFormatter {
@@ -948,11 +954,12 @@ func (f *FlagSet) failf(format string, a ...interface{}) error {
 // usage calls the Usage method for the flag set, or the usage function if
 // the flag set is CommandLine.
 func (f *FlagSet) usage() {
-	if f == CommandLine {
+	switch {
+	case f == CommandLine:
 		Usage()
-	} else if f.Usage == nil {
+	case f.Usage == nil:
 		f.defaultUsage()
-	} else {
+	default:
 		f.Usage()
 	}
 }
@@ -980,6 +987,7 @@ func (f *FlagSet) stripUnknownFlagValue(args []string) []string {
 	return nil
 }
 
+// nolint: funlen
 func (f *FlagSet) parseLongArg(s string, args []string, fn parseFunc) (outArgs []string, err error) {
 	outArgs = args
 	name := s[2:]
@@ -1054,6 +1062,7 @@ func (f *FlagSet) parseLongArg(s string, args []string, fn parseFunc) (outArgs [
 	return
 }
 
+// nolint: funlen
 func (f *FlagSet) parseSingleShortArg(shorthands string, args []string, fn parseFunc) (outShorts string, outArgs []string, err error) {
 	outArgs = args
 	outShorts = shorthands[1:]
@@ -1243,7 +1252,7 @@ func (f *FlagSet) Parsed() bool {
 // after all flags are defined and before flags are accessed by the program.
 func Parse() {
 	// Ignore errors; CommandLine is set for ExitOnError.
-	CommandLine.Parse(os.Args[1:])
+	_ = CommandLine.Parse(os.Args[1:])
 }
 
 // ParseAll parses the command-line flags from os.Args[1:] and called fn for each.
@@ -1251,7 +1260,7 @@ func Parse() {
 // defined and before flags are accessed by the program.
 func ParseAll(fn func(flag *Flag, value string) error) {
 	// Ignore errors; CommandLine is set for ExitOnError.
-	CommandLine.ParseAll(os.Args[1:], fn)
+	_ = CommandLine.ParseAll(os.Args[1:], fn)
 }
 
 // SetInterspersed sets whether to support interspersed option/non-option arguments.

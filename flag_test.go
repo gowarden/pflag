@@ -77,15 +77,15 @@ func TestEverything(t *testing.T) {
 		}
 	}
 	// Now set all flags
-	zflag.Set("test_bool", "true")
-	zflag.Set("test_int", "1")
-	zflag.Set("test_int64", "1")
-	zflag.Set("test_uint", "1")
-	zflag.Set("test_uint64", "1")
-	zflag.Set("test_string", "1")
-	zflag.Set("test_float64", "1")
-	zflag.Set("test_duration", "1s")
-	zflag.Set("test_optional_int", "1")
+	_ = zflag.Set("test_bool", "true")
+	_ = zflag.Set("test_int", "1")
+	_ = zflag.Set("test_int64", "1")
+	_ = zflag.Set("test_uint", "1")
+	_ = zflag.Set("test_uint64", "1")
+	_ = zflag.Set("test_string", "1")
+	_ = zflag.Set("test_float64", "1")
+	_ = zflag.Set("test_duration", "1s")
+	_ = zflag.Set("test_optional_int", "1")
 	desired = "1"
 	zflag.Visit(visitor)
 	if len(m) != 9 {
@@ -355,7 +355,7 @@ func testParse(f *zflag.FlagSet, t *testing.T) {
 	if v, err := f.Get("float64"); err != nil || v.(float64) != *float64Flag {
 		t.Errorf("Get returned %v but float64Flag was %v", v, *float64Flag)
 	}
-	if !(*ipFlag).Equal(net.ParseIP("10.11.12.13")) {
+	if !ipFlag.Equal(net.ParseIP("10.11.12.13")) {
 		t.Error("ip flag should be 10.11.12.13, is ", *ipFlag)
 	}
 	if v, err := f.GetIP("ip"); err != nil || !v.Equal(*ipFlag) {
@@ -364,13 +364,13 @@ func testParse(f *zflag.FlagSet, t *testing.T) {
 	if v, err := f.Get("ip"); err != nil || !v.(net.IP).Equal(*ipFlag) {
 		t.Errorf("GetIP returned %v but ipFlag was %v", v, *ipFlag)
 	}
-	if (*maskFlag).String() != zflag.ParseIPv4Mask("255.255.255.0").String() {
-		t.Error("mask flag should be 255.255.255.0, is ", (*maskFlag).String())
+	if maskFlag.String() != zflag.ParseIPv4Mask("255.255.255.0").String() {
+		t.Error("mask flag should be 255.255.255.0, is ", maskFlag.String())
 	}
-	if v, err := f.GetIPv4Mask("mask"); err != nil || v.String() != (*maskFlag).String() {
+	if v, err := f.GetIPv4Mask("mask"); err != nil || v.String() != maskFlag.String() {
 		t.Errorf("GetIP returned %v maskFlag was %v error was %v", v, *maskFlag, err)
 	}
-	if v, err := f.Get("mask"); err != nil || v.(net.IPMask).String() != (*maskFlag).String() {
+	if v, err := f.Get("mask"); err != nil || v.(net.IPMask).String() != maskFlag.String() {
 		t.Errorf("Get returned %v maskFlag was %v error was %v", v, *maskFlag, err)
 	}
 	if *durationFlag != 2*time.Minute {
@@ -584,11 +584,12 @@ func TestShorthand(t *testing.T) {
 	if *stringzFlag != "something" {
 		t.Error("stringz flag should be `something`, is ", *stringzFlag)
 	}
-	if len(f.Args()) != 2 {
+	switch {
+	case len(f.Args()) != 2:
 		t.Error("expected one argument, got", len(f.Args()))
-	} else if f.Args()[0] != extra {
+	case f.Args()[0] != extra:
 		t.Errorf("expected argument %q got %q", extra, f.Args()[0])
-	} else if f.Args()[1] != notaflag {
+	case f.Args()[1] != notaflag:
 		t.Errorf("expected argument %q got %q", notaflag, f.Args()[1])
 	}
 	if f.ArgsLenAtDash() != 1 {
@@ -705,7 +706,7 @@ func TestChangedHelper(t *testing.T) {
 func replaceSeparators(name string, from []string, to string) string {
 	result := name
 	for _, sep := range from {
-		result = strings.Replace(result, sep, to, -1)
+		result = strings.ReplaceAll(result, sep, to)
 	}
 	// Type convert to indicate normalization has been done.
 	return result
@@ -776,8 +777,7 @@ func aliasAndWordSepFlagNames(f *zflag.FlagSet, name string) zflag.NormalizedNam
 	newName := replaceSeparators("valid-flag", seps, ".")
 
 	name = replaceSeparators(name, seps, ".")
-	switch name {
-	case oldName:
+	if name == oldName {
 		name = newName
 	}
 
@@ -876,7 +876,7 @@ func TestNormalizationSetFlags(t *testing.T) {
 	}
 
 	f.Bool(testName, false, "bool value")
-	f.Set(testName, "true")
+	_ = f.Set(testName, "true")
 	f.SetNormalizeFunc(nfunc)
 
 	if len(zflag.GetFlagFormalField(f)) != 1 {
@@ -1001,7 +1001,7 @@ func TestSetOutput(t *testing.T) {
 	var buf bytes.Buffer
 	flags.SetOutput(&buf)
 	flags.Init("test", zflag.ContinueOnError)
-	flags.Parse([]string{"--unknown"})
+	_ = flags.Parse([]string{"--unknown"})
 	if out := buf.String(); !strings.Contains(out, "--unknown") {
 		t.Fatalf("expected output mentioning unknown; got %q", out)
 	}
@@ -1070,7 +1070,6 @@ func TestChangingArgs(t *testing.T) {
 
 // Test that -help invokes the usage message and returns ErrHelp.
 func TestHelp(t *testing.T) {
-
 	var helpCalled = false
 	fs := zflag.NewFlagSet("help test", zflag.ContinueOnError)
 	fs.Usage = func() { helpCalled = true }
@@ -1113,9 +1112,7 @@ func TestHelp(t *testing.T) {
 		if err == nil {
 			t.Fatalf("while passing %s, error expected", f)
 		}
-		if err.Error() != "unknown flag: --help" &&
-			err.Error() != "unknown shorthand flag: 'h' in -h" {
-
+		if err.Error() != "unknown flag: --help" && err.Error() != "unknown shorthand flag: 'h' in -h" {
 			t.Fatalf("while passing %s, unknown flag error expected, got %s\n", f, err)
 		}
 		if !helpCalled {
@@ -1314,7 +1311,7 @@ func parseReturnStderr(t *testing.T, f *zflag.FlagSet, args []string) (string, e
 	// copy the output in a separate goroutine so printing can't block indefinitely
 	go func() {
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		outC <- buf.String()
 	}()
 
@@ -1516,7 +1513,7 @@ func TestVisitFlagOrder(t *testing.T) {
 	names := []string{"C", "B", "A", "D"}
 	for _, name := range names {
 		fs.Bool(name, false, "")
-		fs.Set(name, "true")
+		_ = fs.Set(name, "true")
 	}
 
 	i := 0
@@ -1608,5 +1605,80 @@ func TestCustomFlagDefValue(t *testing.T) {
 		fmt.Println("\n" + beforeParse)
 		fmt.Println("\n" + afterParse)
 		t.Errorf("got %q want %q\n", afterParse, beforeParse)
+	}
+}
+
+func TestUnquoteUsage1(t *testing.T) {
+	tests := []struct {
+		name                string
+		flagName            string
+		usage               string
+		usageType           string
+		disableUnquoteUsage bool
+		wantName            string
+		wantUsage           string
+	}{
+		{
+			name:                "Skips if not enabled",
+			flagName:            "aname",
+			usageType:           "aname",
+			usage:               "hello `myflag` world",
+			disableUnquoteUsage: true,
+			wantName:            "aname",
+			wantUsage:           "hello `myflag` world",
+		},
+		{
+			name:                "Skips if single backtick",
+			flagName:            "aname",
+			usageType:           "aname",
+			usage:               "hello `myflag world",
+			disableUnquoteUsage: true,
+			wantName:            "aname",
+			wantUsage:           "hello `myflag world",
+		},
+		{
+			name:      "Indexing start yes end no",
+			flagName:  "aname",
+			usageType: "aname",
+			usage:     "`hello myflag world",
+			wantName:  "aname",
+			wantUsage: "`hello myflag world",
+		},
+		{
+			name:      "Indexing start no end yes",
+			flagName:  "aname",
+			usageType: "aname",
+			usage:     "hello myflag world`",
+			wantName:  "aname",
+			wantUsage: "hello myflag world`",
+		},
+		{
+			name:      "Indexing start yes end yes",
+			flagName:  "aname",
+			usageType: "aname",
+			usage:     "hello myflag `world`",
+			wantName:  "aname",
+			wantUsage: "hello myflag world",
+		},
+	}
+
+	t.Parallel()
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			gotName, gotUsage := zflag.UnquoteUsage(&zflag.Flag{
+				Name:                tt.flagName,
+				Usage:               tt.usage,
+				UsageType:           tt.usageType,
+				DisableUnquoteUsage: tt.disableUnquoteUsage,
+			})
+			if gotName != tt.wantName {
+				t.Errorf("UnquoteUsage() gotName = %q, want %q", gotName, tt.wantName)
+			}
+			if gotUsage != tt.wantUsage {
+				t.Errorf("UnquoteUsage() gotUsage = %q, want %q", gotUsage, tt.wantUsage)
+			}
+		})
 	}
 }

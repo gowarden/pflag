@@ -116,7 +116,6 @@ func OptShorthandDeprecated(msg string) Opt {
 		f.ShorthandDeprecated = msg
 		return nil
 	}
-
 }
 
 // OptGroup flag group

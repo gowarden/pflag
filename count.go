@@ -22,7 +22,7 @@ func newCountValue(val int, p *int) *countValue {
 
 func (i *countValue) Set(val string) error {
 	if val == "" {
-		*i = *i + 1
+		*i++
 		return nil
 	}
 

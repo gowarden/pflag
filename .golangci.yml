@@ -4,14 +4,28 @@ run:
 
 linters:
   enable:
+    - deadcode
+    - errcheck
+    - funlen
+    - gocritic
     - gofmt
     - goheader
     - goimports
     - gosimple
     - govet
+    - ineffassign
+    - megacheck
     - misspell
-  disable:
-    - errcheck
+    - nolintlint
+    - revive
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unused
+    - varcheck
+    - whitespace
 
 issues:
   exclude-rules:
@@ -21,6 +35,7 @@ issues:
         - staticcheck
         - unused
         - varcheck
+        - funlen
     - path: doc.go
       linters:
         - goheader
