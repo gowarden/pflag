@@ -52,6 +52,14 @@ func OptShorthandOnly() Opt {
 	}
 }
 
+// OptUsage help message
+func OptUsage(help string) Opt {
+	return func(f *Flag) error {
+		f.Usage = help
+		return nil
+	}
+}
+
 // OptUsageType flag type displayed in the help message
 func OptUsageType(usageType string) Opt {
 	return func(f *Flag) error {
