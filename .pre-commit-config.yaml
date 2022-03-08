@@ -7,7 +7,6 @@ repos:
       - id: validate_manifest
 
   - repo: https://github.com/golangci/golangci-lint
-    # When updating this, also update .golangci.yml accordingly
     rev: v1.44.0
     hooks:
       - id: golangci-lint
@@ -38,5 +37,5 @@ repos:
       - id: mdtoc
         name: Markdown Table of Contents
         language: system
-        entry: go run sigs.k8s.io/mdtoc@latest --inplace
+        entry: bash -euxc 'mdtocw() { if command -v mdtoc >/dev/null; then command mdtoc "$@"; else go run sigs.k8s.io/mdtoc@latest "$@"; fi; }; mdtocw --inplace "$@"' _
         files: ^README.md$
