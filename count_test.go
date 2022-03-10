@@ -80,7 +80,7 @@ func TestCount(t *testing.T) {
 					t.Fatalf("expected an error; got none")
 				}
 				if test.expectedErr != "" && err.Error() != test.expectedErr {
-					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+					t.Fatalf("expected error to equal %q, but was: %s", test.expectedErr, err)
 				}
 				return
 			}
@@ -90,7 +90,7 @@ func TestCount(t *testing.T) {
 			}
 
 			if verbose != test.expectedValue {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, verbose, verbose)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, verbose)
 			}
 
 			getVerbose, err := f.GetCount("verbose")
@@ -98,7 +98,7 @@ func TestCount(t *testing.T) {
 				t.Fatal("got an error from GetCount():", err)
 			}
 			if getVerbose != test.expectedValue {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, getVerbose, getVerbose)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, getVerbose)
 			}
 
 			getVerboseGet, err := f.Get("verbose")
@@ -106,7 +106,7 @@ func TestCount(t *testing.T) {
 				t.Fatal("got an error from Get():", err)
 			}
 			if getVerboseGet != test.expectedValue {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, getVerboseGet, getVerboseGet)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, getVerboseGet)
 			}
 		})
 	}

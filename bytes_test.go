@@ -112,7 +112,7 @@ func TestBytesHex(t *testing.T) {
 					t.Fatalf("expected an error; got none")
 				}
 				if test.expectedErr != "" && err.Error() != test.expectedErr {
-					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+					t.Fatalf("expected error to equal %q, but was: %s", test.expectedErr, err)
 				}
 				return
 			}
@@ -122,7 +122,7 @@ func TestBytesHex(t *testing.T) {
 			}
 
 			if fmt.Sprintf("%X", bytes) != test.expectedValue {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, bytes, bytes)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, bytes)
 			}
 
 			bytesHex, err := f.GetBytesHex("bytes")
@@ -130,7 +130,7 @@ func TestBytesHex(t *testing.T) {
 				t.Fatal("got an error from GetBytesHex():", err)
 			}
 			if fmt.Sprintf("%X", bytesHex) != test.expectedValue {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", bytesHex, bytesHex, test.expectedValue, test.expectedValue)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", bytesHex, test.expectedValue)
 			}
 
 			bytesHexGet, err := f.Get("bytes")
@@ -138,7 +138,7 @@ func TestBytesHex(t *testing.T) {
 				t.Fatal("got an error from Get():", err)
 			}
 			if fmt.Sprintf("%X", bytesHexGet) != test.expectedValue {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", bytesHex, bytesHex, bytesHexGet, bytesHexGet)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", bytesHex, bytesHexGet)
 			}
 		})
 	}
@@ -227,7 +227,7 @@ func TestBytesB64(t *testing.T) {
 					t.Fatalf("expected an error; got none")
 				}
 				if test.expectedErr != "" && err.Error() != test.expectedErr {
-					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+					t.Fatalf("expected error to equal %q, but was: %s", test.expectedErr, err)
 				}
 				return
 			}
@@ -237,7 +237,7 @@ func TestBytesB64(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(bytes, test.expectedValue) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, bytes, bytes)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, bytes)
 			}
 
 			bytesB64, err := f.GetBytesBase64("bytes")
@@ -245,7 +245,7 @@ func TestBytesB64(t *testing.T) {
 				t.Fatal("got an error from GetBytesHex():", err)
 			}
 			if !reflect.DeepEqual(bytesB64, test.expectedValue) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, bytesB64, bytesB64)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, bytesB64)
 			}
 
 			bytesB64Get, err := f.Get("bytes")
@@ -253,7 +253,7 @@ func TestBytesB64(t *testing.T) {
 				t.Fatal("got an error from Get():", err)
 			}
 			if !reflect.DeepEqual(bytesB64Get, test.expectedValue) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, bytesB64Get, bytesB64Get)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, bytesB64Get)
 			}
 		})
 	}

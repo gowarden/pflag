@@ -101,7 +101,7 @@ func TestDurationSlice(t *testing.T) {
 					t.Fatalf("expected an error; got none")
 				}
 				if test.expectedErr != "" && err.Error() != test.expectedErr {
-					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+					t.Fatalf("expected error to equal %q, but was: %s", test.expectedErr, err)
 				}
 				return
 			}
@@ -115,7 +115,7 @@ func TestDurationSlice(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(test.expectedValues, ds) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, ds, ds)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, ds)
 			}
 
 			durSlice, err := f.GetDurationSlice("ds")
@@ -123,7 +123,7 @@ func TestDurationSlice(t *testing.T) {
 				t.Fatal("got an error from GetDurationSlice():", err)
 			}
 			if !reflect.DeepEqual(test.expectedValues, durSlice) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, durSlice, durSlice)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, durSlice)
 			}
 
 			durSliceGet, err := f.Get("ds")
@@ -131,7 +131,7 @@ func TestDurationSlice(t *testing.T) {
 				t.Fatal("got an error from Get():", err)
 			}
 			if !reflect.DeepEqual(durSliceGet, durSlice) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, durSliceGet, durSliceGet)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, durSliceGet)
 			}
 		})
 	}

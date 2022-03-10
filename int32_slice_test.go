@@ -90,7 +90,7 @@ func TestInt32Slice(t *testing.T) {
 					t.Fatalf("expected an error; got none")
 				}
 				if test.expectedErr != "" && err.Error() != test.expectedErr {
-					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+					t.Fatalf("expected error to equal %q, but was: %s", test.expectedErr, err)
 				}
 				return
 			}
@@ -104,7 +104,7 @@ func TestInt32Slice(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(test.expectedValues, i32s) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, i32s, i32s)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, i32s)
 			}
 
 			int32Slice, err := f.GetInt32Slice("i32s")
@@ -112,7 +112,7 @@ func TestInt32Slice(t *testing.T) {
 				t.Fatal("got an error from GetInt32Slice():", err)
 			}
 			if !reflect.DeepEqual(test.expectedValues, int32Slice) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, int32Slice, int32Slice)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, int32Slice)
 			}
 
 			int32SliceGet, err := f.Get("i32s")
@@ -120,7 +120,7 @@ func TestInt32Slice(t *testing.T) {
 				t.Fatal("got an error from Get():", err)
 			}
 			if !reflect.DeepEqual(int32SliceGet, int32Slice) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, int32SliceGet, int32SliceGet)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, int32SliceGet)
 			}
 		})
 	}

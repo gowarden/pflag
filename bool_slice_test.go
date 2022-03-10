@@ -95,7 +95,7 @@ func TestBoolSlice(t *testing.T) {
 					t.Fatalf("expected an error; got none")
 				}
 				if test.expectedErr != "" && err.Error() != test.expectedErr {
-					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+					t.Fatalf("expected error to equal %q, but was: %s", test.expectedErr, err)
 				}
 				return
 			}
@@ -109,7 +109,7 @@ func TestBoolSlice(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(test.expectedValues, bs) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, bs, bs)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, bs)
 			}
 
 			boolSlice, err := f.GetBoolSlice("bs")
@@ -117,7 +117,7 @@ func TestBoolSlice(t *testing.T) {
 				t.Fatal("got an error from GetBoolSlice():", err)
 			}
 			if !reflect.DeepEqual(test.expectedValues, boolSlice) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, boolSlice, boolSlice)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, boolSlice)
 			}
 
 			boolSliceGet, err := f.Get("bs")
@@ -125,7 +125,7 @@ func TestBoolSlice(t *testing.T) {
 				t.Fatal("got an error from Get():", err)
 			}
 			if !reflect.DeepEqual(boolSliceGet, boolSlice) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, boolSliceGet, boolSliceGet)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, boolSliceGet)
 			}
 		})
 	}

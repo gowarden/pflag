@@ -115,7 +115,7 @@ func TestStringSlice(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(test.expectedValues, ss) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, ss, ss)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, ss)
 			}
 
 			stringSlice, err := f.GetStringSlice("ss")
@@ -123,7 +123,7 @@ func TestStringSlice(t *testing.T) {
 				t.Fatal("got an error from GetStringSlice():", err)
 			}
 			if !reflect.DeepEqual(test.expectedValues, stringSlice) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, stringSlice, stringSlice)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, stringSlice)
 			}
 
 			stringSliceGet, err := f.Get("ss")
@@ -131,7 +131,7 @@ func TestStringSlice(t *testing.T) {
 				t.Fatal("got an error from Get():", err)
 			}
 			if !reflect.DeepEqual(stringSliceGet, stringSlice) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, stringSliceGet, stringSliceGet)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, stringSliceGet)
 			}
 		})
 	}

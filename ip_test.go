@@ -103,7 +103,7 @@ func TestIP(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(test.expectedIPs, ip) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedIPs, test.expectedIPs, ip, ip)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedIPs, ip)
 			}
 
 			getIPS, err := f.GetIP("ip")
@@ -111,7 +111,7 @@ func TestIP(t *testing.T) {
 				t.Fatal("got an error from GetIP():", err)
 			}
 			if !reflect.DeepEqual(test.expectedIPs, getIPS) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", getIPS, getIPS, test.expectedIPs, test.expectedIPs)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", getIPS, test.expectedIPs)
 			}
 
 			getIPSGet, err := f.Get("ip")
@@ -119,7 +119,7 @@ func TestIP(t *testing.T) {
 				t.Fatal("got an error from Get():", err)
 			}
 			if !reflect.DeepEqual(getIPSGet, getIPS) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", getIPS, getIPS, getIPSGet, getIPSGet)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", getIPS, getIPSGet)
 			}
 		})
 	}

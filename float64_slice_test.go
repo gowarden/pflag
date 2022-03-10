@@ -90,7 +90,7 @@ func TestFloat64Slice(t *testing.T) {
 					t.Fatalf("expected an error; got none")
 				}
 				if test.expectedErr != "" && err.Error() != test.expectedErr {
-					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+					t.Fatalf("expected error to equal %q, but was: %s", test.expectedErr, err)
 				}
 				return
 			}
@@ -104,7 +104,7 @@ func TestFloat64Slice(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(test.expectedValues, f64s) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, f64s, f64s)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, f64s)
 			}
 
 			float64Slice, err := f.GetFloat64Slice("f64s")
@@ -112,7 +112,7 @@ func TestFloat64Slice(t *testing.T) {
 				t.Fatal("got an error from GetFloat64Slice():", err)
 			}
 			if !reflect.DeepEqual(test.expectedValues, float64Slice) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, float64Slice, float64Slice)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, float64Slice)
 			}
 
 			float64SliceGet, err := f.Get("f64s")
@@ -120,7 +120,7 @@ func TestFloat64Slice(t *testing.T) {
 				t.Fatal("got an error from Get():", err)
 			}
 			if !reflect.DeepEqual(float64SliceGet, float64Slice) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, float64SliceGet, float64SliceGet)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, float64SliceGet)
 			}
 		})
 	}

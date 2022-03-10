@@ -90,7 +90,7 @@ func TestInt8Slice(t *testing.T) {
 					t.Fatalf("expected an error; got none")
 				}
 				if test.expectedErr != "" && err.Error() != test.expectedErr {
-					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+					t.Fatalf("expected error to equal %q, but was: %s", test.expectedErr, err)
 				}
 				return
 			}
@@ -104,7 +104,7 @@ func TestInt8Slice(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(test.expectedValues, i8s) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, i8s, i8s)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, i8s)
 			}
 
 			int8Slice, err := f.GetInt8Slice("i8s")
@@ -112,7 +112,7 @@ func TestInt8Slice(t *testing.T) {
 				t.Fatal("got an error from GetInt8Slice():", err)
 			}
 			if !reflect.DeepEqual(test.expectedValues, int8Slice) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, int8Slice, int8Slice)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, int8Slice)
 			}
 
 			int8SliceGet, err := f.Get("i8s")
@@ -120,7 +120,7 @@ func TestInt8Slice(t *testing.T) {
 				t.Fatal("got an error from Get():", err)
 			}
 			if !reflect.DeepEqual(int8SliceGet, int8Slice) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, int8SliceGet, int8SliceGet)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, int8SliceGet)
 			}
 		})
 	}

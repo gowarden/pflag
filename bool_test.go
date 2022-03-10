@@ -215,7 +215,7 @@ func TestBool(t *testing.T) {
 					t.Fatalf("expected an error; got none")
 				}
 				if test.expectedErr != "" && err.Error() != test.expectedErr {
-					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+					t.Fatalf("expected error to equal %q, but was: %s", test.expectedErr, err)
 				}
 				return
 			}
@@ -225,7 +225,7 @@ func TestBool(t *testing.T) {
 			}
 
 			if bs != test.expectedValue {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, bs, bs)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, bs)
 			}
 
 			getBS, err := f.GetBool("bs")
@@ -233,7 +233,7 @@ func TestBool(t *testing.T) {
 				t.Fatal("got an error from GetBool():", err)
 			}
 			if getBS != test.expectedValue {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, getBS, getBS)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, getBS)
 			}
 
 			getBSGet, err := f.Get("bs")
@@ -241,7 +241,7 @@ func TestBool(t *testing.T) {
 				t.Fatal("got an error from Get():", err)
 			}
 			if getBSGet != test.expectedValue {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValue, test.expectedValue, getBSGet, getBSGet)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, getBSGet)
 			}
 		})
 	}

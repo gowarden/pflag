@@ -97,7 +97,7 @@ func TestC128Slice(t *testing.T) {
 					t.Fatalf("expected an error; got none")
 				}
 				if test.expectedErr != "" && err.Error() != test.expectedErr {
-					t.Fatalf("expected error to eqaul %q, but was: %s", test.expectedErr, err)
+					t.Fatalf("expected error to equal %q, but was: %s", test.expectedErr, err)
 				}
 				return
 			}
@@ -111,7 +111,7 @@ func TestC128Slice(t *testing.T) {
 			}
 
 			if !reflect.DeepEqual(test.expectedValues, c128s) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, c128s, c128s)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, c128s)
 			}
 
 			getC128s, err := f.GetComplex128Slice("c128s")
@@ -119,7 +119,7 @@ func TestC128Slice(t *testing.T) {
 				t.Fatal("got an error from GetComplex128Slice():", err)
 			}
 			if !reflect.DeepEqual(test.expectedValues, getC128s) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, getC128s, getC128s)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, getC128s)
 			}
 
 			getC128sGet, err := f.Get("c128s")
@@ -127,7 +127,7 @@ func TestC128Slice(t *testing.T) {
 				t.Fatal("got an error from Get():", err)
 			}
 			if !reflect.DeepEqual(getC128sGet, c128s) {
-				t.Fatalf("expected %v with type %T but got %v with type %T ", test.expectedValues, test.expectedValues, getC128sGet, getC128sGet)
+				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, getC128sGet)
 			}
 		})
 	}
