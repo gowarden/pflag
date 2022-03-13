@@ -22,7 +22,7 @@ jobs:
               awk -F/ '$3 ~ /^go([0-9]+(\.[0-9]+)$)/{gsub(/^go/, "", $3); print $3}' |
               sort -V |
               sed -ne "/^$go_version$/,$ p" |
-              jq -cnR '[inputs | select(length>0)] + ["tip"]')"
+              jq -cMnR '[inputs | select(length>0)] | map(. + ".x") + ["tip"]')"
           echo "::set-output name=matrix::$matrix_versions"
 
           golangci_version="$(yq '.repos[] | select(.repo | contains("golangci-lint")) | .rev' .pre-commit-config.yaml)"
@@ -40,6 +40,15 @@ jobs:
       - name: Setup go
         run: curl -sL https://raw.githubusercontent.com/maxatome/install-go/v3.3/install-go.pl | perl - ${{ needs.DetermineVersion.outputs.go_version }} $HOME
       - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            ~/AppData/Local/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ needs.DetermineVersion.outputs.go_version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-mod
       - name: Setup mdtoc
         run: go install sigs.k8s.io/mdtoc@latest
       - uses: pre-commit/action@v2.0.3
@@ -54,6 +63,15 @@ jobs:
         run: curl -sL https://raw.githubusercontent.com/maxatome/install-go/v3.3/install-go.pl | perl - ${{ needs.DetermineVersion.outputs.go_version }} $HOME
       - name: Checkout code
         uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            ~/AppData/Local/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ needs.DetermineVersion.outputs.go_version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-mod
       - name: Run linters
         uses: golangci/golangci-lint-action@v2
         with:
@@ -67,6 +85,15 @@ jobs:
         run: curl -sL https://raw.githubusercontent.com/maxatome/install-go/v3.3/install-go.pl | perl - ${{ needs.DetermineVersion.outputs.go_version }} $HOME
       - name: Checkout code
         uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            ~/AppData/Local/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ needs.DetermineVersion.outputs.go_version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-mod
       - name: Run vet
         run: go vet
 
@@ -85,6 +112,15 @@ jobs:
         run: curl -sL https://raw.githubusercontent.com/maxatome/install-go/v3.3/install-go.pl | perl - ${{ matrix.go }} $HOME
       - name: Checkout code
         uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            ~/AppData/Local/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-mod
       - name: Run tests
         shell: bash
         run: go test -v -cover -race
