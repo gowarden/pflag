@@ -211,38 +211,42 @@ func TestBool(t *testing.T) {
 			f.BoolVar(&bs, "bs", test.flagDefault, "usage", test.extraOpts...)
 			err := f.Parse(test.input)
 			if test.expectedErr != "" {
-				if err == nil {
-					t.Fatalf("expected an error; got none")
-				}
-				if test.expectedErr != "" && err.Error() != test.expectedErr {
-					t.Fatalf("expected error to equal %q, but was: %s", test.expectedErr, err)
-				}
+				assertErrMsg(t, test.expectedErr, err)
 				return
 			}
-
-			if err != nil {
-				t.Fatalf("expected no error; got %q", err)
-			}
-
-			if bs != test.expectedValue {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, bs)
-			}
+			assertNoErr(t, err)
+			assertEqual(t, test.expectedValue, bs)
 
 			getBS, err := f.GetBool("bs")
-			if err != nil {
-				t.Fatal("got an error from GetBool():", err)
-			}
-			if getBS != test.expectedValue {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, getBS)
-			}
+			assertNoErr(t, err)
+			assertEqual(t, test.expectedValue, getBS)
 
 			getBSGet, err := f.Get("bs")
-			if err != nil {
-				t.Fatal("got an error from Get():", err)
-			}
-			if getBSGet != test.expectedValue {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, getBSGet)
-			}
+			assertNoErr(t, err)
+			assertEqual(t, test.expectedValue, getBSGet)
+
+			defer assertNoPanic(t)()
+			mustBool := f.MustGetBool("bs")
+			assertEqual(t, test.expectedValue, mustBool)
 		})
 	}
+}
+
+func TestBoolErrors(t *testing.T) {
+	t.Parallel()
+
+	var s string
+	var bs bool
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.SetOutput(ioutil.Discard)
+	f.StringVar(&s, "s", "", "usage")
+	f.BoolVar(&bs, "bs", false, "usage")
+	err := f.Parse([]string{})
+	assertNoErr(t, err)
+
+	_, err = f.GetBool("s")
+	assertErr(t, err)
+
+	defer assertPanic(t)()
+	_ = f.MustGetBool("s")
 }

@@ -5,7 +5,6 @@ package zflag_test
 
 import (
 	"io/ioutil"
-	"reflect"
 	"testing"
 	"time"
 
@@ -14,19 +13,23 @@ import (
 
 func TestDurationSlice(t *testing.T) {
 	tests := []struct {
-		name           string
-		flagDefault    []time.Duration
-		input          []string
-		expectedErr    string
-		expectedValues []time.Duration
-		visitor        func(f *zflag.Flag)
+		name              string
+		flagDefault       []time.Duration
+		input             []string
+		expectedErr       string
+		expectedValues    []time.Duration
+		expectedStrValues string
+		expectedGetSlice  []string
+		visitor           func(f *zflag.Flag)
 	}{
 		{
-			name:           "no value passed",
-			input:          []string{},
-			flagDefault:    []time.Duration{},
-			expectedErr:    "",
-			expectedValues: []time.Duration{},
+			name:              "no value passed",
+			input:             []string{},
+			flagDefault:       []time.Duration{},
+			expectedErr:       "",
+			expectedValues:    []time.Duration{},
+			expectedStrValues: "[]",
+			expectedGetSlice:  []string{},
 		},
 		{
 			name:        "empty value passed",
@@ -53,16 +56,20 @@ func TestDurationSlice(t *testing.T) {
 			expectedErr: `invalid argument "2m,2h" for "--ds" flag: time: unknown unit "m," in duration "2m,2h"`,
 		},
 		{
-			name:           "defaults returned",
-			input:          []string{},
-			flagDefault:    []time.Duration{time.Second, time.Minute},
-			expectedValues: []time.Duration{time.Second, time.Minute},
+			name:              "defaults returned",
+			input:             []string{},
+			flagDefault:       []time.Duration{time.Second, time.Minute},
+			expectedValues:    []time.Duration{time.Second, time.Minute},
+			expectedStrValues: "[1s 1m0s]",
+			expectedGetSlice:  []string{"1s", "1m0s"},
 		},
 		{
-			name:           "defaults overwritten",
-			input:          []string{"1m", "1s"},
-			flagDefault:    []time.Duration{time.Second, time.Minute},
-			expectedValues: []time.Duration{time.Minute, time.Second},
+			name:              "defaults overwritten",
+			input:             []string{"1m", "1s"},
+			flagDefault:       []time.Duration{time.Second, time.Minute},
+			expectedValues:    []time.Duration{time.Minute, time.Second},
+			expectedStrValues: "[1m0s 1s]",
+			expectedGetSlice:  []string{"1m0s", "1s"},
 		},
 		{
 			name:  "replace values",
@@ -72,17 +79,70 @@ func TestDurationSlice(t *testing.T) {
 					_ = val.Replace([]string{"1s"})
 				}
 			},
-			expectedValues: []time.Duration{time.Second},
+			expectedValues:    []time.Duration{time.Second},
+			expectedStrValues: "[1s]",
+			expectedGetSlice:  []string{"1s"},
 		},
 		{
-			name:           "trims input",
-			input:          []string{" 1ns", "2ms  ", "  3m    ", "    4h"},
-			expectedValues: []time.Duration{1 * time.Nanosecond, 2 * time.Millisecond, 3 * time.Minute, 4 * time.Hour},
+			name:  "replace values error",
+			input: []string{"5m"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					err := val.Replace([]string{"notduration"})
+					assertErr(t, err)
+				}
+			},
+			expectedValues:    []time.Duration{time.Minute * 5},
+			expectedStrValues: "[5m0s]",
+			expectedGetSlice:  []string{"5m0s"},
 		},
 		{
-			name:           "valid values",
-			input:          []string{"1ns", "2ms", "3m", "4h"},
-			expectedValues: []time.Duration{1 * time.Nanosecond, 2 * time.Millisecond, 3 * time.Minute, 4 * time.Hour},
+			name:  "add values",
+			input: []string{"1s"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					_ = val.Append("1m")
+				}
+			},
+			expectedValues:    []time.Duration{time.Second, time.Minute},
+			expectedStrValues: "[1s 1m0s]",
+			expectedGetSlice:  []string{"1s", "1m0s"},
+		},
+		{
+			name:  "add values error",
+			input: []string{"1m"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					err := val.Append("asd")
+					assertErr(t, err)
+				}
+			},
+			flagDefault:       nil,
+			expectedValues:    []time.Duration{time.Minute},
+			expectedStrValues: "[1m0s]",
+			expectedGetSlice:  []string{"1m0s"},
+		},
+		{
+			name:              "nil default",
+			input:             []string{},
+			flagDefault:       nil,
+			expectedValues:    nil,
+			expectedStrValues: "[]",
+			expectedGetSlice:  []string{},
+		},
+		{
+			name:              "trims input",
+			input:             []string{" 1ns", "2ms  ", "  3m    ", "    4h"},
+			expectedValues:    []time.Duration{1 * time.Nanosecond, 2 * time.Millisecond, 3 * time.Minute, 4 * time.Hour},
+			expectedStrValues: "[1ns 2ms 3m0s 4h0m0s]",
+			expectedGetSlice:  []string{"1ns", "2ms", "3m0s", "4h0m0s"},
+		},
+		{
+			name:              "valid values",
+			input:             []string{"1ns", "2ms", "3m", "4h"},
+			expectedValues:    []time.Duration{1 * time.Nanosecond, 2 * time.Millisecond, 3 * time.Minute, 4 * time.Hour},
+			expectedStrValues: "[1ns 2ms 3m0s 4h0m0s]",
+			expectedGetSlice:  []string{"1ns", "2ms", "3m0s", "4h0m0s"},
 		},
 	}
 
@@ -97,42 +157,53 @@ func TestDurationSlice(t *testing.T) {
 			f.DurationSliceVar(&ds, "ds", test.flagDefault, "usage")
 			err := f.Parse(repeatFlag("--ds", test.input...))
 			if test.expectedErr != "" {
-				if err == nil {
-					t.Fatalf("expected an error; got none")
-				}
-				if test.expectedErr != "" && err.Error() != test.expectedErr {
-					t.Fatalf("expected error to equal %q, but was: %s", test.expectedErr, err)
-				}
+				assertErrMsg(t, test.expectedErr, err)
 				return
 			}
-
-			if err != nil {
-				t.Fatalf("expected no error; got %q", err)
-			}
+			assertNoErr(t, err)
 
 			if test.visitor != nil {
 				f.VisitAll(test.visitor)
 			}
 
-			if !reflect.DeepEqual(test.expectedValues, ds) {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, ds)
-			}
+			assertDeepEqual(t, test.expectedValues, ds)
 
 			durSlice, err := f.GetDurationSlice("ds")
-			if err != nil {
-				t.Fatal("got an error from GetDurationSlice():", err)
-			}
-			if !reflect.DeepEqual(test.expectedValues, durSlice) {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, durSlice)
-			}
+			assertNoErr(t, err)
+			assertDeepEqual(t, test.expectedValues, durSlice)
 
 			durSliceGet, err := f.Get("ds")
-			if err != nil {
-				t.Fatal("got an error from Get():", err)
-			}
-			if !reflect.DeepEqual(durSliceGet, durSlice) {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, durSliceGet)
-			}
+			assertNoErr(t, err)
+			assertDeepEqual(t, test.expectedValues, durSliceGet)
+
+			flag := f.Lookup("ds")
+			assertEqual(t, test.expectedStrValues, flag.Value.String())
+
+			sliced := flag.Value.(zflag.SliceValue)
+			assertDeepEqual(t, test.expectedGetSlice, sliced.GetSlice())
+
+			defer assertNoPanic(t)()
+			mustDurSlice := f.MustGetDurationSlice("ds")
+			assertDeepEqual(t, test.expectedValues, mustDurSlice)
 		})
 	}
+}
+
+func TestDurationSliceErrors(t *testing.T) {
+	t.Parallel()
+
+	var s string
+	var bs []time.Duration
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.SetOutput(ioutil.Discard)
+	f.StringVar(&s, "s", "", "usage")
+	f.DurationSliceVar(&bs, "bs", []time.Duration{}, "usage")
+	err := f.Parse([]string{})
+	assertNoErr(t, err)
+
+	_, err = f.GetDurationSlice("s")
+	assertErr(t, err)
+
+	defer assertPanic(t)()
+	_ = f.MustGetDurationSlice("s")
 }

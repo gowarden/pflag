@@ -137,6 +137,7 @@ func OptGroup(group string) Opt {
 // OptAnnotation Use it to annotate this specific flag for your application
 func OptAnnotation(key string, value []string) Opt {
 	return func(f *Flag) error {
-		return f.SetAnnotation(key, value)
+		f.SetAnnotation(key, value)
+		return nil
 	}
 }

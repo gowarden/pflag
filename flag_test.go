@@ -34,6 +34,66 @@ var (
 	normalizeFlagNameInvocations = 0
 )
 
+func TestCmdVars(t *testing.T) {
+	var tbool bool
+	zflag.BoolVar(&tbool, "bool_var", false, "bool value")
+
+	var tint int
+	zflag.IntVar(&tint, "int_var", 0, "int value")
+
+	var tint64 int64
+	zflag.Int64Var(&tint64, "int64_var", 0, "int64 value")
+
+	var tuint uint
+	zflag.UintVar(&tuint, "uint_var", 0, "uint value")
+
+	var tuint64 uint64
+	zflag.Uint64Var(&tuint64, "uint64_var", 0, "uint64 value")
+
+	var tstring string
+	zflag.StringVar(&tstring, "string_var", "0", "string value")
+
+	var tfloat64 float64
+	zflag.Float64Var(&tfloat64, "float64_var", 0, "float64 value")
+
+	var tduration time.Duration
+	zflag.DurationVar(&tduration, "duration_var", 0, "time.Duration value")
+
+	var toptint int
+	zflag.IntVar(&toptint, "optional_int_var", 0, "optional int value")
+
+	var tboolSlice []bool
+	_ = zflag.BoolSlice("bool_slice", []bool{}, "usage")
+	zflag.BoolSliceVar(&tboolSlice, "bool_slice_var", []bool{}, "usage")
+
+	var tbytesHex []byte
+	_ = zflag.BytesHex("bytes_hex", nil, "usage")
+	zflag.BytesHexVar(&tbytesHex, "bytes_hex_var", nil, "usage")
+	var tbytesBase64 []byte
+	_ = zflag.BytesBase64("bytes_base64", nil, "usage")
+	zflag.BytesBase64Var(&tbytesBase64, "bytes_base64_var", nil, "usage")
+
+	var tc128 complex128
+	_ = zflag.Complex128("c128", complex(0, 0), "usage")
+	zflag.Complex128Var(&tc128, "c128_var", complex(0, 0), "usage")
+
+	var tc128s []complex128
+	_ = zflag.Complex128Slice("c128s", []complex128{}, "usage")
+	zflag.Complex128SliceVar(&tc128s, "c128s_var", []complex128{}, "usage")
+
+	zflag.Func("func", "", func(s string) error {
+		return nil
+	})
+
+	var tcount int
+	_ = zflag.Count("count", "")
+	zflag.CountVar(&tcount, "count_var", "")
+
+	var tdurations []time.Duration
+	_ = zflag.DurationSlice("durations", []time.Duration{}, "usage")
+	zflag.DurationSliceVar(&tdurations, "durations_var", []time.Duration{}, "usage")
+}
+
 func boolString(s string) string {
 	if s == "0" {
 		return "false"
@@ -61,6 +121,7 @@ func TestEverything(t *testing.T) {
 			}
 		}
 	}
+	assertEqual(t, true, zflag.CommandLine.HasFlags())
 	zflag.VisitAll(visitor)
 	if len(m) != 9 {
 		t.Error("VisitAll misses some flags")
@@ -133,30 +194,19 @@ func TestAddFlagSet(t *testing.T) {
 func TestAnnotation(t *testing.T) {
 	f := zflag.NewFlagSet("shorthand", zflag.ContinueOnError)
 
-	if err := f.SetAnnotation("missing-flag", "key", nil); err == nil {
-		t.Errorf("Expected error setting annotation on non-existent flag")
-	}
-
-	f.String("stringa", "", "string value", zflag.OptShorthand('a'))
-	if err := f.SetAnnotation("stringa", "key", nil); err != nil {
-		t.Errorf("Unexpected error setting new nil annotation: %v", err)
-	}
+	f.String("stringa", "", "string value", zflag.OptShorthand('a'), zflag.OptAnnotation("key", nil))
 	if annotation := f.Lookup("stringa").Annotations["key"]; annotation != nil {
 		t.Errorf("Unexpected annotation: %v", annotation)
 	}
 
-	f.String("stringb", "", "string2 value", zflag.OptShorthand('b'))
-	if err := f.SetAnnotation("stringb", "key", []string{"value1"}); err != nil {
-		t.Errorf("Unexpected error setting new annotation: %v", err)
-	}
-	if annotation := f.Lookup("stringb").Annotations["key"]; !reflect.DeepEqual(annotation, []string{"value1"}) {
+	f.String("stringb", "", "string2 value", zflag.OptShorthand('b'), zflag.OptAnnotation("key", []string{"value1"}))
+	stringb := f.Lookup("stringb")
+	if annotation := stringb.Annotations["key"]; !reflect.DeepEqual(annotation, []string{"value1"}) {
 		t.Errorf("Unexpected annotation: %v", annotation)
 	}
 
-	if err := f.SetAnnotation("stringb", "key", []string{"value2"}); err != nil {
-		t.Errorf("Unexpected error updating annotation: %v", err)
-	}
-	if annotation := f.Lookup("stringb").Annotations["key"]; !reflect.DeepEqual(annotation, []string{"value2"}) {
+	stringb.SetAnnotation("key", []string{"value2"})
+	if annotation := stringb.Annotations["key"]; !reflect.DeepEqual(annotation, []string{"value2"}) {
 		t.Errorf("Unexpected annotation: %v", annotation)
 	}
 }
@@ -630,27 +680,38 @@ func TestShorthandLookup(t *testing.T) {
 		"-ab",
 	}
 	f.SetOutput(ioutil.Discard)
-	if err := f.Parse(args); err != nil {
-		t.Error("expected no error, got ", err)
-	}
+	err := f.Parse(args)
+	assertNoErr(t, err)
 	if !f.Parsed() {
 		t.Error("f.Parse() = false after Parse")
 	}
 	flag := f.ShorthandLookup('a')
-	if flag == nil {
-		t.Errorf("f.ShorthandLookup('a') returned nil")
-	}
-	if flag.Name != "boola" {
-		t.Errorf("f.ShorthandLookup('a') found %q instead of \"boola\"", flag.Name)
-	}
+	assertNotNilf(t, flag, "f.ShorthandLookup('a') returned nil")
+	assertEqualf(t, flag.Name, "boola", `f.ShorthandLookup('a') found %q instead of "boola"`, flag.Name)
+
 	flag = f.ShorthandLookup('d')
-	if flag != nil {
-		t.Errorf("f.ShorthandLookup('d') did not return nil")
-	}
+	assertNotNilf(t, flag, "f.ShorthandLookup('d') did not return nil")
 	flag = f.ShorthandLookup('ö')
-	if flag.Name != "boolö" {
-		t.Errorf("f.ShorthandLookup('ö') found %q instead of \"boolö\"", flag.Name)
-	}
+	assertEqualf(t, flag.Name, "boolö", `f.ShorthandLookup('ö') found %q instead of "boolö"`, flag.Name)
+
+	flag = f.ShorthandLookupStr("a")
+	assertNotNilf(t, flag, `f.ShorthandLookupStrStr("a") returned nil`)
+	assertEqualf(t, flag.Name, "boola", `f.ShorthandLookupStr('a') found %q instead of "boola"`, flag.Name)
+
+	flag = f.ShorthandLookupStr("d")
+	assertNotNilf(t, flag, `f.ShorthandLookupStr("d") did not return nil`)
+	flag = f.ShorthandLookupStr("ö")
+	assertEqualf(t, flag.Name, "boolö", `f.ShorthandLookupStr("ö") found %q instead of "boolö"`, flag.Name)
+
+	func() {
+		defer assertPanic(t)()
+		flag = f.ShorthandLookupStr("aa")
+	}()
+
+	func() {
+		defer assertNoPanic(t)()
+		flag = f.ShorthandLookupStr("")
+	}()
 }
 
 func TestParse(t *testing.T) {
@@ -918,15 +979,11 @@ func TestGroups(t *testing.T) {
 	fs.String("string1", "some", "string1 usage", zflag.OptShorthand('s'))
 	fs.Bool("bool1", false, "bool1 usage", zflag.OptShorthand('b'))
 
-	fs.String("string2", "some", "string2 usage in group1")
-	fs.Lookup("string2").Group = "group1"
-	fs.Bool("bool2", false, "bool2 usage in group1")
-	fs.Lookup("bool2").Group = "group1"
+	fs.String("string2", "some", "string2 usage in group1", zflag.OptGroup("group1"))
+	fs.Bool("bool2", false, "bool2 usage in group1", zflag.OptGroup("group1"))
 
-	fs.String("string3", "some", "string3 usage in group2")
-	fs.Lookup("string3").Group = "group2"
-	fs.Bool("bool3", false, "bool3 usage in group2")
-	fs.Lookup("bool3").Group = "group2"
+	fs.String("string3", "some", "string3 usage in group2", zflag.OptGroup("group2"))
+	fs.Bool("bool3", false, "bool3 usage in group2", zflag.OptGroup("group2"))
 
 	expectedGroupLen := 3
 	if expectedGroupLen != len(fs.Groups()) {
@@ -953,15 +1010,11 @@ func TestEmptyUngrouped(t *testing.T) {
 	var fs zflag.FlagSet
 	fs.Init("test", zflag.ContinueOnError)
 
-	fs.String("string2", "some", "string2 usage in group1")
-	fs.Lookup("string2").Group = "group1"
-	fs.Bool("bool2", false, "bool2 usage in group1")
-	fs.Lookup("bool2").Group = "group1"
+	fs.String("string2", "some", "string2 usage in group1", zflag.OptGroup("group1"))
+	fs.Bool("bool2", false, "bool2 usage in group1", zflag.OptGroup("group1"))
 
-	fs.String("string3", "some", "string3 usage in group2")
-	fs.Lookup("string3").Group = "group2"
-	fs.Bool("bool3", false, "bool3 usage in group2")
-	fs.Lookup("bool3").Group = "group2"
+	fs.String("string3", "some", "string3 usage in group2", zflag.OptGroup("group2"))
+	fs.Bool("bool3", false, "bool3 usage in group2", zflag.OptGroup("group2"))
 
 	expectedGroupLen := 2
 	if expectedGroupLen != len(fs.Groups()) {
@@ -1467,8 +1520,7 @@ func TestPrintDefaults(t *testing.T) {
 	fs.Duration("maxT", 0, "set `timeout` for dial")
 	fs.StringSlice("StringSlice", []string{}, "string slice with zero default")
 	fs.Count("verbose", "verbosity", zflag.OptShorthand('v'))
-	fs.Int("disableDefault", -1, "A non-zero int with DisablePrintDefault")
-	fs.Lookup("disableDefault").DisablePrintDefault = true
+	fs.Int("disableDefault", -1, "A non-zero int with DisablePrintDefault", zflag.OptDisablePrintDefault())
 
 	var cv customValue
 	fs.Var(&cv, "custom", "custom Value implementation")
@@ -1526,50 +1578,97 @@ func TestVisitFlagOrder(t *testing.T) {
 }
 
 func TestUnquoteUsage(t *testing.T) {
-	var buf bytes.Buffer
-	var fs = zflag.NewFlagSet(t.Name(), zflag.ContinueOnError)
-	fs.SetOutput(&buf)
-	want := "Usage of TestUnquoteUsage:\n"
-
-	var check = func(want string) {
-		zflag.CallDefaultUsage(fs)
-		if want != buf.String() {
-			t.Fatalf("\nexpected:\n%s\n\ngot:\n%s", want, buf.String())
-		}
-		buf.Reset()
+	tests := []struct {
+		name                   string
+		flagUsage              string
+		expectedUsage          string
+		opts                   []zflag.Opt
+		overrideUnquoteUsage   bool
+		disableUnquoteUsageVal bool
+	}{
+		{
+			name:          "default unquotes",
+			flagUsage:     "test `ctype1`",
+			expectedUsage: "--test ctype1   test ctype1",
+		},
+		{
+			name:                   "unquote when usage type set and unquote explicitly unset",
+			flagUsage:              "test `ctype2`",
+			opts:                   []zflag.Opt{zflag.OptUsageType("foo")},
+			overrideUnquoteUsage:   true,
+			disableUnquoteUsageVal: false,
+			expectedUsage:          "--test foo   test ctype2",
+		},
+		{
+			name:          "does not unquote when unquote usage disabled",
+			flagUsage:     "test `ctype3`",
+			opts:          []zflag.Opt{zflag.OptDisableUnquoteUsage()},
+			expectedUsage: "--test string   test `ctype3`",
+		},
+		{
+			name:          "disables unquote usage when usage type set",
+			flagUsage:     "test `ctype4`",
+			opts:          []zflag.Opt{zflag.OptUsageType("bar")},
+			expectedUsage: "--test bar   test `ctype4`",
+		},
+		{
+			name:          "Skips if single backtick",
+			flagUsage:     "test `ctype4",
+			expectedUsage: "--test string   test `ctype4",
+		},
+		{
+			name:                   "Indexing start yes end no",
+			flagUsage:              "`test ctype4",
+			expectedUsage:          "--test string   `test ctype4",
+			overrideUnquoteUsage:   true,
+			disableUnquoteUsageVal: false,
+		},
+		{
+			name:                   "Indexing start yes end no, custom usage type",
+			flagUsage:              "`test ctype4",
+			expectedUsage:          "--test val   `test ctype4",
+			opts:                   []zflag.Opt{zflag.OptUsageType("val")},
+			overrideUnquoteUsage:   true,
+			disableUnquoteUsageVal: false,
+		},
+		{
+			name:                   "Indexing start no end yes",
+			flagUsage:              "`test ctype4",
+			expectedUsage:          "--test string   `test ctype4",
+			overrideUnquoteUsage:   true,
+			disableUnquoteUsageVal: false,
+		},
+		{
+			name:                   "Indexing start no end yes, custom usage type",
+			flagUsage:              "`test ctype4",
+			expectedUsage:          "--test val   `test ctype4",
+			opts:                   []zflag.Opt{zflag.OptUsageType("val")},
+			overrideUnquoteUsage:   true,
+			disableUnquoteUsageVal: false,
+		},
 	}
 
-	// normal usage
-	fs.String("flagA", "", "flagA: `ctype1`")
-	want += "      --flagA ctype1   flagA: ctype1\n"
-	check(want)
+	t.Parallel()
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	// custom type
-	fs.String("flagB", "", "flagB: `ctype2`")
-	fs.Lookup("flagB").UsageType = "foo"
-	want += "      --flagB foo      flagB: ctype2\n"
-	check(want)
+			var buf bytes.Buffer
+			var fs = zflag.NewFlagSet("", zflag.ContinueOnError)
+			fs.SetOutput(&buf)
 
-	// disable unquoting
-	fs.String("flagC", "", "flagC: `ctype3`")
-	fs.Lookup("flagC").DisableUnquoteUsage = true
-	want += "      --flagC string   flagC: `ctype3`\n"
-	zflag.CallDefaultUsage(fs)
-	if want != buf.String() {
-		t.Fatalf("\nexpected:\n%s\n\ngot:\n%s", want, buf.String())
+			// normal usage
+			fs.String("test", "", tt.flagUsage, tt.opts...)
+			if tt.overrideUnquoteUsage {
+				fs.Lookup("test").DisableUnquoteUsage = tt.disableUnquoteUsageVal
+			}
+			want := fmt.Sprintf("Usage:\n      %s\n", tt.expectedUsage)
+
+			zflag.CallDefaultUsage(fs)
+			assertEqual(t, want, buf.String())
+		})
 	}
-	buf.Reset()
-
-	// custom type and disable unquoting
-	fs.String("flagD", "", "flagD: `ctype4`")
-	fs.Lookup("flagD").UsageType = "bar"
-	fs.Lookup("flagD").DisableUnquoteUsage = true
-	want += "      --flagD bar      flagD: `ctype4`\n"
-	zflag.CallDefaultUsage(fs)
-	if want != buf.String() {
-		t.Fatalf("\nexpected:\n%s\n\ngot:\n%s", want, buf.String())
-	}
-	buf.Reset()
 }
 
 // TestCustomFlagValue verifies that custom flag usage string doesn't change its "default" section after parsing
@@ -1579,7 +1678,7 @@ func TestCustomFlagDefValue(t *testing.T) {
 	fs.SetOutput(&buf)
 
 	var cv customValue
-	fs.Var(&cv, "customP", "a VarP with no default")
+	fs.Var(&cv, "customP", "a Var with no default")
 
 	fs.PrintDefaults()
 	beforeParse := buf.String()
@@ -1589,14 +1688,11 @@ func TestCustomFlagDefValue(t *testing.T) {
 		"--customP=10",
 	}
 
-	if err := fs.Parse(args); err != nil {
-		t.Error("expected no error, got ", err)
-	}
+	err := fs.Parse(args)
+	assertNoErr(t, err)
 
 	val := fs.Lookup("customP").Value.String()
-	if val != "10" {
-		t.Errorf("expected customP to be set to the new value, got %s\n", val)
-	}
+	assertEqual(t, "10", val)
 
 	fs.PrintDefaults()
 	afterParse := buf.String()
@@ -1605,80 +1701,5 @@ func TestCustomFlagDefValue(t *testing.T) {
 		fmt.Println("\n" + beforeParse)
 		fmt.Println("\n" + afterParse)
 		t.Errorf("got %q want %q\n", afterParse, beforeParse)
-	}
-}
-
-func TestUnquoteUsage1(t *testing.T) {
-	tests := []struct {
-		name                string
-		flagName            string
-		usage               string
-		usageType           string
-		disableUnquoteUsage bool
-		wantName            string
-		wantUsage           string
-	}{
-		{
-			name:                "Skips if not enabled",
-			flagName:            "aname",
-			usageType:           "aname",
-			usage:               "hello `myflag` world",
-			disableUnquoteUsage: true,
-			wantName:            "aname",
-			wantUsage:           "hello `myflag` world",
-		},
-		{
-			name:                "Skips if single backtick",
-			flagName:            "aname",
-			usageType:           "aname",
-			usage:               "hello `myflag world",
-			disableUnquoteUsage: true,
-			wantName:            "aname",
-			wantUsage:           "hello `myflag world",
-		},
-		{
-			name:      "Indexing start yes end no",
-			flagName:  "aname",
-			usageType: "aname",
-			usage:     "`hello myflag world",
-			wantName:  "aname",
-			wantUsage: "`hello myflag world",
-		},
-		{
-			name:      "Indexing start no end yes",
-			flagName:  "aname",
-			usageType: "aname",
-			usage:     "hello myflag world`",
-			wantName:  "aname",
-			wantUsage: "hello myflag world`",
-		},
-		{
-			name:      "Indexing start yes end yes",
-			flagName:  "aname",
-			usageType: "aname",
-			usage:     "hello myflag `world`",
-			wantName:  "aname",
-			wantUsage: "hello myflag world",
-		},
-	}
-
-	t.Parallel()
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			gotName, gotUsage := zflag.UnquoteUsage(&zflag.Flag{
-				Name:                tt.flagName,
-				Usage:               tt.usage,
-				UsageType:           tt.usageType,
-				DisableUnquoteUsage: tt.disableUnquoteUsage,
-			})
-			if gotName != tt.wantName {
-				t.Errorf("UnquoteUsage() gotName = %q, want %q", gotName, tt.wantName)
-			}
-			if gotUsage != tt.wantUsage {
-				t.Errorf("UnquoteUsage() gotUsage = %q, want %q", gotUsage, tt.wantUsage)
-			}
-		})
 	}
 }

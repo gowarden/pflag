@@ -76,38 +76,42 @@ func TestCount(t *testing.T) {
 			f.CountVar(&verbose, "verbose", "usage", zflag.OptShorthand('v'))
 			err := f.Parse(test.input)
 			if test.expectedErr != "" {
-				if err == nil {
-					t.Fatalf("expected an error; got none")
-				}
-				if test.expectedErr != "" && err.Error() != test.expectedErr {
-					t.Fatalf("expected error to equal %q, but was: %s", test.expectedErr, err)
-				}
+				assertErrMsg(t, test.expectedErr, err)
 				return
 			}
-
-			if err != nil {
-				t.Fatalf("expected no error; got %q", err)
-			}
-
-			if verbose != test.expectedValue {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, verbose)
-			}
+			assertNoErr(t, err)
+			assertEqual(t, test.expectedValue, verbose)
 
 			getVerbose, err := f.GetCount("verbose")
-			if err != nil {
-				t.Fatal("got an error from GetCount():", err)
-			}
-			if getVerbose != test.expectedValue {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, getVerbose)
-			}
+			assertNoErr(t, err)
+			assertEqual(t, test.expectedValue, getVerbose)
 
 			getVerboseGet, err := f.Get("verbose")
-			if err != nil {
-				t.Fatal("got an error from Get():", err)
-			}
-			if getVerboseGet != test.expectedValue {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, getVerboseGet)
-			}
+			assertNoErr(t, err)
+			assertEqual(t, test.expectedValue, getVerboseGet)
+
+			defer assertNoPanic(t)()
+			mustBool := f.MustGetCount("verbose")
+			assertEqual(t, test.expectedValue, mustBool)
 		})
 	}
+}
+
+func TestCountErrors(t *testing.T) {
+	t.Parallel()
+
+	var s string
+	var count int
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.SetOutput(ioutil.Discard)
+	f.StringVar(&s, "s", "", "usage")
+	f.CountVar(&count, "count", "usage")
+	err := f.Parse([]string{})
+	assertNoErr(t, err)
+
+	_, err = f.GetBool("s")
+	assertErr(t, err)
+
+	defer assertPanic(t)()
+	_ = f.MustGetCount("s")
 }

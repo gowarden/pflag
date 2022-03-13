@@ -52,7 +52,7 @@ func (s *durationSliceValue) Type() string {
 }
 
 func (s *durationSliceValue) String() string {
-	if s.value == nil {
+	if s.value == nil || *s.value == nil {
 		return "[]"
 	}
 

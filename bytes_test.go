@@ -6,7 +6,6 @@ package zflag_test
 import (
 	"fmt"
 	"io/ioutil"
-	"reflect"
 	"testing"
 
 	"github.com/gowarden/zflag"
@@ -108,49 +107,55 @@ func TestBytesHex(t *testing.T) {
 			f.BytesHexVar(&bytes, "bytes", test.flagDefault, "usage")
 			err := f.Parse(repeatFlag("--bytes", test.input...))
 			if test.expectedErr != "" {
-				if err == nil {
-					t.Fatalf("expected an error; got none")
-				}
-				if test.expectedErr != "" && err.Error() != test.expectedErr {
-					t.Fatalf("expected error to equal %q, but was: %s", test.expectedErr, err)
-				}
+				assertErrMsg(t, test.expectedErr, err)
 				return
 			}
-
-			if err != nil {
-				t.Fatalf("expected no error; got %q", err)
-			}
-
-			if fmt.Sprintf("%X", bytes) != test.expectedValue {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, bytes)
-			}
+			assertNoErr(t, err)
+			assertEqual(t, test.expectedValue, fmt.Sprintf("%X", bytes))
 
 			bytesHex, err := f.GetBytesHex("bytes")
-			if err != nil {
-				t.Fatal("got an error from GetBytesHex():", err)
-			}
-			if fmt.Sprintf("%X", bytesHex) != test.expectedValue {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", bytesHex, test.expectedValue)
-			}
+			assertNoErr(t, err)
+			assertEqual(t, test.expectedValue, fmt.Sprintf("%X", bytesHex))
 
 			bytesHexGet, err := f.Get("bytes")
-			if err != nil {
-				t.Fatal("got an error from Get():", err)
-			}
-			if fmt.Sprintf("%X", bytesHexGet) != test.expectedValue {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", bytesHex, bytesHexGet)
-			}
+			assertNoErr(t, err)
+			assertEqual(t, test.expectedValue, fmt.Sprintf("%X", bytesHexGet))
+
+			flag := f.Lookup("bytes")
+			assertEqual(t, test.expectedValue, flag.Value.String())
+
+			defer assertNoPanic(t)()
+			mustBytesHex := f.MustGetBytesHex("bytes")
+			assertDeepEqual(t, test.expectedValue, fmt.Sprintf("%X", mustBytesHex))
 		})
 	}
 }
 
+func TestBytesHexErrors(t *testing.T) {
+	var s string
+	var b []byte
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.SetOutput(ioutil.Discard)
+	f.StringVar(&s, "s", "", "usage")
+	f.BytesHexVar(&b, "b", []byte{}, "usage")
+	err := f.Parse([]string{})
+	assertNoErr(t, err)
+
+	_, err = f.GetBytesHex("s")
+	assertErr(t, err)
+
+	defer assertPanic(t)()
+	_ = f.MustGetBytesHex("s")
+}
+
 func TestBytesB64(t *testing.T) {
 	tests := []struct {
-		name          string
-		flagDefault   []byte
-		input         []string
-		expectedErr   string
-		expectedValue []byte
+		name             string
+		flagDefault      []byte
+		input            []string
+		expectedErr      string
+		expectedValue    []byte
+		expectedStrValue string
 	}{
 		{
 			name:          "no value passed",
@@ -183,32 +188,37 @@ func TestBytesB64(t *testing.T) {
 			expectedErr: `invalid argument "AQ==,AQ==" for "--bytes" flag: illegal base64 data at input byte 4`,
 		},
 		{
-			name:          "default value gets returned when none passed",
-			input:         []string{},
-			flagDefault:   []byte("bye"),
-			expectedValue: []byte("bye"),
+			name:             "default value gets returned when none passed",
+			input:            []string{},
+			flagDefault:      []byte("bye"),
+			expectedValue:    []byte("bye"),
+			expectedStrValue: "Ynll",
 		},
 		{
-			name:          "repeated value gets the last call",
-			input:         []string{"aGk=", "Ynll"},
-			flagDefault:   []byte{},
-			expectedValue: []byte("bye"),
+			name:             "repeated value gets the last call",
+			input:            []string{"aGk=", "Ynll"},
+			flagDefault:      []byte{},
+			expectedValue:    []byte("bye"),
+			expectedStrValue: "Ynll",
 		},
 		{
-			name:          "default values get overwritten",
-			input:         []string{"Ynll"},
-			flagDefault:   []byte("aGk="),
-			expectedValue: []byte("bye"),
+			name:             "default values get overwritten",
+			input:            []string{"Ynll"},
+			flagDefault:      []byte("aGk="),
+			expectedValue:    []byte("bye"),
+			expectedStrValue: "Ynll",
 		},
 		{
-			name:          "trims input",
-			input:         []string{" Ynll "},
-			expectedValue: []byte("bye"),
+			name:             "trims input",
+			input:            []string{" Ynll "},
+			expectedValue:    []byte("bye"),
+			expectedStrValue: "Ynll",
 		},
 		{
-			name:          "test valid",
-			input:         []string{"Ynll"},
-			expectedValue: []byte("bye"),
+			name:             "test valid",
+			input:            []string{"Ynll"},
+			expectedValue:    []byte("bye"),
+			expectedStrValue: "Ynll",
 		},
 	}
 
@@ -223,38 +233,45 @@ func TestBytesB64(t *testing.T) {
 			f.BytesBase64Var(&bytes, "bytes", test.flagDefault, "usage")
 			err := f.Parse(repeatFlag("--bytes", test.input...))
 			if test.expectedErr != "" {
-				if err == nil {
-					t.Fatalf("expected an error; got none")
-				}
-				if test.expectedErr != "" && err.Error() != test.expectedErr {
-					t.Fatalf("expected error to equal %q, but was: %s", test.expectedErr, err)
-				}
+				assertErrMsg(t, test.expectedErr, err)
 				return
 			}
-
-			if err != nil {
-				t.Fatalf("expected no error; got %q", err)
-			}
-
-			if !reflect.DeepEqual(bytes, test.expectedValue) {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, bytes)
-			}
+			assertNoErr(t, err)
+			assertDeepEqual(t, test.expectedValue, bytes)
 
 			bytesB64, err := f.GetBytesBase64("bytes")
-			if err != nil {
-				t.Fatal("got an error from GetBytesHex():", err)
-			}
-			if !reflect.DeepEqual(bytesB64, test.expectedValue) {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, bytesB64)
-			}
+			assertNoErr(t, err)
+			assertDeepEqual(t, test.expectedValue, bytesB64)
 
 			bytesB64Get, err := f.Get("bytes")
-			if err != nil {
-				t.Fatal("got an error from Get():", err)
-			}
-			if !reflect.DeepEqual(bytesB64Get, test.expectedValue) {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValue, bytesB64Get)
-			}
+			assertNoErr(t, err)
+			assertDeepEqual(t, test.expectedValue, bytesB64Get)
+
+			flag := f.Lookup("bytes")
+			assertEqual(t, test.expectedStrValue, flag.Value.String())
+
+			defer assertNoPanic(t)()
+			mustBytesBase64 := f.MustGetBytesBase64("bytes")
+			assertDeepEqual(t, test.expectedValue, mustBytesBase64)
 		})
 	}
+}
+
+func TestBytesBase64Errors(t *testing.T) {
+	t.Parallel()
+
+	var s bool
+	var b []byte
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.SetOutput(ioutil.Discard)
+	f.BoolVar(&s, "s", false, "usage")
+	f.BytesBase64Var(&b, "b", []byte{}, "usage")
+	err := f.Parse([]string{})
+	assertNoErr(t, err)
+
+	_, err = f.GetBytesBase64("s")
+	assertErr(t, err)
+
+	defer assertPanic(t)()
+	_ = f.MustGetBytesBase64("s")
 }

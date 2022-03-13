@@ -392,15 +392,12 @@ func (f *FlagSet) lookup(name NormalizedName) *Flag {
 func (f *FlagSet) getFlagType(name string, ftype string) (interface{}, error) {
 	flag := f.Lookup(name)
 	if flag == nil {
-		err := fmt.Errorf("flag accessed but not defined: %s", name)
-		return nil, err
+		return nil, NewUnknownFlagError(name)
 	}
 
-	if ftype != "" {
-		if v, ok := flag.Value.(Typed); ok && v.Type() != ftype {
-			err := fmt.Errorf("trying to get %q value of flag of type %q", ftype, v.Type())
-			return nil, err
-		}
+	if v, isTyped := flag.Value.(Typed); isTyped && ftype != "" && v.Type() != ftype {
+		err := fmt.Errorf("trying to get %q value of flag of type %q", ftype, v.Type())
+		return nil, err
 	}
 
 	getter, ok := flag.Value.(Getter)
@@ -477,26 +474,12 @@ func (f *FlagSet) Set(name, value string) error {
 // SetAnnotation allows one to set arbitrary annotations on this flag.
 // This is sometimes used by gowarden/zulu programs which want to generate additional
 // bash completion information.
-func (f *Flag) SetAnnotation(key string, values []string) error {
+func (f *Flag) SetAnnotation(key string, values []string) {
 	if f.Annotations == nil {
 		f.Annotations = map[string][]string{}
 	}
 
 	f.Annotations[key] = values
-
-	return nil
-}
-
-// SetAnnotation allows one to set arbitrary annotations on a flag in the FlagSet.
-// This is sometimes used by gowarden/zulu programs which want to generate additional
-// bash completion information.
-func (f *FlagSet) SetAnnotation(name, key string, values []string) error {
-	normalName := f.normalizeFlagName(name)
-	flag, ok := f.formal[normalName]
-	if !ok {
-		return NewUnknownFlagError(name)
-	}
-	return flag.SetAnnotation(key, values)
 }
 
 // Changed returns true if the flag was explicitly set during Parse() and false

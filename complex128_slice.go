@@ -55,7 +55,7 @@ func (s *complex128SliceValue) Type() string {
 }
 
 func (s *complex128SliceValue) String() string {
-	if s.value == nil {
+	if s.value == nil || *s.value == nil {
 		return "[]"
 	}
 

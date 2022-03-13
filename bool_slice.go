@@ -56,7 +56,7 @@ func (s *boolSliceValue) Type() string {
 
 // String defines a "native" format for this boolean slice flag value.
 func (s *boolSliceValue) String() string {
-	if s.value == nil {
+	if s.value == nil || *s.value == nil {
 		return "[]"
 	}
 

@@ -4,9 +4,7 @@
 package zflag_test
 
 import (
-	"fmt"
 	"io/ioutil"
-	"reflect"
 	"testing"
 
 	"github.com/gowarden/zflag"
@@ -14,19 +12,23 @@ import (
 
 func TestBoolSlice(t *testing.T) {
 	tests := []struct {
-		name           string
-		flagDefault    []bool
-		input          []string
-		expectedErr    string
-		expectedValues []bool
-		visitor        func(f *zflag.Flag)
+		name              string
+		flagDefault       []bool
+		input             []string
+		expectedErr       string
+		expectedValues    []bool
+		expectedStrValues string
+		visitor           func(f *zflag.Flag)
+		expectedGetSlice  []string
 	}{
 		{
-			name:           "no value passed",
-			input:          []string{},
-			flagDefault:    []bool{},
-			expectedErr:    "",
-			expectedValues: []bool{},
+			name:              "no value passed",
+			input:             []string{},
+			flagDefault:       []bool{},
+			expectedErr:       "",
+			expectedValues:    []bool{},
+			expectedStrValues: "[]",
+			expectedGetSlice:  []string{},
 		},
 		{
 			name:        "empty value passed",
@@ -47,16 +49,20 @@ func TestBoolSlice(t *testing.T) {
 			expectedErr: `invalid argument "true,false" for "--bs" flag: strconv.ParseBool: parsing "true,false": invalid syntax`,
 		},
 		{
-			name:           "empty value passed",
-			input:          []string{"true", "false"},
-			flagDefault:    []bool{},
-			expectedValues: []bool{true, false},
+			name:              "multiple values passed",
+			input:             []string{"true", "false"},
+			flagDefault:       []bool{},
+			expectedValues:    []bool{true, false},
+			expectedStrValues: "[true false]",
+			expectedGetSlice:  []string{"true", "false"},
 		},
 		{
-			name:           "with default values",
-			input:          []string{"false", "true"},
-			flagDefault:    []bool{true, false},
-			expectedValues: []bool{false, true},
+			name:              "with default values",
+			input:             []string{"false", "true"},
+			flagDefault:       []bool{true, false},
+			expectedValues:    []bool{false, true},
+			expectedStrValues: "[false true]",
+			expectedGetSlice:  []string{"false", "true"},
 		},
 		{
 			name:  "replace values",
@@ -66,17 +72,72 @@ func TestBoolSlice(t *testing.T) {
 					_ = val.Replace([]string{"false"})
 				}
 			},
-			expectedValues: []bool{false},
+			expectedValues:    []bool{false},
+			expectedStrValues: "[false]",
+			expectedGetSlice:  []string{"false"},
 		},
 		{
-			name:           "trims input",
-			input:          []string{" true ", " false "},
-			expectedValues: []bool{true, false},
+			name:  "replace values error",
+			input: []string{"true", "false"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					err := val.Replace([]string{"notbool"})
+					assertErr(t, err)
+				}
+			},
+			expectedValues:    []bool{true, false},
+			expectedStrValues: "[true false]",
+			expectedGetSlice:  []string{"true", "false"},
 		},
 		{
-			name:           "all valid bool values",
-			input:          []string{"true", "false", "1", "0", "t", "f", "TRUE", "FALSE", "1", "0", "T", "F", "True", "False"},
-			expectedValues: []bool{true, false, true, false, true, false, true, false, true, false, true, false, true, false},
+			name:  "add values",
+			input: []string{"true", "false"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					_ = val.Append("false")
+				}
+			},
+			expectedValues:    []bool{true, false, false},
+			expectedStrValues: "[true false false]",
+			expectedGetSlice:  []string{"true", "false", "false"},
+		},
+		{
+			name:  "add values error",
+			input: []string{"true"},
+			visitor: func(f *zflag.Flag) {
+				if val, ok := f.Value.(zflag.SliceValue); ok {
+					err := val.Append("asd")
+					if err == nil {
+						t.Errorf("Expected an error when appending, got %s", err)
+					}
+				}
+			},
+			flagDefault:       nil,
+			expectedValues:    []bool{true},
+			expectedStrValues: "[true]",
+			expectedGetSlice:  []string{"true"},
+		},
+		{
+			name:              "nil default",
+			input:             []string{},
+			flagDefault:       nil,
+			expectedValues:    nil,
+			expectedStrValues: "[]",
+			expectedGetSlice:  []string{},
+		},
+		{
+			name:              "trims input",
+			input:             []string{" true ", " false "},
+			expectedValues:    []bool{true, false},
+			expectedStrValues: "[true false]",
+			expectedGetSlice:  []string{"true", "false"},
+		},
+		{
+			name:              "all valid bool values",
+			input:             []string{"true", "false", "1", "0", "t", "f", "TRUE", "FALSE", "1", "0", "T", "F", "True", "False"},
+			expectedValues:    []bool{true, false, true, false, true, false, true, false, true, false, true, false, true, false},
+			expectedStrValues: "[true false true false true false true false true false true false true false]",
+			expectedGetSlice:  []string{"true", "false", "true", "false", "true", "false", "true", "false", "true", "false", "true", "false", "true", "false"},
 		},
 	}
 
@@ -91,51 +152,53 @@ func TestBoolSlice(t *testing.T) {
 			f.BoolSliceVar(&bs, "bs", test.flagDefault, "usage")
 			err := f.Parse(repeatFlag("--bs", test.input...))
 			if test.expectedErr != "" {
-				if err == nil {
-					t.Fatalf("expected an error; got none")
-				}
-				if test.expectedErr != "" && err.Error() != test.expectedErr {
-					t.Fatalf("expected error to equal %q, but was: %s", test.expectedErr, err)
-				}
+				assertErrMsg(t, test.expectedErr, err)
 				return
 			}
-
-			if err != nil {
-				t.Fatalf("expected no error; got %q", err)
-			}
+			assertNoErr(t, err)
 
 			if test.visitor != nil {
 				f.VisitAll(test.visitor)
 			}
 
-			if !reflect.DeepEqual(test.expectedValues, bs) {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, bs)
-			}
+			assertDeepEqual(t, test.expectedValues, bs)
 
 			boolSlice, err := f.GetBoolSlice("bs")
-			if err != nil {
-				t.Fatal("got an error from GetBoolSlice():", err)
-			}
-			if !reflect.DeepEqual(test.expectedValues, boolSlice) {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, boolSlice)
-			}
+			assertNoErr(t, err)
+			assertDeepEqual(t, test.expectedValues, boolSlice)
 
 			boolSliceGet, err := f.Get("bs")
-			if err != nil {
-				t.Fatal("got an error from Get():", err)
-			}
-			if !reflect.DeepEqual(boolSliceGet, boolSlice) {
-				t.Fatalf("expected %[1]v with type %[1]T but got %[2]v with type %[2]T", test.expectedValues, boolSliceGet)
-			}
+			assertNoErr(t, err)
+			assertDeepEqual(t, test.expectedValues, boolSliceGet)
+
+			flag := f.Lookup("bs")
+			assertEqual(t, test.expectedStrValues, flag.Value.String())
+
+			sliced := flag.Value.(zflag.SliceValue)
+			assertDeepEqual(t, test.expectedGetSlice, sliced.GetSlice())
+
+			defer assertNoPanic(t)()
+			mustBoolSlice := f.MustGetBoolSlice("bs")
+			assertDeepEqual(t, test.expectedValues, mustBoolSlice)
 		})
 	}
 }
 
-func repeatFlag(flag string, values ...string) (res []string) {
-	res = make([]string, 0, len(values))
-	for _, val := range values {
-		res = append(res, fmt.Sprintf("%s=%s", flag, val))
-	}
+func TestBoolSliceErrors(t *testing.T) {
+	t.Parallel()
 
-	return
+	var s string
+	var bs []bool
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	f.SetOutput(ioutil.Discard)
+	f.StringVar(&s, "s", "", "usage")
+	f.BoolSliceVar(&bs, "bs", []bool{}, "usage")
+	err := f.Parse([]string{})
+	assertNoErr(t, err)
+
+	_, err = f.GetBoolSlice("s")
+	assertErr(t, err)
+
+	defer assertPanic(t)()
+	_ = f.MustGetBoolSlice("s")
 }
