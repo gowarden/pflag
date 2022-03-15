@@ -11,8 +11,9 @@ import (
 
 // -- stringToInt64 Value
 type stringToInt64Value struct {
-	value   *map[string]int64
-	changed bool
+	value         *map[string]int64
+	changed       bool
+	valueOptional bool
 }
 
 var _ Value = (*stringToInt64Value)(nil)

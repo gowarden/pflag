@@ -11,8 +11,9 @@ import (
 
 // -- stringToInt Value
 type stringToIntValue struct {
-	value   *map[string]int
-	changed bool
+	value         *map[string]int
+	changed       bool
+	valueOptional bool
 }
 
 var _ Value = (*stringToIntValue)(nil)

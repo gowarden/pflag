@@ -11,8 +11,9 @@ import (
 
 // -- stringToString Value
 type stringToStringValue struct {
-	value   *map[string]string
-	changed bool
+	value         *map[string]string
+	changed       bool
+	valueOptional bool
 }
 
 var _ Value = (*stringToStringValue)(nil)
@@ -28,10 +29,15 @@ func newStringToStringValue(val map[string]string, p *map[string]string) *string
 
 func (s *stringToStringValue) Set(val string) error {
 	kv := strings.SplitN(val, "=", 2)
-	if len(kv) != 2 {
-		return fmt.Errorf("%s must be formatted as key=value", val)
+	if !s.valueOptional && len(kv) != 2 {
+		return fmt.Errorf("%q must be formatted as key=value", val)
 	}
-	key, val := kv[0], kv[1]
+
+	key := kv[0]
+	val = ""
+	if len(kv) == 2 {
+		val = kv[1]
+	}
 
 	if !s.changed {
 		*s.value = map[string]string{}
@@ -102,4 +108,22 @@ func (f *FlagSet) StringToString(name string, value map[string]string, usage str
 // The return value is the address of a map[string]string variable that stores the values of multiple flags.
 func StringToString(name string, value map[string]string, usage string, opts ...Opt) *map[string]string {
 	return CommandLine.StringToString(name, value, usage, opts...)
+}
+
+func OptMapValueOptional() Opt {
+	return func(f *Flag) error {
+		switch v := f.Value.(type) {
+		case *stringToStringValue:
+			v.valueOptional = true
+			return nil
+		case *stringToIntValue:
+			v.valueOptional = true
+			return nil
+		case *stringToInt64Value:
+			v.valueOptional = true
+			return nil
+		}
+
+		return fmt.Errorf("value of type %T cannot be optional", f.Value)
+	}
 }
