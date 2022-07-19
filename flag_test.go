@@ -1703,3 +1703,21 @@ func TestCustomFlagDefValue(t *testing.T) {
 		t.Errorf("got %q want %q\n", afterParse, beforeParse)
 	}
 }
+
+// TestNoDuplicateUnknownFlagError ensures issue https://github.com/spf13/pflag/issues/352 does not regress.
+func TestNoDuplicateUnknownFlagError(t *testing.T) {
+	zflag.SetExitFunc(func(code int) {
+		assertEqual(t, 2, code)
+	})
+
+	buf := bytes.Buffer{}
+
+	fs := zflag.NewFlagSet("myprog", zflag.ExitOnError)
+	fs.SetOutput(&buf)
+	err := fs.Parse([]string{"--bogus"})
+	assertNoErr(t, err)
+
+	substr := "unknown flag: --bogus"
+	count := strings.Count(buf.String(), substr)
+	assertEqualf(t, 1, count, "expected %q to appear in output exactly once, got %d", substr, count)
+}

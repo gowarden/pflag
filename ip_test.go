@@ -76,6 +76,13 @@ func TestIP(t *testing.T) {
 			flagDefault: net.IP{},
 			expectedIPs: net.ParseIP("0:0:0:0:0:0:0:2"),
 		},
+		{
+			// https://github.com/spf13/pflag/issues/351
+			name:        "allows nil value",
+			input:       []string{},
+			flagDefault: nil,
+			expectedIPs: nil,
+		},
 	}
 
 	t.Parallel()

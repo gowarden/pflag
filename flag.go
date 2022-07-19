@@ -1171,6 +1171,10 @@ func (f *FlagSet) parseArgs(args []string, fn parseFunc) (err error) {
 	return
 }
 
+var exitFn = func(code int) {
+	os.Exit(code)
+}
+
 func (f *FlagSet) parseAll(arguments []string, fn parseFunc) error {
 	if f.addedGoFlagSets != nil {
 		for _, goFlagSet := range f.addedGoFlagSets {
@@ -1194,9 +1198,9 @@ func (f *FlagSet) parseAll(arguments []string, fn parseFunc) error {
 			return err
 		case ExitOnError:
 			if err == ErrHelp {
-				os.Exit(0)
+				exitFn(0)
 			}
-			os.Exit(2)
+			exitFn(2)
 		case PanicOnError:
 			panic(err)
 		}
