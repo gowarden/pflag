@@ -90,7 +90,7 @@ func (s *intSliceValue) GetSlice() []string {
 
 // GetIntSlice return the []int value of a flag with the given name
 func (f *FlagSet) GetIntSlice(name string) ([]int, error) {
-	val, err := f.getFlagType(name, "intSlice")
+	val, err := f.getFlagValue(name, "intSlice")
 	if err != nil {
 		return []int{}, err
 	}

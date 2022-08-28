@@ -39,7 +39,7 @@ func (f *float64Value) String() string { return strconv.FormatFloat(float64(*f),
 
 // GetFloat64 return the float64 value of a flag with the given name
 func (f *FlagSet) GetFloat64(name string) (float64, error) {
-	val, err := f.getFlagType(name, "float64")
+	val, err := f.getFlagValue(name, "float64")
 	if err != nil {
 		return 0, err
 	}

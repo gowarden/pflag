@@ -44,34 +44,34 @@ func TestCmdVars(t *testing.T) {
 	var tint64 int64
 	zflag.Int64Var(&tint64, "int64_var", 0, "int64 value")
 
-	var tuint uint
-	zflag.UintVar(&tuint, "uint_var", 0, "uint value")
+	var tUint uint
+	zflag.UintVar(&tUint, "uint_var", 0, "uint value")
 
-	var tuint64 uint64
-	zflag.Uint64Var(&tuint64, "uint64_var", 0, "uint64 value")
+	var tUint64 uint64
+	zflag.Uint64Var(&tUint64, "uint64_var", 0, "uint64 value")
 
-	var tstring string
-	zflag.StringVar(&tstring, "string_var", "0", "string value")
+	var tString string
+	zflag.StringVar(&tString, "string_var", "0", "string value")
 
-	var tfloat64 float64
-	zflag.Float64Var(&tfloat64, "float64_var", 0, "float64 value")
+	var tFloat64 float64
+	zflag.Float64Var(&tFloat64, "float64_var", 0, "float64 value")
 
-	var tduration time.Duration
-	zflag.DurationVar(&tduration, "duration_var", 0, "time.Duration value")
+	var tDuration time.Duration
+	zflag.DurationVar(&tDuration, "duration_var", 0, "time.Duration value")
 
-	var toptint int
-	zflag.IntVar(&toptint, "optional_int_var", 0, "optional int value")
+	var tOptInt int
+	zflag.IntVar(&tOptInt, "optional_int_var", 0, "optional int value")
 
-	var tboolSlice []bool
+	var tBoolSlice []bool
 	_ = zflag.BoolSlice("bool_slice", []bool{}, "usage")
-	zflag.BoolSliceVar(&tboolSlice, "bool_slice_var", []bool{}, "usage")
+	zflag.BoolSliceVar(&tBoolSlice, "bool_slice_var", []bool{}, "usage")
 
-	var tbytesHex []byte
+	var tBytesHex []byte
 	_ = zflag.BytesHex("bytes_hex", nil, "usage")
-	zflag.BytesHexVar(&tbytesHex, "bytes_hex_var", nil, "usage")
-	var tbytesBase64 []byte
+	zflag.BytesHexVar(&tBytesHex, "bytes_hex_var", nil, "usage")
+	var tBytesBase64 []byte
 	_ = zflag.BytesBase64("bytes_base64", nil, "usage")
-	zflag.BytesBase64Var(&tbytesBase64, "bytes_base64_var", nil, "usage")
+	zflag.BytesBase64Var(&tBytesBase64, "bytes_base64_var", nil, "usage")
 
 	var tc128 complex128
 	_ = zflag.Complex128("c128", complex(0, 0), "usage")
@@ -85,13 +85,13 @@ func TestCmdVars(t *testing.T) {
 		return nil
 	})
 
-	var tcount int
+	var tCount int
 	_ = zflag.Count("count", "")
-	zflag.CountVar(&tcount, "count_var", "")
+	zflag.CountVar(&tCount, "count_var", "")
 
-	var tdurations []time.Duration
+	var tDurations []time.Duration
 	_ = zflag.DurationSlice("durations", []time.Duration{}, "usage")
-	zflag.DurationSliceVar(&tdurations, "durations_var", []time.Duration{}, "usage")
+	zflag.DurationSliceVar(&tDurations, "durations_var", []time.Duration{}, "usage")
 
 	var tTime time.Time
 	_ = zflag.Time("time", time.Time{}, []string{time.RFC3339}, "usage")

@@ -44,7 +44,7 @@ func newIPNetValue(val net.IPNet, p *net.IPNet) *ipNetValue {
 
 // GetIPNet return the net.IPNet value of a flag with the given name
 func (f *FlagSet) GetIPNet(name string) (net.IPNet, error) {
-	val, err := f.getFlagType(name, "ipNet")
+	val, err := f.getFlagValue(name, "ipNet")
 	if err != nil {
 		return net.IPNet{}, err
 	}

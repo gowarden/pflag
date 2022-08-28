@@ -103,7 +103,7 @@ func (s *int32SliceValue) GetSlice() []string {
 
 // GetInt32Slice return the []int32 value of a flag with the given name
 func (f *FlagSet) GetInt32Slice(name string) ([]int32, error) {
-	val, err := f.getFlagType(name, "int32Slice")
+	val, err := f.getFlagValue(name, "int32Slice")
 	if err != nil {
 		return []int32{}, err
 	}

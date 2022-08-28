@@ -39,7 +39,7 @@ func (i *uint16Value) String() string { return strconv.FormatUint(uint64(*i), 10
 
 // GetUint16 return the uint16 value of a flag with the given name
 func (f *FlagSet) GetUint16(name string) (uint16, error) {
-	val, err := f.getFlagType(name, "uint16")
+	val, err := f.getFlagValue(name, "uint16")
 	if err != nil {
 		return 0, err
 	}

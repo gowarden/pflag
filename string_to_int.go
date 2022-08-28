@@ -70,7 +70,7 @@ func (s *stringToIntValue) String() string {
 
 // GetStringToInt return the map[string]int value of a flag with the given name
 func (f *FlagSet) GetStringToInt(name string) (map[string]int, error) {
-	val, err := f.getFlagType(name, "stringToInt")
+	val, err := f.getFlagValue(name, "stringToInt")
 	if err != nil {
 		return map[string]int{}, err
 	}

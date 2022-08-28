@@ -71,7 +71,7 @@ func ParseIPv4Mask(s string) net.IPMask {
 
 // GetIPv4Mask return the net.IPv4Mask value of a flag with the given name
 func (f *FlagSet) GetIPv4Mask(name string) (net.IPMask, error) {
-	val, err := f.getFlagType(name, "ipMask")
+	val, err := f.getFlagValue(name, "ipMask")
 	if err != nil {
 		return nil, err
 	}

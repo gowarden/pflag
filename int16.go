@@ -39,7 +39,7 @@ func (i *int16Value) String() string { return strconv.FormatInt(int64(*i), 10) }
 
 // GetInt16 returns the int16 value of a flag with the given name
 func (f *FlagSet) GetInt16(name string) (int16, error) {
-	val, err := f.getFlagType(name, "int16")
+	val, err := f.getFlagValue(name, "int16")
 	if err != nil {
 		return 0, err
 	}

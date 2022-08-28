@@ -68,7 +68,7 @@ func (s *stringToStringValue) String() string {
 
 // GetStringToString return the map[string]string value of a flag with the given name
 func (f *FlagSet) GetStringToString(name string) (map[string]string, error) {
-	val, err := f.getFlagType(name, "stringToString")
+	val, err := f.getFlagValue(name, "stringToString")
 	if err != nil {
 		return map[string]string{}, err
 	}

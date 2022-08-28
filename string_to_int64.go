@@ -70,7 +70,7 @@ func (s *stringToInt64Value) String() string {
 
 // GetStringToInt64 return the map[string]int64 value of a flag with the given name
 func (f *FlagSet) GetStringToInt64(name string) (map[string]int64, error) {
-	val, err := f.getFlagType(name, "stringToInt64")
+	val, err := f.getFlagValue(name, "stringToInt64")
 	if err != nil {
 		return map[string]int64{}, err
 	}

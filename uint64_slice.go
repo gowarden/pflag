@@ -99,7 +99,7 @@ func (s *uint64SliceValue) GetSlice() []string {
 
 // GetUint64Slice return the []uint64 value of a flag with the given name
 func (f *FlagSet) GetUint64Slice(name string) ([]uint64, error) {
-	val, err := f.getFlagType(name, "uint64Slice")
+	val, err := f.getFlagValue(name, "uint64Slice")
 	if err != nil {
 		return []uint64{}, err
 	}

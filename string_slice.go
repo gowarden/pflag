@@ -67,7 +67,7 @@ func (s *stringSliceValue) GetSlice() []string {
 
 // GetStringSlice return the []string value of a flag with the given name
 func (f *FlagSet) GetStringSlice(name string) ([]string, error) {
-	val, err := f.getFlagType(name, "stringSlice")
+	val, err := f.getFlagValue(name, "stringSlice")
 	if err != nil {
 		return []string{}, err
 	}

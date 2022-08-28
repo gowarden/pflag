@@ -39,7 +39,7 @@ func (d *durationValue) String() string { return (*time.Duration)(d).String() }
 
 // GetDuration return the duration value of a flag with the given name
 func (f *FlagSet) GetDuration(name string) (time.Duration, error) {
-	val, err := f.getFlagType(name, "duration")
+	val, err := f.getFlagValue(name, "duration")
 	if err != nil {
 		return 0, err
 	}

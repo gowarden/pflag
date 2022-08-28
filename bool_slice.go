@@ -103,7 +103,7 @@ func (s *boolSliceValue) GetSlice() []string {
 
 // GetBoolSlice returns the []bool value of a flag with the given name.
 func (f *FlagSet) GetBoolSlice(name string) ([]bool, error) {
-	val, err := f.getFlagType(name, "boolSlice")
+	val, err := f.getFlagValue(name, "boolSlice")
 	if err != nil {
 		return []bool{}, err
 	}

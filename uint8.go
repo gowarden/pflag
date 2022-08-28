@@ -39,7 +39,7 @@ func (i *uint8Value) String() string { return strconv.FormatUint(uint64(*i), 10)
 
 // GetUint8 return the uint8 value of a flag with the given name
 func (f *FlagSet) GetUint8(name string) (uint8, error) {
-	val, err := f.getFlagType(name, "uint8")
+	val, err := f.getFlagValue(name, "uint8")
 	if err != nil {
 		return 0, err
 	}

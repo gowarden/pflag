@@ -99,7 +99,7 @@ func (s *durationSliceValue) GetSlice() []string {
 
 // GetDurationSlice returns the []time.Duration value of a flag with the given name
 func (f *FlagSet) GetDurationSlice(name string) ([]time.Duration, error) {
-	val, err := f.getFlagType(name, "durationSlice")
+	val, err := f.getFlagValue(name, "durationSlice")
 	if err != nil {
 		return []time.Duration{}, err
 	}

@@ -103,7 +103,7 @@ func (s *uintSliceValue) GetSlice() []string {
 
 // GetUintSlice returns the []uint value of a flag with the given name.
 func (f *FlagSet) GetUintSlice(name string) ([]uint, error) {
-	val, err := f.getFlagType(name, "uintSlice")
+	val, err := f.getFlagValue(name, "uintSlice")
 	if err != nil {
 		return []uint{}, err
 	}

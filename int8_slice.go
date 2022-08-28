@@ -103,7 +103,7 @@ func (s *int8SliceValue) GetSlice() []string {
 
 // GetInt8Slice return the []int8 value of a flag with the given name
 func (f *FlagSet) GetInt8Slice(name string) ([]int8, error) {
-	val, err := f.getFlagType(name, "int8Slice")
+	val, err := f.getFlagValue(name, "int8Slice")
 	if err != nil {
 		return []int8{}, err
 	}

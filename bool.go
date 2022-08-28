@@ -57,7 +57,7 @@ func (b *boolValue) IsOptional() bool { return true }
 
 // GetBool return the bool value of a flag with the given name
 func (f *FlagSet) GetBool(name string) (bool, error) {
-	val, err := f.getFlagType(name, "bool")
+	val, err := f.getFlagValue(name, "bool")
 	if err != nil {
 		return false, err
 	}

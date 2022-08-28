@@ -105,7 +105,7 @@ func (s *ipSliceValue) GetSlice() []string {
 
 // GetIPSlice returns the []net.IP value of a flag with the given name
 func (f *FlagSet) GetIPSlice(name string) ([]net.IP, error) {
-	val, err := f.getFlagType(name, "ipSlice")
+	val, err := f.getFlagValue(name, "ipSlice")
 	if err != nil {
 		return []net.IP{}, err
 	}

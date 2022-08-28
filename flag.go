@@ -332,7 +332,7 @@ func GetUnknownFlags() []string {
 
 // Get returns the value of the named flag.
 func (f *FlagSet) Get(name string) (interface{}, error) {
-	return f.getFlagType(name, "")
+	return f.getFlagValue(name, "")
 }
 
 // Get returns the value of the named flag.
@@ -388,15 +388,15 @@ func (f *FlagSet) lookup(name NormalizedName) *Flag {
 	return f.formal[name]
 }
 
-// func to return a given type for a given flag name
-func (f *FlagSet) getFlagType(name string, ftype string) (interface{}, error) {
+// getFlagValue returns the value of a flag based on the requested name and type.
+func (f *FlagSet) getFlagValue(name string, fType string) (interface{}, error) {
 	flag := f.Lookup(name)
 	if flag == nil {
 		return nil, NewUnknownFlagError(name)
 	}
 
-	if v, isTyped := flag.Value.(Typed); isTyped && ftype != "" && v.Type() != ftype {
-		err := fmt.Errorf("trying to get %q value of flag of type %q", ftype, v.Type())
+	if v, isTyped := flag.Value.(Typed); isTyped && fType != "" && v.Type() != fType {
+		err := fmt.Errorf("trying to get %q value of flag of type %q", fType, v.Type())
 		return nil, err
 	}
 

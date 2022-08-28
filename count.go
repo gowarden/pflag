@@ -46,7 +46,7 @@ func (i *countValue) IsOptional() bool { return true }
 
 // GetCount return the int value of a flag with the given name
 func (f *FlagSet) GetCount(name string) (int, error) {
-	val, err := f.getFlagType(name, "count")
+	val, err := f.getFlagValue(name, "count")
 	if err != nil {
 		return 0, err
 	}

@@ -112,7 +112,7 @@ func (s *ipNetSliceValue) GetSlice() []string {
 
 // GetIPNetSlice returns the []net.IPNet value of a flag with the given name
 func (f *FlagSet) GetIPNetSlice(name string) ([]net.IPNet, error) {
-	val, err := f.getFlagType(name, "ipNetSlice")
+	val, err := f.getFlagValue(name, "ipNetSlice")
 	if err != nil {
 		return []net.IPNet{}, err
 	}

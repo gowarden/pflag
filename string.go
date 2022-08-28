@@ -32,7 +32,7 @@ func (s *stringValue) String() string { return string(*s) }
 
 // GetString return the string value of a flag with the given name
 func (f *FlagSet) GetString(name string) (string, error) {
-	val, err := f.getFlagType(name, "string")
+	val, err := f.getFlagValue(name, "string")
 	if err != nil {
 		return "", err
 	}

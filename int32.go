@@ -39,7 +39,7 @@ func (i *int32Value) String() string { return strconv.FormatInt(int64(*i), 10) }
 
 // GetInt32 return the int32 value of a flag with the given name
 func (f *FlagSet) GetInt32(name string) (int32, error) {
-	val, err := f.getFlagType(name, "int32")
+	val, err := f.getFlagValue(name, "int32")
 	if err != nil {
 		return 0, err
 	}

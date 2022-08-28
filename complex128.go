@@ -39,7 +39,7 @@ func (f *complex128Value) String() string { return strconv.FormatComplex(complex
 
 // GetComplex128 return the complex128 value of a flag with the given name
 func (f *FlagSet) GetComplex128(name string) (complex128, error) {
-	val, err := f.getFlagType(name, "complex128")
+	val, err := f.getFlagValue(name, "complex128")
 	if err != nil {
 		return 0, err
 	}

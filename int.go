@@ -39,7 +39,7 @@ func (i *intValue) String() string { return strconv.Itoa(int(*i)) }
 
 // GetInt return the int value of a flag with the given name
 func (f *FlagSet) GetInt(name string) (int, error) {
-	val, err := f.getFlagType(name, "int")
+	val, err := f.getFlagValue(name, "int")
 	if err != nil {
 		return 0, err
 	}

@@ -56,7 +56,7 @@ func (d *TimeValue) String() string { return d.Time.Format(time.RFC3339Nano) }
 
 // GetTime return the time value of a flag with the given name
 func (f *FlagSet) GetTime(name string) (time.Time, error) {
-	val, err := f.getFlagType(name, "time")
+	val, err := f.getFlagValue(name, "time")
 	if err != nil {
 		return time.Time{}, err
 	}

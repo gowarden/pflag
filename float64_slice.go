@@ -99,7 +99,7 @@ func (s *float64SliceValue) GetSlice() []string {
 
 // GetFloat64Slice return the []float64 value of a flag with the given name
 func (f *FlagSet) GetFloat64Slice(name string) ([]float64, error) {
-	val, err := f.getFlagType(name, "float64Slice")
+	val, err := f.getFlagValue(name, "float64Slice")
 	if err != nil {
 		return []float64{}, err
 	}

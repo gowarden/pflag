@@ -51,7 +51,7 @@ func newBytesHexValue(val []byte, p *[]byte) *bytesHexValue {
 
 // GetBytesHex return the []byte value of a flag with the given name
 func (f *FlagSet) GetBytesHex(name string) ([]byte, error) {
-	val, err := f.getFlagType(name, "bytesHex")
+	val, err := f.getFlagValue(name, "bytesHex")
 
 	if err != nil {
 		return []byte{}, err
@@ -135,7 +135,7 @@ func newBytesBase64Value(val []byte, p *[]byte) *bytesBase64Value {
 
 // GetBytesBase64 return the []byte value of a flag with the given name
 func (f *FlagSet) GetBytesBase64(name string) ([]byte, error) {
-	val, err := f.getFlagType(name, "bytesBase64")
+	val, err := f.getFlagValue(name, "bytesBase64")
 	if err != nil {
 		return []byte{}, err
 	}

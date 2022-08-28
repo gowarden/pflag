@@ -102,7 +102,7 @@ func (s *complex128SliceValue) GetSlice() []string {
 
 // GetComplex128Slice return the []complex128 value of a flag with the given name
 func (f *FlagSet) GetComplex128Slice(name string) ([]complex128, error) {
-	val, err := f.getFlagType(name, "complex128Slice")
+	val, err := f.getFlagValue(name, "complex128Slice")
 	if err != nil {
 		return []complex128{}, err
 	}

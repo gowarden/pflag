@@ -103,7 +103,7 @@ func (s *int16SliceValue) GetSlice() []string {
 
 // GetInt16Slice return the []int16 value of a flag with the given name
 func (f *FlagSet) GetInt16Slice(name string) ([]int16, error) {
-	val, err := f.getFlagType(name, "int16Slice")
+	val, err := f.getFlagValue(name, "int16Slice")
 	if err != nil {
 		return []int16{}, err
 	}

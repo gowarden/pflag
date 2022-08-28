@@ -39,7 +39,7 @@ func (f *float32Value) String() string { return strconv.FormatFloat(float64(*f),
 
 // GetFloat32 return the float32 value of a flag with the given name
 func (f *FlagSet) GetFloat32(name string) (float32, error) {
-	val, err := f.getFlagType(name, "float32")
+	val, err := f.getFlagValue(name, "float32")
 	if err != nil {
 		return 0, err
 	}

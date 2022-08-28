@@ -103,7 +103,7 @@ func (s *float32SliceValue) GetSlice() []string {
 
 // GetFloat32Slice return the []float32 value of a flag with the given name
 func (f *FlagSet) GetFloat32Slice(name string) ([]float32, error) {
-	val, err := f.getFlagType(name, "float32Slice")
+	val, err := f.getFlagValue(name, "float32Slice")
 	if err != nil {
 		return []float32{}, err
 	}

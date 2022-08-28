@@ -45,7 +45,7 @@ func (i *ipValue) Type() string {
 
 // GetIP return the net.IP value of a flag with the given name
 func (f *FlagSet) GetIP(name string) (net.IP, error) {
-	val, err := f.getFlagType(name, "ip")
+	val, err := f.getFlagValue(name, "ip")
 	if err != nil {
 		return nil, err
 	}
