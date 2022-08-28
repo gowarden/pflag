@@ -92,6 +92,10 @@ func TestCmdVars(t *testing.T) {
 	var tdurations []time.Duration
 	_ = zflag.DurationSlice("durations", []time.Duration{}, "usage")
 	zflag.DurationSliceVar(&tdurations, "durations_var", []time.Duration{}, "usage")
+
+	var tTime time.Time
+	_ = zflag.Time("time", time.Time{}, []string{time.RFC3339}, "usage")
+	zflag.TimeVar(&tTime, "time_var", time.Time{}, []string{time.RFC3339}, "usage")
 }
 
 func boolString(s string) string {
