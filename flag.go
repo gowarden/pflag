@@ -452,7 +452,7 @@ func (f *FlagSet) Set(name, value string) error {
 		} else {
 			flagName = getFlagWithDashes(flag.Name)
 		}
-		return fmt.Errorf("invalid argument %q for %q flag: %v", value, flagName, err)
+		return fmt.Errorf("invalid argument %q for %q flag: %w", value, flagName, err)
 	}
 
 	if !flag.Changed {
@@ -687,7 +687,7 @@ func (f *FlagSet) FlagUsagesWrapped(cols int) string {
 
 // FlagUsagesForGroupWrapped returns a string containing the usage information
 // for all flags in the FlagSet for group. Wrapped to `cols` columns (0 for no
-// wrapping)
+// wrapping).
 func (f *FlagSet) FlagUsagesForGroupWrapped(group string, cols int) string {
 	buf := new(bytes.Buffer)
 

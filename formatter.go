@@ -7,6 +7,12 @@ import (
 	"fmt"
 )
 
+// FlagUsageFormatter is a function type that prints the usage for a single Flag.
+// This should be returning two strings, one that is considered the "left" hand side,
+// and one that is considered the "right" hand side.
+// Once the left and right are determined for all flags, the length of the text is
+// determined, and each is appropriated cut based the terminal's width, and some space
+// is added between left and right.
 type FlagUsageFormatter func(*Flag) (string, string)
 
 func defaultUsageFormatter(flag *Flag) (string, string) {
