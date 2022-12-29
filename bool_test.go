@@ -45,6 +45,13 @@ func TestBool(t *testing.T) {
 			expectedErr: `invalid argument "true,false" for "--bs" flag: strconv.ParseBool: parsing "true,false": invalid syntax`,
 		},
 		{
+			name:        "non-existent flag prefixed with `no-` does not panic",
+			input:       []string{"--no-non-existent"},
+			flagDefault: true,
+			expectedErr: "unknown flag: --no-non-existent",
+			extraOpts:   []zflag.Opt{zflag.OptShorthand('b')},
+		},
+		{
 			name:        "flag prefixed with `no-` is not found",
 			input:       []string{"--no-bs"},
 			flagDefault: true,

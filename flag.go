@@ -986,10 +986,12 @@ func (f *FlagSet) parseLongArg(s string, args []string, fn parseFunc) (outArgs [
 
 	if !exists && len(name) > 3 && hasNoPrefix {
 		bFlag, bExists := f.formal[f.normalizeFlagName(name[3:])]
-		if _, isBoolFlag := bFlag.Value.(BoolFlag); bExists && isBoolFlag && bFlag.AddNegative {
-			flag = bFlag
-			exists = bExists
-			name = name[3:]
+		if bExists && bFlag.AddNegative {
+			if _, isBoolFlag := bFlag.Value.(BoolFlag); isBoolFlag {
+				flag = bFlag
+				exists = bExists
+				name = name[3:]
+			}
 		}
 	}
 
