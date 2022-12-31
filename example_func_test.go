@@ -4,7 +4,6 @@
 package zflag_test
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -20,7 +19,7 @@ func ExampleFunc() {
 	fs.Func("ip", "`IP address` to parse", func(s string) error {
 		ip = net.ParseIP(s)
 		if ip == nil {
-			return errors.New("could not parse IP")
+			return fmt.Errorf("could not parse IP")
 		}
 		return nil
 	})
@@ -34,8 +33,9 @@ func ExampleFunc() {
 	// Output:
 	// {ip: 127.0.0.1, loopback: true}
 	//
-	// invalid argument "256.0.0.1" for "--ip" flag: could not parse IP
 	// Usage of ExampleFunc:
 	//       --ip IP address   IP address to parse
+	//
+	// invalid argument "256.0.0.1" for "--ip" flag: could not parse IP
 	// {ip: <nil>, loopback: false}
 }
