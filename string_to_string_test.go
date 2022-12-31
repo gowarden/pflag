@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gowarden/zflag"
+	"github.com/zulucmd/zflag"
 )
 
 func TestStringToString(t *testing.T) {

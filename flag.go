@@ -472,7 +472,7 @@ func (f *FlagSet) Set(name, value string) error {
 }
 
 // SetAnnotation allows one to set arbitrary annotations on this flag.
-// This is sometimes used by gowarden/zulu programs which want to generate additional
+// This is sometimes used by zulucmd/zulu programs which want to generate additional
 // bash completion information.
 func (f *Flag) SetAnnotation(key string, values []string) {
 	if f.Annotations == nil {

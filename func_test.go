@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gowarden/zflag"
+	"github.com/zulucmd/zflag"
 )
 
 func TestFunc(t *testing.T) {

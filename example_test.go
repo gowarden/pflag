@@ -6,7 +6,7 @@ package zflag_test
 import (
 	"fmt"
 
-	"github.com/gowarden/zflag"
+	"github.com/zulucmd/zflag"
 )
 
 func ExampleShorthandLookup() {

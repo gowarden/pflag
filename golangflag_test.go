@@ -7,7 +7,7 @@ import (
 	goflag "flag"
 	"testing"
 
-	"github.com/gowarden/zflag"
+	"github.com/zulucmd/zflag"
 )
 
 func TestGoflags(t *testing.T) {

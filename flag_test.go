@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gowarden/zflag"
+	"github.com/zulucmd/zflag"
 )
 
 var (

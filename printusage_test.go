@@ -8,7 +8,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/gowarden/zflag"
+	"github.com/zulucmd/zflag"
 )
 
 const expectedOutput = `      --long-form                 Some description

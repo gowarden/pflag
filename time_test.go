@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gowarden/zflag"
+	"github.com/zulucmd/zflag"
 )
 
 func parseTime(t *testing.T, value string) time.Time {

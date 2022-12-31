@@ -6,7 +6,7 @@ package zflag_test
 import (
 	"testing"
 
-	"github.com/gowarden/zflag"
+	"github.com/zulucmd/zflag"
 )
 
 func TestFormatter(t *testing.T) {

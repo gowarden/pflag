@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gowarden/zflag"
+	"github.com/zulucmd/zflag"
 )
 
 func TestDuration(t *testing.T) {
