@@ -1461,7 +1461,6 @@ func TestMultipleNormalizeFlagNameInvocations(t *testing.T) {
 	}
 }
 
-//
 func TestHiddenFlagInUsage(t *testing.T) {
 	f := zflag.NewFlagSet("bob", zflag.ContinueOnError)
 	f.Bool("secretFlag", true, "shhh", zflag.OptHidden())
@@ -1475,7 +1474,6 @@ func TestHiddenFlagInUsage(t *testing.T) {
 	}
 }
 
-//
 func TestHiddenFlagUsage(t *testing.T) {
 	f := zflag.NewFlagSet("bob", zflag.ContinueOnError)
 	f.Bool("secretFlag", true, "shhh", zflag.OptHidden())

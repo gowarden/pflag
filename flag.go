@@ -771,8 +771,10 @@ func (f *FlagSet) Groups() []string {
 // a usage message showing the default settings of all defined
 // command-line flags.
 // For an integer valued flag x, the default output has the form
+//
 //	-x int
 //		usage-message-for-x (default 7)
+//
 // The usage message will appear on a separate line for anything but
 // a bool flag with a one-byte name. For bool flags, the type is
 // omitted and if the flag name is one byte the usage message appears
@@ -782,8 +784,11 @@ func (f *FlagSet) Groups() []string {
 // string; the first such item in the message is taken to be a parameter
 // name to show in the message and the back quotes are stripped from
 // the message when displayed. For instance, given
+//
 //	flag.String("I", "", "search `directory` for include files")
+//
 // the output will be
+//
 //	-I directory
 //		search directory for include files.
 //
@@ -972,7 +977,7 @@ func (f *FlagSet) stripUnknownFlagValue(args []string) []string {
 	return nil
 }
 
-// nolint: funlen
+//nolint: funlen
 func (f *FlagSet) parseLongArg(s string, args []string, fn parseFunc) (outArgs []string, err error) {
 	outArgs = args
 	name := s[2:]
@@ -1049,7 +1054,7 @@ func (f *FlagSet) parseLongArg(s string, args []string, fn parseFunc) (outArgs [
 	return
 }
 
-// nolint: funlen
+//nolint: funlen
 func (f *FlagSet) parseSingleShortArg(shorthands string, args []string, fn parseFunc) (outShorts string, outArgs []string, err error) {
 	outArgs = args
 	outShorts = shorthands[1:]
