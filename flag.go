@@ -397,8 +397,7 @@ func (f *FlagSet) getFlagValue(name string, fType string) (interface{}, error) {
 	}
 
 	if v, isTyped := flag.Value.(Typed); isTyped && fType != "" && v.Type() != fType {
-		err := fmt.Errorf("trying to get %q value of flag of type %q", fType, v.Type())
-		return nil, err
+		return nil, fmt.Errorf("trying to get %q value of flag of type %q", fType, v.Type())
 	}
 
 	getter, ok := flag.Value.(Getter)
@@ -444,16 +443,7 @@ func (f *FlagSet) Set(name, value string) error {
 
 	err := flag.Value.Set(value)
 	if err != nil {
-		var flagName string
-		if flag.Shorthand != 0 && flag.ShorthandDeprecated == "" {
-			flagName = fmt.Sprintf("-%c", flag.Shorthand)
-			if !flag.ShorthandOnly {
-				flagName = fmt.Sprintf("%s, --%s", flagName, flag.Name)
-			}
-		} else {
-			flagName = getFlagWithDashes(flag.Name)
-		}
-		return fmt.Errorf("invalid argument %q for %q flag: %w", value, flagName, err)
+		return NewInvalidArgumentError(err, flag, value)
 	}
 
 	if !flag.Changed {
@@ -1302,25 +1292,16 @@ func (f *FlagSet) Init(name string, errorHandling ErrorHandling) {
 
 // Validate ensures all flag values are valid.
 func (f *FlagSet) Validate() error {
-	var missingFlagNames []string
+	var missingFlagsErr MissingFlagsError
 	f.VisitAll(func(f *Flag) {
 		if f.Required && !f.Changed {
-			missingFlagNames = append(missingFlagNames, fmt.Sprintf("%q", getFlagWithDashes(f.Name)))
+			missingFlagsErr.AddMissingFlag(f)
 		}
 	})
 
-	if len(missingFlagNames) > 0 {
-		return fmt.Errorf(`required flag(s) %s not set`, strings.Join(missingFlagNames, `, `))
+	if len(missingFlagsErr) > 0 {
+		return missingFlagsErr
 	}
 
 	return nil
-}
-
-func getFlagWithDashes(name string) string {
-	dash := "--"
-	if len(name) == 1 {
-		dash = "-"
-	}
-
-	return dash + name
 }
