@@ -40,7 +40,12 @@ func (e *MissingFlagsError) AddMissingFlag(f *Flag) {
 }
 
 func (e MissingFlagsError) Error() string {
-	return fmt.Sprintf(`required flag(s) %q not set`, strings.Join(e, `, `))
+	flagNames := make([]string, 0, len(e))
+	for _, s := range e {
+		flagNames = append(flagNames, fmt.Sprintf("%q", s))
+	}
+
+	return fmt.Sprintf(`required flag(s) %s not set`, strings.Join(flagNames, `, `))
 }
 
 type InvalidArgumentError struct {

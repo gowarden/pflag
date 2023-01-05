@@ -232,13 +232,20 @@ func TestRequired(t *testing.T) {
 	}
 	_ = f.String("string", "0", "string value")
 	_ = f.String("required-string", "0", "required string value", zflag.OptRequired())
+	_ = f.Int("required-int", 0, "required int value", zflag.OptRequired())
 	err := f.Parse([]string{"--string=hello", "some-arg"})
-	expectedError := `required flag(s) "--required-string" not set`
+	expectedError := `required flag(s) "--required-int", "--required-string" not set`
 	if err == nil || err.Error() != expectedError {
-		t.Errorf("Expected an error %q, got %q", expectedError, err)
+		t.Errorf("Expected error %q, got %q", expectedError, err)
 	}
 
 	err = f.Parse([]string{"--required-string=hello", "some-arg"})
+	expectedError = `required flag(s) "--required-int" not set`
+	if err == nil || err.Error() != expectedError {
+		t.Errorf("Expected error %q, got %q", expectedError, err)
+	}
+
+	err = f.Parse([]string{"--required-int=4", "--required-string=hello", "some-arg"})
 	if err != nil {
 		t.Errorf("Expected no error, got %q", err)
 	}
