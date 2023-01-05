@@ -37,6 +37,10 @@ func defaultUsageFormatter(flag *Flag) (string, string) {
 	}
 
 	right := usage
+	if flag.Required {
+		right += " (required)"
+	}
+
 	if !flag.DisablePrintDefault && !flag.DefaultIsZeroValue() {
 		if v, ok := flag.Value.(Typed); ok && v.Type() == "string" {
 			right += fmt.Sprintf(" (default %q)", flag.DefValue)

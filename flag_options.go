@@ -114,6 +114,14 @@ func OptHidden() Opt {
 	}
 }
 
+// OptRequired ensures that a flag must be changed
+func OptRequired() Opt {
+	return func(f *Flag) error {
+		f.Required = true
+		return nil
+	}
+}
+
 // OptShorthandDeprecated If the shorthand of this flag is deprecated, this string is the new or now thing to use
 func OptShorthandDeprecated(msg string) Opt {
 	return func(f *Flag) error {

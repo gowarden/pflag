@@ -19,6 +19,9 @@ func ExampleShorthandLookup() {
 	flag := zflag.ShorthandLookup(short)
 
 	fmt.Println(flag.Name)
+
+	// Output:
+	// verbose
 }
 
 func ExampleFlagSet_ShorthandLookup() {
@@ -32,4 +35,17 @@ func ExampleFlagSet_ShorthandLookup() {
 	flag := fs.ShorthandLookup(short)
 
 	fmt.Println(flag.Name)
+
+	// Output:
+	// verbose
+}
+
+func ExampleFlag_Required() {
+	fs := zflag.NewFlagSet("Example", zflag.ContinueOnError)
+	fs.Bool("required", false, "flag must be set", zflag.OptRequired())
+	err := fs.Parse([]string{})
+	fmt.Println(err)
+
+	// Output:
+	// required flag(s) "--required" not set
 }

@@ -225,6 +225,25 @@ func TestName(t *testing.T) {
 	}
 }
 
+func TestRequired(t *testing.T) {
+	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+	if f.Parsed() {
+		t.Error("f.Parse() = true before Parse")
+	}
+	_ = f.String("string", "0", "string value")
+	_ = f.String("required-string", "0", "required string value", zflag.OptRequired())
+	err := f.Parse([]string{"--string=hello", "some-arg"})
+	expectedError := `required flag(s) "--required-string" not set`
+	if err == nil || err.Error() != expectedError {
+		t.Errorf("Expected an error %q, got %q", expectedError, err)
+	}
+
+	err = f.Parse([]string{"--required-string=hello", "some-arg"})
+	if err != nil {
+		t.Errorf("Expected no error, got %q", err)
+	}
+}
+
 func testParse(f *zflag.FlagSet, t *testing.T) {
 	if f.Parsed() {
 		t.Error("f.Parse() = true before Parse")
@@ -1442,7 +1461,6 @@ func TestMultipleNormalizeFlagNameInvocations(t *testing.T) {
 	}
 }
 
-//
 func TestHiddenFlagInUsage(t *testing.T) {
 	f := zflag.NewFlagSet("bob", zflag.ContinueOnError)
 	f.Bool("secretFlag", true, "shhh", zflag.OptHidden())
@@ -1456,7 +1474,6 @@ func TestHiddenFlagInUsage(t *testing.T) {
 	}
 }
 
-//
 func TestHiddenFlagUsage(t *testing.T) {
 	f := zflag.NewFlagSet("bob", zflag.ContinueOnError)
 	f.Bool("secretFlag", true, "shhh", zflag.OptHidden())
