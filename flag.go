@@ -97,6 +97,7 @@ type Flag struct {
 	Changed             bool                // If the user set the value (or if left to default)
 	Deprecated          string              // If this flag is deprecated, this string is the new or now thing to use
 	Hidden              bool                // used by zulu.Command to allow flags to be hidden from help/usage text
+	Required            bool                // ensures that a flag must be changed
 	ShorthandDeprecated string              // If the shorthand of this flag is deprecated, this string is the new or now thing to use
 	Group               string              // flag group
 	Annotations         map[string][]string // Use it to annotate this specific flag for your application; used by zulu.Command bash completion code
@@ -1171,7 +1172,8 @@ func (f *FlagSet) parseArgs(args []string, fn parseFunc) (err error) {
 			return
 		}
 	}
-	return
+
+	return f.Validate()
 }
 
 var exitFn = func(code int) {
@@ -1189,7 +1191,7 @@ func (f *FlagSet) parseAll(arguments []string, fn parseFunc) error {
 	f.parsed = true
 
 	if len(arguments) == 0 {
-		return nil
+		return f.Validate()
 	}
 
 	f.args = make([]string, 0, len(arguments))
@@ -1291,6 +1293,22 @@ func (f *FlagSet) Init(name string, errorHandling ErrorHandling) {
 	f.name = name
 	f.errorHandling = errorHandling
 	f.argsLenAtDash = -1
+}
+
+// Validate ensures all flag values are valid.
+func (f *FlagSet) Validate() error {
+	var missingFlagNames []string
+	f.VisitAll(func(f *Flag) {
+		if f.Required && !f.Changed {
+			missingFlagNames = append(missingFlagNames, fmt.Sprintf("%q", getFlagWithDashes(f.Name)))
+		}
+	})
+
+	if len(missingFlagNames) > 0 {
+		return fmt.Errorf(`required flag(s) %s not set`, strings.Join(missingFlagNames, `, `))
+	}
+
+	return nil
 }
 
 func getFlagWithDashes(name string) string {

@@ -114,6 +114,13 @@ func TestBool(t *testing.T) {
 			extraOpts:     []zflag.Opt{zflag.OptShorthand('b'), zflag.OptAddNegative()},
 		},
 		{
+			name:        "required option",
+			input:       []string{},
+			flagDefault: false,
+			expectedErr: `required flag(s) "--bs" not set`,
+			extraOpts:   []zflag.Opt{zflag.OptRequired()},
+		},
+		{
 			name:          "repeated value",
 			input:         repeatFlag("--bs", "true", "false"),
 			flagDefault:   true,

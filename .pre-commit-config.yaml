@@ -25,11 +25,11 @@ repos:
       - id: trailing-whitespace
         stages: [commit]
 
-  - repo: https://github.com/hadenlabs/pre-commit-hooks
-    rev: 0.4.0
+  - repo: https://github.com/tekwizely/pre-commit-golang
+    rev: master
     hooks:
-      - id: go-unit-tests
-      - id: go-build
+      - id: go-test-repo-mod
+      - id: go-build-repo-mod
       - id: go-mod-tidy
 
   - repo: local
