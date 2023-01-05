@@ -15,6 +15,7 @@
   - [Mutating or &quot;Normalizing&quot; Flag names](#mutating-or-normalizing-flag-names)
   - [Deprecating a flag or its shorthand](#deprecating-a-flag-or-its-shorthand)
   - [Hidden flags](#hidden-flags)
+  - [Required flags](#required-flags)
   - [Disable sorting of flags](#disable-sorting-of-flags)
   - [Supporting Go flags when using zflag](#supporting-go-flags-when-using-zflag)
   - [Shorthand flags](#shorthand-flags)
@@ -261,6 +262,19 @@ only and don't want it showing up in help text, or for its usage text to be avai
 ```go
 // hide a flag by specifying its name
 flags.Bool("secretFlag", false, "this does something", zflag.OptHidden())
+```
+
+### Required flags
+
+It is possible to mark a flag as required, meaning it zflag will return an error if
+it is not passed in.
+
+**Example**:
+
+```go
+flags.Bool("must", false, "this does something", zflag.OptRequired())
+err := flags.Parse()
+// err == `required flag(s) "--must" not set`
 ```
 
 ### Disable sorting of flags

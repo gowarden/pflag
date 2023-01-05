@@ -2,17 +2,17 @@ minimum_pre_commit_version: '2.9.3'
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit
-    rev: v2.17.0
+    rev: v2.21.0
     hooks:
       - id: validate_manifest
 
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.47.0
+    rev: v1.50.1
     hooks:
       - id: golangci-lint
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.1.0
+    rev: v4.4.0
     hooks:
       - id: check-merge-conflict
         stages: [commit]
@@ -26,7 +26,7 @@ repos:
         stages: [commit]
 
   - repo: https://github.com/tekwizely/pre-commit-golang
-    rev: master
+    rev: v1.0.0-rc.1
     hooks:
       - id: go-test-repo-mod
       - id: go-build-repo-mod
