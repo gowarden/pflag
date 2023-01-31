@@ -226,28 +226,66 @@ func TestName(t *testing.T) {
 }
 
 func TestRequired(t *testing.T) {
-	f := zflag.NewFlagSet("test", zflag.ContinueOnError)
-	if f.Parsed() {
-		t.Error("f.Parse() = true before Parse")
-	}
-	_ = f.String("string", "0", "string value")
-	_ = f.String("required-string", "0", "required string value", zflag.OptRequired())
-	_ = f.Int("required-int", 0, "required int value", zflag.OptRequired())
-	err := f.Parse([]string{"--string=hello", "some-arg"})
-	expectedError := `required flag(s) "--required-int", "--required-string" not set`
-	if err == nil || err.Error() != expectedError {
-		t.Errorf("Expected error %q, got %q", expectedError, err)
+	tests := []struct {
+		name                      string
+		args                      []string
+		expectedError             string
+		IgnoreRequiredFlagsErrors bool
+	}{
+		{
+			name:                      "errors when required flag not there",
+			args:                      []string{"--string=hello", "some-arg"},
+			expectedError:             `required flag(s) "--required-int", "--required-string" not set`,
+			IgnoreRequiredFlagsErrors: false,
+		},
+		{
+			name:                      "errors when required flag not there",
+			args:                      []string{"--required-string=hello", "some-arg"},
+			expectedError:             `required flag(s) "--required-int" not set`,
+			IgnoreRequiredFlagsErrors: false,
+		},
+		{
+			name:                      "does not error when required flags are there",
+			args:                      []string{"--required-int=4", "--required-string=hello", "some-arg"},
+			expectedError:             "",
+			IgnoreRequiredFlagsErrors: false,
+		},
+		{
+			name:                      "does not error when required flags are not there and required flags are not ignored",
+			args:                      []string{"some-arg"},
+			expectedError:             "",
+			IgnoreRequiredFlagsErrors: true,
+		},
 	}
 
-	err = f.Parse([]string{"--required-string=hello", "some-arg"})
-	expectedError = `required flag(s) "--required-int" not set`
-	if err == nil || err.Error() != expectedError {
-		t.Errorf("Expected error %q, got %q", expectedError, err)
-	}
+	for _, tt := range tests {
+		tt := tt
 
-	err = f.Parse([]string{"--required-int=4", "--required-string=hello", "some-arg"})
-	if err != nil {
-		t.Errorf("Expected no error, got %q", err)
+		t.Run(tt.name, func(t *testing.T) {
+			f := zflag.NewFlagSet("test", zflag.ContinueOnError)
+			if f.Parsed() {
+				t.Error("f.Parse() = true before Parse")
+			}
+			_ = f.String("string", "0", "string value")
+			_ = f.String("required-string", "0", "required string value", zflag.OptRequired())
+			_ = f.Int("required-int", 0, "required int value", zflag.OptRequired())
+			f.ParseErrorsAllowlist.RequiredFlags = tt.IgnoreRequiredFlagsErrors
+
+			err := f.Parse(tt.args)
+			if err == nil && tt.expectedError != "" {
+				t.Errorf("Parse() got no error but expected: %v", tt.expectedError)
+				return
+			}
+
+			if err != nil && tt.expectedError == "" {
+				t.Errorf("Parse() expected no error, got: %v", err)
+				return
+			}
+
+			if err != nil && err.Error() != tt.expectedError {
+				t.Errorf("Parse() error = %v, wantErr: %v", err, tt.expectedError)
+			}
+		})
 	}
 }
 
