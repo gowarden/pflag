@@ -35,6 +35,9 @@ type ParseErrorsAllowlist struct {
 	// UnknownFlags will ignore unknown flags errors and continue parsing rest of the flags
 	// See GetUnknownFlags to retrieve collected unknowns.
 	UnknownFlags bool
+	// RequiredFlags will ignore required flags errors and continue parsing rest of the flags
+	// See GetRequiredFlags to retrieve collected required flags.
+	RequiredFlags bool
 }
 
 // NormalizedName is a flag name that has been normalized according to rules
@@ -967,7 +970,7 @@ func (f *FlagSet) stripUnknownFlagValue(args []string) []string {
 	return nil
 }
 
-//nolint: funlen
+// nolint: funlen
 func (f *FlagSet) parseLongArg(s string, args []string, fn parseFunc) (outArgs []string, err error) {
 	outArgs = args
 	name := s[2:]
@@ -1044,7 +1047,7 @@ func (f *FlagSet) parseLongArg(s string, args []string, fn parseFunc) (outArgs [
 	return
 }
 
-//nolint: funlen
+// nolint: funlen
 func (f *FlagSet) parseSingleShortArg(shorthands string, args []string, fn parseFunc) (outShorts string, outArgs []string, err error) {
 	outArgs = args
 	outShorts = shorthands[1:]
@@ -1154,7 +1157,7 @@ func (f *FlagSet) parseArgs(args []string, fn parseFunc) (err error) {
 		}
 
 		if s[1] == '-' {
-			if len(s) == 2 { // "--" terminates the flags
+			if len(s) == 2 && s == "--" { // "--" terminates the flags
 				f.argsLenAtDash = len(f.args)
 				f.args = append(f.args, args...)
 				break
@@ -1292,15 +1295,17 @@ func (f *FlagSet) Init(name string, errorHandling ErrorHandling) {
 
 // Validate ensures all flag values are valid.
 func (f *FlagSet) Validate() error {
-	var missingFlagsErr MissingFlagsError
-	f.VisitAll(func(f *Flag) {
-		if f.Required && !f.Changed {
-			missingFlagsErr.AddMissingFlag(f)
-		}
-	})
+	if !f.ParseErrorsAllowlist.RequiredFlags {
+		var missingFlagsErr MissingFlagsError
+		f.VisitAll(func(f *Flag) {
+			if f.Required && !f.Changed {
+				missingFlagsErr.AddMissingFlag(f)
+			}
+		})
 
-	if len(missingFlagsErr) > 0 {
-		return missingFlagsErr
+		if len(missingFlagsErr) > 0 {
+			return missingFlagsErr
+		}
 	}
 
 	return nil
