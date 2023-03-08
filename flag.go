@@ -970,7 +970,7 @@ func (f *FlagSet) stripUnknownFlagValue(args []string) []string {
 	return nil
 }
 
-// nolint: funlen
+//nolint:funlen
 func (f *FlagSet) parseLongArg(s string, args []string, fn parseFunc) (outArgs []string, err error) {
 	outArgs = args
 	name := s[2:]
@@ -1047,7 +1047,7 @@ func (f *FlagSet) parseLongArg(s string, args []string, fn parseFunc) (outArgs [
 	return
 }
 
-// nolint: funlen
+//nolint:funlen
 func (f *FlagSet) parseSingleShortArg(shorthands string, args []string, fn parseFunc) (outShorts string, outArgs []string, err error) {
 	outArgs = args
 	outShorts = shorthands[1:]
