@@ -30,8 +30,8 @@ const (
 	PanicOnError
 )
 
-// ParseErrorsAllowlist defines the parsing errors that can be ignored
-type ParseErrorsAllowlist struct {
+// ParseErrorsAllowList defines the parsing errors that can be ignored
+type ParseErrorsAllowList struct {
 	// UnknownFlags will ignore unknown flags errors and continue parsing rest of the flags
 	// See GetUnknownFlags to retrieve collected unknowns.
 	UnknownFlags bool
@@ -55,8 +55,8 @@ type FlagSet struct {
 	// help/usage messages.
 	SortFlags bool
 
-	// ParseErrorsAllowlist is used to configure an allowlist of errors
-	ParseErrorsAllowlist ParseErrorsAllowlist
+	// ParseErrorsAllowList is used to configure an allowlist of errors
+	ParseErrorsAllowList ParseErrorsAllowList
 
 	// DisableBuiltinHelp toggles the built-in convention of handling -h and --help
 	DisableBuiltinHelp bool
@@ -78,7 +78,7 @@ type FlagSet struct {
 	argsLenAtDash     int      // len(args) when a '--' was located when parsing, or -1 if no --
 	errorHandling     ErrorHandling
 	output            io.Writer // nil means stderr; use Output() accessor
-	interspersed      bool      // allow interspersed option/non-option args
+	interspersed      bool      // Allow interspersed option/non-option args
 	normalizeNameFunc func(f *FlagSet, name string) NormalizedName
 
 	addedGoFlagSets []*goflag.FlagSet
@@ -87,23 +87,23 @@ type FlagSet struct {
 
 // A Flag represents the state of a flag.
 type Flag struct {
-	Name                string              // name as it appears on command line
-	Shorthand           rune                // one-letter abbreviated flag
-	ShorthandOnly       bool                // If the user set only the shorthand
-	Usage               string              // help message
-	UsageType           string              // flag type displayed in the help message
-	DisableUnquoteUsage bool                // toggle unquoting and extraction of type from usage
-	DisablePrintDefault bool                // toggle printing of the default value in usage message
-	Value               Value               // value as set
+	Name                string              // Name as it appears on command line.
+	Shorthand           rune                // Shorthand represents a one-letter abbreviation of a flag.
+	ShorthandOnly       bool                // ShorthandOnly specifies if the user set only the shorthand.
+	Usage               string              // Usage should contain the help message.
+	UsageType           string              // UsageType is the flag type displayed in the help message.
+	DisableUnquoteUsage bool                // DisableUnquoteUsage will toggle extract and unquote the type from the usage.
+	DisablePrintDefault bool                // DisablePrintDefault toggles printing of the default value in usage message.
+	Value               Value               // Value of the value as set.
 	AddNegative         bool                // AddNegative automatically add a --no-<flag> option for boolean flags.
-	DefValue            string              // default value (as text); for usage message
-	Changed             bool                // If the user set the value (or if left to default)
-	Deprecated          string              // If this flag is deprecated, this string is the new or now thing to use
-	Hidden              bool                // used by zulu.Command to allow flags to be hidden from help/usage text
-	Required            bool                // ensures that a flag must be changed
-	ShorthandDeprecated string              // If the shorthand of this flag is deprecated, this string is the new or now thing to use
-	Group               string              // flag group
-	Annotations         map[string][]string // Use it to annotate this specific flag for your application; used by zulu.Command bash completion code
+	DefValue            string              // DefValue should contain the default value (as text); for usage message.
+	Changed             bool                // Changed contains whether the user set the value (or if left to default).
+	Deprecated          string              // Deprecated is a string printed for a deprecation notice.
+	Hidden              bool                // Hidden is used by zulu.Command to allow flags to be hidden from help/usage text.
+	Required            bool                // Required ensures that a flag must be changed.
+	ShorthandDeprecated string              // ShorthandDeprecated is a string printed for a deprecation notice of the Shorthand.
+	Group               string              // Group contains the flag group.
+	Annotations         map[string][]string // Annotation is used to annotate this specific flag for your application; e.g. it is used by zulu.Command bash completion code.
 }
 
 // Value is the interface to the dynamic value stored in a flag.
@@ -680,16 +680,15 @@ func (f *FlagSet) FlagUsagesWrapped(cols int) string {
 }
 
 // FlagUsagesForGroupWrapped returns a string containing the usage information
-// for all flags in the FlagSet for group. Wrapped to `cols` columns (0 for no
+// for all flags in the FlagSet for a group. Wrapped to `cols` columns (0 for no
 // wrapping).
 func (f *FlagSet) FlagUsagesForGroupWrapped(group string, cols int) string {
-	buf := new(bytes.Buffer)
-
-	lines := make(map[string][]string)
-
 	usageFormatter := f.flagUsageFormatter()
 
-	maxlen := 0
+	var (
+		max, maxlen int
+		lines       = make(map[string][]string)
+	)
 	f.VisitAll(func(flag *Flag) {
 		if flag.Hidden {
 			return
@@ -706,13 +705,16 @@ func (f *FlagSet) FlagUsagesForGroupWrapped(group string, cols int) string {
 
 		line += right
 
-		group := flag.Group
-		if _, ok := lines[group]; !ok {
-			lines[group] = make([]string, 0)
+		groupName := flag.Group
+		if _, ok := lines[groupName]; !ok {
+			lines[groupName] = make([]string, 0)
 		}
-		lines[group] = append(lines[group], line)
+		lines[groupName] = append(lines[groupName], line)
+		max += len(line) + len(groupName)
 	})
 
+	buf := new(bytes.Buffer)
+	buf.Grow(max)
 	for _, line := range lines[group] {
 		sidx := strings.Index(line, "\x00")
 		spacing := strings.Repeat(" ", maxlen-sidx)
@@ -1001,7 +1003,7 @@ func (f *FlagSet) parseLongArg(s string, args []string, fn parseFunc) (outArgs [
 			f.usage()
 			err = ErrHelp
 			return
-		case f.ParseErrorsAllowlist.UnknownFlags || (flag != nil && flag.ShorthandOnly):
+		case f.ParseErrorsAllowList.UnknownFlags || (flag != nil && flag.ShorthandOnly):
 			// --unknown=unknownval arg ...
 			// we do not want to lose arg in this case
 			f.addUnknownFlag(s)
@@ -1060,7 +1062,7 @@ func (f *FlagSet) parseSingleShortArg(shorthands string, args []string, fn parse
 			f.usage()
 			err = ErrHelp
 			return
-		case f.ParseErrorsAllowlist.UnknownFlags:
+		case f.ParseErrorsAllowList.UnknownFlags:
 			if len(shorthands) > 2 {
 				// '-f...'
 				// we do not want to lose anything in this case
@@ -1295,7 +1297,7 @@ func (f *FlagSet) Init(name string, errorHandling ErrorHandling) {
 
 // Validate ensures all flag values are valid.
 func (f *FlagSet) Validate() error {
-	if !f.ParseErrorsAllowlist.RequiredFlags {
+	if !f.ParseErrorsAllowList.RequiredFlags {
 		var missingFlagsErr MissingFlagsError
 		f.VisitAll(func(f *Flag) {
 			if f.Required && !f.Changed {

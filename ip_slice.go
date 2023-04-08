@@ -65,8 +65,8 @@ func (s *ipSliceValue) String() string {
 	return fmt.Sprintf("%s", *s.value)
 }
 
-func (s *ipSliceValue) fromString(val string) (net.IP, error) {
-	return net.ParseIP(strings.TrimSpace(val)), nil
+func (s *ipSliceValue) fromString(val string) net.IP {
+	return net.ParseIP(strings.TrimSpace(val))
 }
 
 func (s *ipSliceValue) toString(val net.IP) string {
@@ -74,10 +74,7 @@ func (s *ipSliceValue) toString(val net.IP) string {
 }
 
 func (s *ipSliceValue) Append(val string) error {
-	i, err := s.fromString(val)
-	if err != nil {
-		return err
-	}
+	i := s.fromString(val)
 	*s.value = append(*s.value, i)
 	return nil
 }
@@ -85,11 +82,7 @@ func (s *ipSliceValue) Append(val string) error {
 func (s *ipSliceValue) Replace(val []string) error {
 	out := make([]net.IP, len(val))
 	for i, d := range val {
-		var err error
-		out[i], err = s.fromString(d)
-		if err != nil {
-			return err
-		}
+		out[i] = s.fromString(d)
 	}
 	*s.value = out
 	return nil

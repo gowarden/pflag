@@ -17,9 +17,9 @@ var _ Value = (*bytesHexValue)(nil)
 var _ Getter = (*bytesHexValue)(nil)
 var _ Typed = (*bytesHexValue)(nil)
 
-// String implements zflag.Value.String.
-func (bytesHex bytesHexValue) String() string {
-	return fmt.Sprintf("%X", []byte(bytesHex))
+// String implements zflag.Value.
+func (bytesHex *bytesHexValue) String() string {
+	return fmt.Sprintf("%X", *bytesHex)
 }
 
 func (bytesHex *bytesHexValue) Get() interface{} {
@@ -103,8 +103,8 @@ var _ Getter = (*bytesBase64Value)(nil)
 var _ Typed = (*bytesBase64Value)(nil)
 
 // String implements zflag.Value.String.
-func (bytesBase64 bytesBase64Value) String() string {
-	return base64.StdEncoding.EncodeToString(bytesBase64)
+func (bytesBase64 *bytesBase64Value) String() string {
+	return base64.StdEncoding.EncodeToString(*bytesBase64)
 }
 
 func (bytesBase64 *bytesBase64Value) Get() interface{} {

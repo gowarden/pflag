@@ -4,7 +4,6 @@
 package zflag_test
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -269,7 +268,7 @@ func TestRequired(t *testing.T) {
 			_ = f.String("string", "0", "string value")
 			_ = f.String("required-string", "0", "required string value", zflag.OptRequired())
 			_ = f.Int("required-int", 0, "required int value", zflag.OptRequired())
-			f.ParseErrorsAllowlist.RequiredFlags = tt.IgnoreRequiredFlagsErrors
+			f.ParseErrorsAllowList.RequiredFlags = tt.IgnoreRequiredFlagsErrors
 
 			err := f.Parse(tt.args)
 			if err == nil && tt.expectedError != "" {
@@ -563,7 +562,7 @@ func testParseWithUnknownFlags(f *zflag.FlagSet, t *testing.T) {
 	if f.Parsed() {
 		t.Error("f.Parse() = true before Parse")
 	}
-	f.ParseErrorsAllowlist.UnknownFlags = true
+	f.ParseErrorsAllowList.UnknownFlags = true
 
 	f.Bool("boola", false, "bool value", zflag.OptShorthand('a'))
 	f.Bool("boolb", false, "bool2 value", zflag.OptShorthand('b'))
@@ -1119,7 +1118,7 @@ func TestUserDefined(t *testing.T) {
 
 func TestSetOutput(t *testing.T) {
 	var flags zflag.FlagSet
-	var buf bytes.Buffer
+	var buf strings.Builder
 	flags.SetOutput(&buf)
 	flags.Init("test", zflag.ContinueOnError)
 	_ = flags.Parse([]string{"--unknown"})
@@ -1130,7 +1129,7 @@ func TestSetOutput(t *testing.T) {
 
 func TestOutput(t *testing.T) {
 	var flags zflag.FlagSet
-	var buf bytes.Buffer
+	var buf strings.Builder
 	expect := "an example string"
 	flags.SetOutput(&buf)
 	fmt.Fprint(flags.Output(), expect)
@@ -1147,8 +1146,9 @@ func TestOutputExitOnError(t *testing.T) {
 		t.Fatal("this error should not be triggered")
 		return
 	}
-	mockStdout := bytes.NewBufferString("")
-	mockStderr := bytes.NewBufferString("")
+
+	mockStdout := new(strings.Builder)
+	mockStderr := new(strings.Builder)
 	cmd := exec.Command(os.Args[0], "-test.run="+t.Name())
 	cmd.Env = append(os.Environ(), "ZFLAG_CRASH_TEST=1")
 	cmd.Stdout = mockStdout
@@ -1250,7 +1250,7 @@ func TestHelp(t *testing.T) {
 		}
 	}
 	helpCalled = false
-	fs.ParseErrorsAllowlist.UnknownFlags = true
+	fs.ParseErrorsAllowList.UnknownFlags = true
 	for _, f := range []string{"--help", "-h"} {
 		err := fs.Parse([]string{f})
 		t.Logf("help called: %v\n", helpCalled)
@@ -1377,7 +1377,7 @@ func getDeprecatedFlagSet() *zflag.FlagSet {
 func TestDeprecatedFlagInDocs(t *testing.T) {
 	f := getDeprecatedFlagSet()
 
-	out := new(bytes.Buffer)
+	out := new(strings.Builder)
 	f.SetOutput(out)
 	f.PrintDefaults()
 
@@ -1394,7 +1394,7 @@ func TestUnHiddenDeprecatedFlagInDocs(t *testing.T) {
 	}
 	flg.Hidden = false
 
-	out := new(bytes.Buffer)
+	out := new(strings.Builder)
 	f.SetOutput(out)
 	f.PrintDefaults()
 
@@ -1412,7 +1412,7 @@ func TestDeprecatedFlagShorthandInDocs(t *testing.T) {
 	name := "noshorthandflag"
 	f.Bool(name, true, "always true", zflag.OptShorthand('n'), zflag.OptShorthandDeprecated(fmt.Sprintf("use --%s instead", name)))
 
-	out := new(bytes.Buffer)
+	out := new(strings.Builder)
 	f.SetOutput(out)
 	f.PrintDefaults()
 
@@ -1431,7 +1431,7 @@ func parseReturnStderr(t *testing.T, f *zflag.FlagSet, args []string) (string, e
 	outC := make(chan string)
 	// copy the output in a separate goroutine so printing can't block indefinitely
 	go func() {
-		var buf bytes.Buffer
+		var buf strings.Builder
 		_, _ = io.Copy(&buf, r)
 		outC <- buf.String()
 	}()
@@ -1510,7 +1510,7 @@ func TestHiddenFlagInUsage(t *testing.T) {
 	f := zflag.NewFlagSet("bob", zflag.ContinueOnError)
 	f.Bool("secretFlag", true, "shhh", zflag.OptHidden())
 
-	out := new(bytes.Buffer)
+	out := new(strings.Builder)
 	f.SetOutput(out)
 	f.PrintDefaults()
 
@@ -1569,7 +1569,7 @@ func (cv *customValue) Type() string { return "custom" }
 
 func TestPrintDefaults(t *testing.T) {
 	fs := zflag.NewFlagSet("print defaults test", zflag.ContinueOnError)
-	var buf bytes.Buffer
+	var buf strings.Builder
 	fs.SetOutput(&buf)
 	fs.Bool("A", false, "for bootstrapping, allow 'any' type")
 	fs.Bool("Alongflagname", false, "disable bounds checking", zflag.OptAddNegative())
@@ -1720,7 +1720,7 @@ func TestUnquoteUsage(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			var buf bytes.Buffer
+			var buf strings.Builder
 			var fs = zflag.NewFlagSet("", zflag.ContinueOnError)
 			fs.SetOutput(&buf)
 
@@ -1740,7 +1740,7 @@ func TestUnquoteUsage(t *testing.T) {
 // TestCustomFlagValue verifies that custom flag usage string doesn't change its "default" section after parsing
 func TestCustomFlagDefValue(t *testing.T) {
 	fs := zflag.NewFlagSet("TestCustomFlagDefValue", zflag.ContinueOnError)
-	var buf bytes.Buffer
+	var buf strings.Builder
 	fs.SetOutput(&buf)
 
 	var cv customValue
@@ -1764,8 +1764,8 @@ func TestCustomFlagDefValue(t *testing.T) {
 	afterParse := buf.String()
 
 	if beforeParse != afterParse {
-		fmt.Println("\n" + beforeParse)
-		fmt.Println("\n" + afterParse)
+		fmt.Print("\n" + beforeParse + "\n")
+		fmt.Print("\n" + afterParse + "\n")
 		t.Errorf("got %q want %q\n", afterParse, beforeParse)
 	}
 }
@@ -1776,7 +1776,7 @@ func TestNoDuplicateUnknownFlagError(t *testing.T) {
 		assertEqual(t, 2, code)
 	})
 
-	buf := bytes.Buffer{}
+	var buf strings.Builder
 
 	fs := zflag.NewFlagSet("myprog", zflag.ExitOnError)
 	fs.SetOutput(&buf)
