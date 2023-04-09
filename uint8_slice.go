@@ -102,8 +102,8 @@ func (s *uint8SliceValue) GetSlice() []string {
 }
 
 // GetUint8Slice return the []uint8 value of a flag with the given name
-func (f *FlagSet) GetUint8Slice(name string) ([]uint8, error) {
-	val, err := f.getFlagValue(name, "uint8Slice")
+func (fs *FlagSet) GetUint8Slice(name string) ([]uint8, error) {
+	val, err := fs.getFlagValue(name, "uint8Slice")
 	if err != nil {
 		return []uint8{}, err
 	}
@@ -111,8 +111,8 @@ func (f *FlagSet) GetUint8Slice(name string) ([]uint8, error) {
 }
 
 // MustGetUint8Slice is like GetUint8Slice, but panics on error.
-func (f *FlagSet) MustGetUint8Slice(name string) []uint8 {
-	val, err := f.GetUint8Slice(name)
+func (fs *FlagSet) MustGetUint8Slice(name string) []uint8 {
+	val, err := fs.GetUint8Slice(name)
 	if err != nil {
 		panic(err)
 	}
@@ -121,8 +121,8 @@ func (f *FlagSet) MustGetUint8Slice(name string) []uint8 {
 
 // Uint8SliceVar defines a []uint8 flag with specified name, default value, and usage string.
 // The argument p points to a []uint8 variable in which to store the value of the flag.
-func (f *FlagSet) Uint8SliceVar(p *[]uint8, name string, value []uint8, usage string, opts ...Opt) {
-	f.Var(newUint8SliceValue(value, p), name, usage, opts...)
+func (fs *FlagSet) Uint8SliceVar(p *[]uint8, name string, value []uint8, usage string, opts ...Opt) {
+	fs.Var(newUint8SliceValue(value, p), name, usage, opts...)
 }
 
 // Uint8SliceVar defines a []uint8 flag with specified name, default value, and usage string.
@@ -133,9 +133,9 @@ func Uint8SliceVar(p *[]uint8, name string, value []uint8, usage string, opts ..
 
 // Uint8Slice defines a []uint8 flag with specified name, default value, and usage string.
 // The return value is the address of a []uint8 variable that stores the value of the flag.
-func (f *FlagSet) Uint8Slice(name string, value []uint8, usage string, opts ...Opt) *[]uint8 {
+func (fs *FlagSet) Uint8Slice(name string, value []uint8, usage string, opts ...Opt) *[]uint8 {
 	var p []uint8
-	f.Uint8SliceVar(&p, name, value, usage, opts...)
+	fs.Uint8SliceVar(&p, name, value, usage, opts...)
 	return &p
 }
 

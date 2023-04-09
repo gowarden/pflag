@@ -38,8 +38,8 @@ func (i *uintValue) Type() string {
 func (i *uintValue) String() string { return strconv.FormatUint(uint64(*i), 10) }
 
 // GetUint return the uint value of a flag with the given name
-func (f *FlagSet) GetUint(name string) (uint, error) {
-	val, err := f.getFlagValue(name, "uint")
+func (fs *FlagSet) GetUint(name string) (uint, error) {
+	val, err := fs.getFlagValue(name, "uint")
 	if err != nil {
 		return 0, err
 	}
@@ -47,8 +47,8 @@ func (f *FlagSet) GetUint(name string) (uint, error) {
 }
 
 // MustGetUint is like GetUint, but panics on error.
-func (f *FlagSet) MustGetUint(name string) uint {
-	val, err := f.GetUint(name)
+func (fs *FlagSet) MustGetUint(name string) uint {
+	val, err := fs.GetUint(name)
 	if err != nil {
 		panic(err)
 	}
@@ -57,8 +57,8 @@ func (f *FlagSet) MustGetUint(name string) uint {
 
 // UintVar defines an uint flag with specified name, default value, and usage string.
 // The argument p points to an uint variable in which to store the value of the flag.
-func (f *FlagSet) UintVar(p *uint, name string, value uint, usage string, opts ...Opt) {
-	f.Var(newUintValue(value, p), name, usage, opts...)
+func (fs *FlagSet) UintVar(p *uint, name string, value uint, usage string, opts ...Opt) {
+	fs.Var(newUintValue(value, p), name, usage, opts...)
 }
 
 // UintVar defines an uint flag with specified name, default value, and usage string.
@@ -69,9 +69,9 @@ func UintVar(p *uint, name string, value uint, usage string, opts ...Opt) {
 
 // Uint defines an uint flag with specified name, default value, and usage string.
 // The return value is the address of an uint variable that stores the value of the flag.
-func (f *FlagSet) Uint(name string, value uint, usage string, opts ...Opt) *uint {
+func (fs *FlagSet) Uint(name string, value uint, usage string, opts ...Opt) *uint {
 	var p uint
-	f.UintVar(&p, name, value, usage, opts...)
+	fs.UintVar(&p, name, value, usage, opts...)
 	return &p
 }
 

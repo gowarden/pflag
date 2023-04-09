@@ -38,8 +38,8 @@ func (i *int8Value) Type() string {
 func (i *int8Value) String() string { return strconv.FormatInt(int64(*i), 10) }
 
 // GetInt8 return the int8 value of a flag with the given name
-func (f *FlagSet) GetInt8(name string) (int8, error) {
-	val, err := f.getFlagValue(name, "int8")
+func (fs *FlagSet) GetInt8(name string) (int8, error) {
+	val, err := fs.getFlagValue(name, "int8")
 	if err != nil {
 		return 0, err
 	}
@@ -47,8 +47,8 @@ func (f *FlagSet) GetInt8(name string) (int8, error) {
 }
 
 // MustGetInt8 is like GetInt8, but panics on error.
-func (f *FlagSet) MustGetInt8(name string) int8 {
-	val, err := f.GetInt8(name)
+func (fs *FlagSet) MustGetInt8(name string) int8 {
+	val, err := fs.GetInt8(name)
 	if err != nil {
 		panic(err)
 	}
@@ -57,8 +57,8 @@ func (f *FlagSet) MustGetInt8(name string) int8 {
 
 // Int8Var defines an int8 flag with specified name, default value, and usage string.
 // The argument p points to an int8 variable in which to store the value of the flag.
-func (f *FlagSet) Int8Var(p *int8, name string, value int8, usage string, opts ...Opt) {
-	f.Var(newInt8Value(value, p), name, usage, opts...)
+func (fs *FlagSet) Int8Var(p *int8, name string, value int8, usage string, opts ...Opt) {
+	fs.Var(newInt8Value(value, p), name, usage, opts...)
 }
 
 // Int8Var defines an int8 flag with specified name, default value, and usage string.
@@ -69,9 +69,9 @@ func Int8Var(p *int8, name string, value int8, usage string, opts ...Opt) {
 
 // Int8 defines an int8 flag with specified name, default value, and usage string.
 // The return value is the address of an int8 variable that stores the value of the flag.
-func (f *FlagSet) Int8(name string, value int8, usage string, opts ...Opt) *int8 {
+func (fs *FlagSet) Int8(name string, value int8, usage string, opts ...Opt) *int8 {
 	var p int8
-	f.Int8Var(&p, name, value, usage, opts...)
+	fs.Int8Var(&p, name, value, usage, opts...)
 	return &p
 }
 

@@ -38,8 +38,8 @@ func (i *intValue) Type() string {
 func (i *intValue) String() string { return strconv.Itoa(int(*i)) }
 
 // GetInt return the int value of a flag with the given name
-func (f *FlagSet) GetInt(name string) (int, error) {
-	val, err := f.getFlagValue(name, "int")
+func (fs *FlagSet) GetInt(name string) (int, error) {
+	val, err := fs.getFlagValue(name, "int")
 	if err != nil {
 		return 0, err
 	}
@@ -47,8 +47,8 @@ func (f *FlagSet) GetInt(name string) (int, error) {
 }
 
 // MustGetInt is like GetInt, but panics on error.
-func (f *FlagSet) MustGetInt(name string) int {
-	val, err := f.GetInt(name)
+func (fs *FlagSet) MustGetInt(name string) int {
+	val, err := fs.GetInt(name)
 	if err != nil {
 		panic(err)
 	}
@@ -57,8 +57,8 @@ func (f *FlagSet) MustGetInt(name string) int {
 
 // IntVar defines an int flag with specified name, default value, and usage string.
 // The argument p points to an int variable in which to store the value of the flag.
-func (f *FlagSet) IntVar(p *int, name string, value int, usage string, opts ...Opt) {
-	f.Var(newIntValue(value, p), name, usage, opts...)
+func (fs *FlagSet) IntVar(p *int, name string, value int, usage string, opts ...Opt) {
+	fs.Var(newIntValue(value, p), name, usage, opts...)
 }
 
 // IntVar defines an int flag with specified name, default value, and usage string.
@@ -69,9 +69,9 @@ func IntVar(p *int, name string, value int, usage string, opts ...Opt) {
 
 // Int defines an int flag with specified name, default value, and usage string.
 // The return value is the address of an int variable that stores the value of the flag.
-func (f *FlagSet) Int(name string, value int, usage string, opts ...Opt) *int {
+func (fs *FlagSet) Int(name string, value int, usage string, opts ...Opt) *int {
 	var p int
-	f.IntVar(&p, name, value, usage, opts...)
+	fs.IntVar(&p, name, value, usage, opts...)
 	return &p
 }
 

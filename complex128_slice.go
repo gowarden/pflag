@@ -101,8 +101,8 @@ func (s *complex128SliceValue) GetSlice() []string {
 }
 
 // GetComplex128Slice return the []complex128 value of a flag with the given name
-func (f *FlagSet) GetComplex128Slice(name string) ([]complex128, error) {
-	val, err := f.getFlagValue(name, "complex128Slice")
+func (fs *FlagSet) GetComplex128Slice(name string) ([]complex128, error) {
+	val, err := fs.getFlagValue(name, "complex128Slice")
 	if err != nil {
 		return []complex128{}, err
 	}
@@ -110,8 +110,8 @@ func (f *FlagSet) GetComplex128Slice(name string) ([]complex128, error) {
 }
 
 // MustGetComplex128Slice is like GetComplex128Slice, but panics on error.
-func (f *FlagSet) MustGetComplex128Slice(name string) []complex128 {
-	val, err := f.GetComplex128Slice(name)
+func (fs *FlagSet) MustGetComplex128Slice(name string) []complex128 {
+	val, err := fs.GetComplex128Slice(name)
 	if err != nil {
 		panic(err)
 	}
@@ -120,8 +120,8 @@ func (f *FlagSet) MustGetComplex128Slice(name string) []complex128 {
 
 // Complex128SliceVar defines a complex128Slice flag with specified name, default value, and usage string.
 // The argument p points to a []complex128 variable in which to store the value of the flag.
-func (f *FlagSet) Complex128SliceVar(p *[]complex128, name string, value []complex128, usage string, opts ...Opt) {
-	f.Var(newComplex128SliceValue(value, p), name, usage, opts...)
+func (fs *FlagSet) Complex128SliceVar(p *[]complex128, name string, value []complex128, usage string, opts ...Opt) {
+	fs.Var(newComplex128SliceValue(value, p), name, usage, opts...)
 }
 
 // Complex128SliceVar defines a complex128[] flag with specified name, default value, and usage string.
@@ -132,9 +132,9 @@ func Complex128SliceVar(p *[]complex128, name string, value []complex128, usage 
 
 // Complex128Slice defines a []complex128 flag with specified name, default value, and usage string.
 // The return value is the address of a []complex128 variable that stores the value of the flag.
-func (f *FlagSet) Complex128Slice(name string, value []complex128, usage string, opts ...Opt) *[]complex128 {
+func (fs *FlagSet) Complex128Slice(name string, value []complex128, usage string, opts ...Opt) *[]complex128 {
 	var p []complex128
-	f.Complex128SliceVar(&p, name, value, usage, opts...)
+	fs.Complex128SliceVar(&p, name, value, usage, opts...)
 	return &p
 }
 

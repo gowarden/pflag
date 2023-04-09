@@ -111,8 +111,8 @@ func (s *ipNetSliceValue) GetSlice() []string {
 }
 
 // GetIPNetSlice returns the []net.IPNet value of a flag with the given name
-func (f *FlagSet) GetIPNetSlice(name string) ([]net.IPNet, error) {
-	val, err := f.getFlagValue(name, "ipNetSlice")
+func (fs *FlagSet) GetIPNetSlice(name string) ([]net.IPNet, error) {
+	val, err := fs.getFlagValue(name, "ipNetSlice")
 	if err != nil {
 		return []net.IPNet{}, err
 	}
@@ -120,8 +120,8 @@ func (f *FlagSet) GetIPNetSlice(name string) ([]net.IPNet, error) {
 }
 
 // MustGetIPNetSlice is like GetIPNetSlice, but panics on error.
-func (f *FlagSet) MustGetIPNetSlice(name string) []net.IPNet {
-	val, err := f.GetIPNetSlice(name)
+func (fs *FlagSet) MustGetIPNetSlice(name string) []net.IPNet {
+	val, err := fs.GetIPNetSlice(name)
 	if err != nil {
 		panic(err)
 	}
@@ -130,8 +130,8 @@ func (f *FlagSet) MustGetIPNetSlice(name string) []net.IPNet {
 
 // IPNetSliceVar defines a []net.IPNet flag with specified name, default value, and usage string.
 // The argument p points to a []net.IPNet variable in which to store the value of the flag.
-func (f *FlagSet) IPNetSliceVar(p *[]net.IPNet, name string, value []net.IPNet, usage string, opts ...Opt) {
-	f.Var(newIPNetSliceValue(value, p), name, usage, opts...)
+func (fs *FlagSet) IPNetSliceVar(p *[]net.IPNet, name string, value []net.IPNet, usage string, opts ...Opt) {
+	fs.Var(newIPNetSliceValue(value, p), name, usage, opts...)
 }
 
 // IPNetSliceVar defines a []net.IPNet flag with specified name, default value, and usage string.
@@ -142,9 +142,9 @@ func IPNetSliceVar(p *[]net.IPNet, name string, value []net.IPNet, usage string,
 
 // IPNetSlice defines a []net.IPNet flag with specified name, default value, and usage string.
 // The return value is the address of a []net.IPNet variable that stores the value of the flag.
-func (f *FlagSet) IPNetSlice(name string, value []net.IPNet, usage string, opts ...Opt) *[]net.IPNet {
+func (fs *FlagSet) IPNetSlice(name string, value []net.IPNet, usage string, opts ...Opt) *[]net.IPNet {
 	var p []net.IPNet
-	f.IPNetSliceVar(&p, name, value, usage, opts...)
+	fs.IPNetSliceVar(&p, name, value, usage, opts...)
 	return &p
 }
 

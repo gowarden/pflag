@@ -69,8 +69,8 @@ func (s *stringToInt64Value) String() string {
 }
 
 // GetStringToInt64 return the map[string]int64 value of a flag with the given name
-func (f *FlagSet) GetStringToInt64(name string) (map[string]int64, error) {
-	val, err := f.getFlagValue(name, "stringToInt64")
+func (fs *FlagSet) GetStringToInt64(name string) (map[string]int64, error) {
+	val, err := fs.getFlagValue(name, "stringToInt64")
 	if err != nil {
 		return map[string]int64{}, err
 	}
@@ -78,8 +78,8 @@ func (f *FlagSet) GetStringToInt64(name string) (map[string]int64, error) {
 }
 
 // MustGetStringToInt64 is like GetStringToInt64, but panics on error.
-func (f *FlagSet) MustGetStringToInt64(name string) map[string]int64 {
-	val, err := f.GetStringToInt64(name)
+func (fs *FlagSet) MustGetStringToInt64(name string) map[string]int64 {
+	val, err := fs.GetStringToInt64(name)
 	if err != nil {
 		panic(err)
 	}
@@ -88,8 +88,8 @@ func (f *FlagSet) MustGetStringToInt64(name string) map[string]int64 {
 
 // StringToInt64Var defines a map[string]int64 flag with specified name, default value, and usage string.
 // The argument p points to a map[string]int64 variable in which to store the values of multiple flags.
-func (f *FlagSet) StringToInt64Var(p *map[string]int64, name string, value map[string]int64, usage string, opts ...Opt) {
-	f.Var(newStringToInt64Value(value, p), name, usage, opts...)
+func (fs *FlagSet) StringToInt64Var(p *map[string]int64, name string, value map[string]int64, usage string, opts ...Opt) {
+	fs.Var(newStringToInt64Value(value, p), name, usage, opts...)
 }
 
 // StringToInt64Var defines a map[string]int64 flag with specified name, default value, and usage string.
@@ -100,9 +100,9 @@ func StringToInt64Var(p *map[string]int64, name string, value map[string]int64, 
 
 // StringToInt64 defines a map[string]int64 flag with specified name, default value, and usage string.
 // The return value is the address of a map[string]int64 variable that stores the values of multiple flags.
-func (f *FlagSet) StringToInt64(name string, value map[string]int64, usage string, opts ...Opt) *map[string]int64 {
+func (fs *FlagSet) StringToInt64(name string, value map[string]int64, usage string, opts ...Opt) *map[string]int64 {
 	var p map[string]int64
-	f.StringToInt64Var(&p, name, value, usage, opts...)
+	fs.StringToInt64Var(&p, name, value, usage, opts...)
 	return &p
 }
 

@@ -38,8 +38,8 @@ func (i *uint32Value) Type() string {
 func (i *uint32Value) String() string { return strconv.FormatUint(uint64(*i), 10) }
 
 // GetUint32 return the uint32 value of a flag with the given name
-func (f *FlagSet) GetUint32(name string) (uint32, error) {
-	val, err := f.getFlagValue(name, "uint32")
+func (fs *FlagSet) GetUint32(name string) (uint32, error) {
+	val, err := fs.getFlagValue(name, "uint32")
 	if err != nil {
 		return 0, err
 	}
@@ -47,8 +47,8 @@ func (f *FlagSet) GetUint32(name string) (uint32, error) {
 }
 
 // MustGetUint32 is like GetUint32, but panics on error.
-func (f *FlagSet) MustGetUint32(name string) uint32 {
-	val, err := f.GetUint32(name)
+func (fs *FlagSet) MustGetUint32(name string) uint32 {
+	val, err := fs.GetUint32(name)
 	if err != nil {
 		panic(err)
 	}
@@ -57,8 +57,8 @@ func (f *FlagSet) MustGetUint32(name string) uint32 {
 
 // Uint32Var defines an uint32 flag with specified name, default value, and usage string.
 // The argument p points to an uint32 variable in which to store the value of the flag.
-func (f *FlagSet) Uint32Var(p *uint32, name string, value uint32, usage string, opts ...Opt) {
-	f.Var(newUint32Value(value, p), name, usage, opts...)
+func (fs *FlagSet) Uint32Var(p *uint32, name string, value uint32, usage string, opts ...Opt) {
+	fs.Var(newUint32Value(value, p), name, usage, opts...)
 }
 
 // Uint32Var defines an uint32 flag with specified name, default value, and usage string.
@@ -69,9 +69,9 @@ func Uint32Var(p *uint32, name string, value uint32, usage string, opts ...Opt) 
 
 // Uint32 defines an uint32 flag with specified name, default value, and usage string.
 // The return value is the address of an uint32 variable that stores the value of the flag.
-func (f *FlagSet) Uint32(name string, value uint32, usage string, opts ...Opt) *uint32 {
+func (fs *FlagSet) Uint32(name string, value uint32, usage string, opts ...Opt) *uint32 {
 	var p uint32
-	f.Uint32Var(&p, name, value, usage, opts...)
+	fs.Uint32Var(&p, name, value, usage, opts...)
 	return &p
 }
 

@@ -89,8 +89,8 @@ func (s *intSliceValue) GetSlice() []string {
 }
 
 // GetIntSlice return the []int value of a flag with the given name
-func (f *FlagSet) GetIntSlice(name string) ([]int, error) {
-	val, err := f.getFlagValue(name, "intSlice")
+func (fs *FlagSet) GetIntSlice(name string) ([]int, error) {
+	val, err := fs.getFlagValue(name, "intSlice")
 	if err != nil {
 		return []int{}, err
 	}
@@ -98,8 +98,8 @@ func (f *FlagSet) GetIntSlice(name string) ([]int, error) {
 }
 
 // MustGetIntSlice is like GetIntSlice, but panics on error.
-func (f *FlagSet) MustGetIntSlice(name string) []int {
-	val, err := f.GetIntSlice(name)
+func (fs *FlagSet) MustGetIntSlice(name string) []int {
+	val, err := fs.GetIntSlice(name)
 	if err != nil {
 		panic(err)
 	}
@@ -108,8 +108,8 @@ func (f *FlagSet) MustGetIntSlice(name string) []int {
 
 // IntSliceVar defines a []int flag with specified name, default value, and usage string.
 // The argument p points to a []int variable in which to store the value of the flag.
-func (f *FlagSet) IntSliceVar(p *[]int, name string, value []int, usage string, opts ...Opt) {
-	f.Var(newIntSliceValue(value, p), name, usage, opts...)
+func (fs *FlagSet) IntSliceVar(p *[]int, name string, value []int, usage string, opts ...Opt) {
+	fs.Var(newIntSliceValue(value, p), name, usage, opts...)
 }
 
 // IntSliceVar defines a []int flag with specified name, default value, and usage string.
@@ -120,9 +120,9 @@ func IntSliceVar(p *[]int, name string, value []int, usage string, opts ...Opt) 
 
 // IntSlice defines a []int flag with specified name, default value, and usage string.
 // The return value is the address of a []int variable that stores the value of the flag.
-func (f *FlagSet) IntSlice(name string, value []int, usage string, opts ...Opt) *[]int {
+func (fs *FlagSet) IntSlice(name string, value []int, usage string, opts ...Opt) *[]int {
 	var p []int
-	f.IntSliceVar(&p, name, value, usage, opts...)
+	fs.IntSliceVar(&p, name, value, usage, opts...)
 	return &p
 }
 

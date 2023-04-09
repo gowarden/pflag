@@ -97,8 +97,8 @@ func (s *ipSliceValue) GetSlice() []string {
 }
 
 // GetIPSlice returns the []net.IP value of a flag with the given name
-func (f *FlagSet) GetIPSlice(name string) ([]net.IP, error) {
-	val, err := f.getFlagValue(name, "ipSlice")
+func (fs *FlagSet) GetIPSlice(name string) ([]net.IP, error) {
+	val, err := fs.getFlagValue(name, "ipSlice")
 	if err != nil {
 		return []net.IP{}, err
 	}
@@ -106,8 +106,8 @@ func (f *FlagSet) GetIPSlice(name string) ([]net.IP, error) {
 }
 
 // MustGetIPSlice is like GetIPSlice, but panics on error.
-func (f *FlagSet) MustGetIPSlice(name string) []net.IP {
-	val, err := f.GetIPSlice(name)
+func (fs *FlagSet) MustGetIPSlice(name string) []net.IP {
+	val, err := fs.GetIPSlice(name)
 	if err != nil {
 		panic(err)
 	}
@@ -116,8 +116,8 @@ func (f *FlagSet) MustGetIPSlice(name string) []net.IP {
 
 // IPSliceVar defines a []net.IP flag with specified name, default value, and usage string.
 // The argument p points to a []net.IP variable in which to store the value of the flag.
-func (f *FlagSet) IPSliceVar(p *[]net.IP, name string, value []net.IP, usage string, opts ...Opt) {
-	f.Var(newIPSliceValue(value, p), name, usage, opts...)
+func (fs *FlagSet) IPSliceVar(p *[]net.IP, name string, value []net.IP, usage string, opts ...Opt) {
+	fs.Var(newIPSliceValue(value, p), name, usage, opts...)
 }
 
 // IPSliceVar defines a []net.IP flag with specified name, default value, and usage string.
@@ -128,9 +128,9 @@ func IPSliceVar(p *[]net.IP, name string, value []net.IP, usage string, opts ...
 
 // IPSlice defines a []net.IP flag with specified name, default value, and usage string.
 // The return value is the address of a []net.IP variable that stores the value of the flag.
-func (f *FlagSet) IPSlice(name string, value []net.IP, usage string, opts ...Opt) *[]net.IP {
+func (fs *FlagSet) IPSlice(name string, value []net.IP, usage string, opts ...Opt) *[]net.IP {
 	var p []net.IP
-	f.IPSliceVar(&p, name, value, usage, opts...)
+	fs.IPSliceVar(&p, name, value, usage, opts...)
 	return &p
 }
 

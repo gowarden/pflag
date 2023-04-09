@@ -102,8 +102,8 @@ func (s *uintSliceValue) GetSlice() []string {
 }
 
 // GetUintSlice returns the []uint value of a flag with the given name.
-func (f *FlagSet) GetUintSlice(name string) ([]uint, error) {
-	val, err := f.getFlagValue(name, "uintSlice")
+func (fs *FlagSet) GetUintSlice(name string) ([]uint, error) {
+	val, err := fs.getFlagValue(name, "uintSlice")
 	if err != nil {
 		return []uint{}, err
 	}
@@ -111,8 +111,8 @@ func (f *FlagSet) GetUintSlice(name string) ([]uint, error) {
 }
 
 // MustGetUintSlice is like GetUintSlice, but panics on error.
-func (f *FlagSet) MustGetUintSlice(name string) []uint {
-	val, err := f.GetUintSlice(name)
+func (fs *FlagSet) MustGetUintSlice(name string) []uint {
+	val, err := fs.GetUintSlice(name)
 	if err != nil {
 		panic(err)
 	}
@@ -121,8 +121,8 @@ func (f *FlagSet) MustGetUintSlice(name string) []uint {
 
 // UintSliceVar defines a []uint flag with specified name, default value, and usage string.
 // The argument p points to a []uint variable in which to store the value of the flag.
-func (f *FlagSet) UintSliceVar(p *[]uint, name string, value []uint, usage string, opts ...Opt) {
-	f.Var(newUintSliceValue(value, p), name, usage, opts...)
+func (fs *FlagSet) UintSliceVar(p *[]uint, name string, value []uint, usage string, opts ...Opt) {
+	fs.Var(newUintSliceValue(value, p), name, usage, opts...)
 }
 
 // UintSliceVar defines a []uint flag with specified name, default value, and usage string.
@@ -133,9 +133,9 @@ func UintSliceVar(p *[]uint, name string, value []uint, usage string, opts ...Op
 
 // UintSlice defines a []uint flag with specified name, default value, and usage string.
 // The return value is the address of a []uint variable that stores the value of the flag.
-func (f *FlagSet) UintSlice(name string, value []uint, usage string, opts ...Opt) *[]uint {
+func (fs *FlagSet) UintSlice(name string, value []uint, usage string, opts ...Opt) *[]uint {
 	var p []uint
-	f.UintSliceVar(&p, name, value, usage, opts...)
+	fs.UintSliceVar(&p, name, value, usage, opts...)
 	return &p
 }
 

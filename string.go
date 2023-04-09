@@ -31,8 +31,8 @@ func (s *stringValue) Type() string {
 func (s *stringValue) String() string { return string(*s) }
 
 // GetString return the string value of a flag with the given name
-func (f *FlagSet) GetString(name string) (string, error) {
-	val, err := f.getFlagValue(name, "string")
+func (fs *FlagSet) GetString(name string) (string, error) {
+	val, err := fs.getFlagValue(name, "string")
 	if err != nil {
 		return "", err
 	}
@@ -40,8 +40,8 @@ func (f *FlagSet) GetString(name string) (string, error) {
 }
 
 // MustGetString is like GetString, but panics on error.
-func (f *FlagSet) MustGetString(name string) string {
-	val, err := f.GetString(name)
+func (fs *FlagSet) MustGetString(name string) string {
+	val, err := fs.GetString(name)
 	if err != nil {
 		panic(err)
 	}
@@ -50,8 +50,8 @@ func (f *FlagSet) MustGetString(name string) string {
 
 // StringVar defines a string flag with specified name, default value, and usage string.
 // The argument p points to a string variable in which to store the value of the flag.
-func (f *FlagSet) StringVar(p *string, name string, value string, usage string, opts ...Opt) {
-	f.Var(newStringValue(value, p), name, usage, opts...)
+func (fs *FlagSet) StringVar(p *string, name string, value string, usage string, opts ...Opt) {
+	fs.Var(newStringValue(value, p), name, usage, opts...)
 }
 
 // StringVar defines a string flag with specified name, default value, and usage string.
@@ -62,9 +62,9 @@ func StringVar(p *string, name string, value string, usage string, opts ...Opt) 
 
 // String defines a string flag with specified name, default value, and usage string.
 // The return value is the address of a string variable that stores the value of the flag.
-func (f *FlagSet) String(name string, value string, usage string, opts ...Opt) *string {
+func (fs *FlagSet) String(name string, value string, usage string, opts ...Opt) *string {
 	var p string
-	f.StringVar(&p, name, value, usage, opts...)
+	fs.StringVar(&p, name, value, usage, opts...)
 	return &p
 }
 

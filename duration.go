@@ -38,8 +38,8 @@ func (d *durationValue) Type() string {
 func (d *durationValue) String() string { return (*time.Duration)(d).String() }
 
 // GetDuration return the duration value of a flag with the given name
-func (f *FlagSet) GetDuration(name string) (time.Duration, error) {
-	val, err := f.getFlagValue(name, "duration")
+func (fs *FlagSet) GetDuration(name string) (time.Duration, error) {
+	val, err := fs.getFlagValue(name, "duration")
 	if err != nil {
 		return 0, err
 	}
@@ -47,8 +47,8 @@ func (f *FlagSet) GetDuration(name string) (time.Duration, error) {
 }
 
 // MustGetDuration is like GetDuration, but panics on error.
-func (f *FlagSet) MustGetDuration(name string) time.Duration {
-	val, err := f.GetDuration(name)
+func (fs *FlagSet) MustGetDuration(name string) time.Duration {
+	val, err := fs.GetDuration(name)
 	if err != nil {
 		panic(err)
 	}
@@ -57,8 +57,8 @@ func (f *FlagSet) MustGetDuration(name string) time.Duration {
 
 // DurationVar defines a time.Duration flag with specified name, default value, and usage string.
 // The argument p points to a time.Duration variable in which to store the value of the flag.
-func (f *FlagSet) DurationVar(p *time.Duration, name string, value time.Duration, usage string, opts ...Opt) {
-	f.Var(newDurationValue(value, p), name, usage, opts...)
+func (fs *FlagSet) DurationVar(p *time.Duration, name string, value time.Duration, usage string, opts ...Opt) {
+	fs.Var(newDurationValue(value, p), name, usage, opts...)
 }
 
 // DurationVar defines a time.Duration flag with specified name, default value, and usage string.
@@ -69,9 +69,9 @@ func DurationVar(p *time.Duration, name string, value time.Duration, usage strin
 
 // Duration defines a time.Duration flag with specified name, default value, and usage string.
 // The return value is the address of a time.Duration variable that stores the value of the flag.
-func (f *FlagSet) Duration(name string, value time.Duration, usage string, opts ...Opt) *time.Duration {
+func (fs *FlagSet) Duration(name string, value time.Duration, usage string, opts ...Opt) *time.Duration {
 	var p time.Duration
-	f.DurationVar(&p, name, value, usage, opts...)
+	fs.DurationVar(&p, name, value, usage, opts...)
 	return &p
 }
 

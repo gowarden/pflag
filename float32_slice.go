@@ -102,8 +102,8 @@ func (s *float32SliceValue) GetSlice() []string {
 }
 
 // GetFloat32Slice return the []float32 value of a flag with the given name
-func (f *FlagSet) GetFloat32Slice(name string) ([]float32, error) {
-	val, err := f.getFlagValue(name, "float32Slice")
+func (fs *FlagSet) GetFloat32Slice(name string) ([]float32, error) {
+	val, err := fs.getFlagValue(name, "float32Slice")
 	if err != nil {
 		return []float32{}, err
 	}
@@ -111,8 +111,8 @@ func (f *FlagSet) GetFloat32Slice(name string) ([]float32, error) {
 }
 
 // MustGetFloat32Slice is like GetFloat32Slice, but panics on error.
-func (f *FlagSet) MustGetFloat32Slice(name string) []float32 {
-	val, err := f.GetFloat32Slice(name)
+func (fs *FlagSet) MustGetFloat32Slice(name string) []float32 {
+	val, err := fs.GetFloat32Slice(name)
 	if err != nil {
 		panic(err)
 	}
@@ -121,8 +121,8 @@ func (f *FlagSet) MustGetFloat32Slice(name string) []float32 {
 
 // Float32SliceVar defines a float32Slice flag with specified name, default value, and usage string.
 // The argument p points to a []float32 variable in which to store the value of the flag.
-func (f *FlagSet) Float32SliceVar(p *[]float32, name string, value []float32, usage string, opts ...Opt) {
-	f.Var(newFloat32SliceValue(value, p), name, usage, opts...)
+func (fs *FlagSet) Float32SliceVar(p *[]float32, name string, value []float32, usage string, opts ...Opt) {
+	fs.Var(newFloat32SliceValue(value, p), name, usage, opts...)
 }
 
 // Float32SliceVar defines a float32[] flag with specified name, default value, and usage string.
@@ -133,9 +133,9 @@ func Float32SliceVar(p *[]float32, name string, value []float32, usage string, o
 
 // Float32Slice defines a []float32 flag with specified name, default value, and usage string.
 // The return value is the address of a []float32 variable that stores the value of the flag.
-func (f *FlagSet) Float32Slice(name string, value []float32, usage string, opts ...Opt) *[]float32 {
+func (fs *FlagSet) Float32Slice(name string, value []float32, usage string, opts ...Opt) *[]float32 {
 	var p []float32
-	f.Float32SliceVar(&p, name, value, usage, opts...)
+	fs.Float32SliceVar(&p, name, value, usage, opts...)
 	return &p
 }
 

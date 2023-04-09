@@ -66,8 +66,8 @@ func (s *stringSliceValue) GetSlice() []string {
 }
 
 // GetStringSlice return the []string value of a flag with the given name
-func (f *FlagSet) GetStringSlice(name string) ([]string, error) {
-	val, err := f.getFlagValue(name, "stringSlice")
+func (fs *FlagSet) GetStringSlice(name string) ([]string, error) {
+	val, err := fs.getFlagValue(name, "stringSlice")
 	if err != nil {
 		return []string{}, err
 	}
@@ -75,8 +75,8 @@ func (f *FlagSet) GetStringSlice(name string) ([]string, error) {
 }
 
 // MustGetStringSlice is like GetStringSlice, but panics on error.
-func (f *FlagSet) MustGetStringSlice(name string) []string {
-	val, err := f.GetStringSlice(name)
+func (fs *FlagSet) MustGetStringSlice(name string) []string {
+	val, err := fs.GetStringSlice(name)
 	if err != nil {
 		panic(err)
 	}
@@ -85,8 +85,8 @@ func (f *FlagSet) MustGetStringSlice(name string) []string {
 
 // StringSliceVar defines a []string flag with specified name, default value, and usage string.
 // The argument p points to a []string variable in which to store the value of the flag.
-func (f *FlagSet) StringSliceVar(p *[]string, name string, value []string, usage string, opts ...Opt) {
-	f.Var(newStringSliceValue(value, p), name, usage, opts...)
+func (fs *FlagSet) StringSliceVar(p *[]string, name string, value []string, usage string, opts ...Opt) {
+	fs.Var(newStringSliceValue(value, p), name, usage, opts...)
 }
 
 // StringSliceVar defines a []string flag with specified name, default value, and usage string.
@@ -97,9 +97,9 @@ func StringSliceVar(p *[]string, name string, value []string, usage string, opts
 
 // StringSlice defines a []string flag with specified name, default value, and usage string.
 // The return value is the address of a []string variable that stores the value of the flag.
-func (f *FlagSet) StringSlice(name string, value []string, usage string, opts ...Opt) *[]string {
+func (fs *FlagSet) StringSlice(name string, value []string, usage string, opts ...Opt) *[]string {
 	var p []string
-	f.StringSliceVar(&p, name, value, usage, opts...)
+	fs.StringSliceVar(&p, name, value, usage, opts...)
 	return &p
 }
 

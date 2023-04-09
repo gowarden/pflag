@@ -38,8 +38,8 @@ func (f *float64Value) Type() string {
 func (f *float64Value) String() string { return strconv.FormatFloat(float64(*f), 'g', -1, 64) }
 
 // GetFloat64 return the float64 value of a flag with the given name
-func (f *FlagSet) GetFloat64(name string) (float64, error) {
-	val, err := f.getFlagValue(name, "float64")
+func (fs *FlagSet) GetFloat64(name string) (float64, error) {
+	val, err := fs.getFlagValue(name, "float64")
 	if err != nil {
 		return 0, err
 	}
@@ -47,8 +47,8 @@ func (f *FlagSet) GetFloat64(name string) (float64, error) {
 }
 
 // MustGetFloat64 is like GetFloat64, but panics on error.
-func (f *FlagSet) MustGetFloat64(name string) float64 {
-	val, err := f.GetFloat64(name)
+func (fs *FlagSet) MustGetFloat64(name string) float64 {
+	val, err := fs.GetFloat64(name)
 	if err != nil {
 		panic(err)
 	}
@@ -57,8 +57,8 @@ func (f *FlagSet) MustGetFloat64(name string) float64 {
 
 // Float64Var defines a float64 flag with specified name, default value, and usage string.
 // The argument p points to a float64 variable in which to store the value of the flag.
-func (f *FlagSet) Float64Var(p *float64, name string, value float64, usage string, opts ...Opt) {
-	f.Var(newFloat64Value(value, p), name, usage, opts...)
+func (fs *FlagSet) Float64Var(p *float64, name string, value float64, usage string, opts ...Opt) {
+	fs.Var(newFloat64Value(value, p), name, usage, opts...)
 }
 
 // Float64Var defines a float64 flag with specified name, default value, and usage string.
@@ -69,9 +69,9 @@ func Float64Var(p *float64, name string, value float64, usage string, opts ...Op
 
 // Float64 defines a float64 flag with specified name, default value, and usage string.
 // The return value is the address of a float64 variable that stores the value of the flag.
-func (f *FlagSet) Float64(name string, value float64, usage string, opts ...Opt) *float64 {
+func (fs *FlagSet) Float64(name string, value float64, usage string, opts ...Opt) *float64 {
 	var p float64
-	f.Float64Var(&p, name, value, usage, opts...)
+	fs.Float64Var(&p, name, value, usage, opts...)
 	return &p
 }
 

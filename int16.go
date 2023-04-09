@@ -38,8 +38,8 @@ func (i *int16Value) Type() string {
 func (i *int16Value) String() string { return strconv.FormatInt(int64(*i), 10) }
 
 // GetInt16 returns the int16 value of a flag with the given name
-func (f *FlagSet) GetInt16(name string) (int16, error) {
-	val, err := f.getFlagValue(name, "int16")
+func (fs *FlagSet) GetInt16(name string) (int16, error) {
+	val, err := fs.getFlagValue(name, "int16")
 	if err != nil {
 		return 0, err
 	}
@@ -47,8 +47,8 @@ func (f *FlagSet) GetInt16(name string) (int16, error) {
 }
 
 // MustGetInt16 is like GetInt16, but panics on error.
-func (f *FlagSet) MustGetInt16(name string) int16 {
-	val, err := f.GetInt16(name)
+func (fs *FlagSet) MustGetInt16(name string) int16 {
+	val, err := fs.GetInt16(name)
 	if err != nil {
 		panic(err)
 	}
@@ -57,8 +57,8 @@ func (f *FlagSet) MustGetInt16(name string) int16 {
 
 // Int16Var defines an int16 flag with specified name, default value, and usage string.
 // The argument p points to an int16 variable in which to store the value of the flag.
-func (f *FlagSet) Int16Var(p *int16, name string, value int16, usage string, opts ...Opt) {
-	f.Var(newInt16Value(value, p), name, usage, opts...)
+func (fs *FlagSet) Int16Var(p *int16, name string, value int16, usage string, opts ...Opt) {
+	fs.Var(newInt16Value(value, p), name, usage, opts...)
 }
 
 // Int16Var defines an int16 flag with specified name, default value, and usage string.
@@ -69,9 +69,9 @@ func Int16Var(p *int16, name string, value int16, usage string, opts ...Opt) {
 
 // Int16 defines an int16 flag with specified name, default value, and usage string.
 // The return value is the address of an int16 variable that stores the value of the flag.
-func (f *FlagSet) Int16(name string, value int16, usage string, opts ...Opt) *int16 {
+func (fs *FlagSet) Int16(name string, value int16, usage string, opts ...Opt) *int16 {
 	var p int16
-	f.Int16Var(&p, name, value, usage, opts...)
+	fs.Int16Var(&p, name, value, usage, opts...)
 	return &p
 }
 

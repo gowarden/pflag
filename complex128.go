@@ -38,8 +38,8 @@ func (f *complex128Value) Type() string {
 func (f *complex128Value) String() string { return strconv.FormatComplex(complex128(*f), 'g', -1, 128) }
 
 // GetComplex128 return the complex128 value of a flag with the given name
-func (f *FlagSet) GetComplex128(name string) (complex128, error) {
-	val, err := f.getFlagValue(name, "complex128")
+func (fs *FlagSet) GetComplex128(name string) (complex128, error) {
+	val, err := fs.getFlagValue(name, "complex128")
 	if err != nil {
 		return 0, err
 	}
@@ -47,8 +47,8 @@ func (f *FlagSet) GetComplex128(name string) (complex128, error) {
 }
 
 // MustGetComplex128 is like GetComplex128, but panics on error.
-func (f *FlagSet) MustGetComplex128(name string) complex128 {
-	val, err := f.GetComplex128(name)
+func (fs *FlagSet) MustGetComplex128(name string) complex128 {
+	val, err := fs.GetComplex128(name)
 	if err != nil {
 		panic(err)
 	}
@@ -57,8 +57,8 @@ func (f *FlagSet) MustGetComplex128(name string) complex128 {
 
 // Complex128Var defines a complex128 flag with specified name, default value, and usage string.
 // The argument p points to a complex128 variable in which to store the value of the flag.
-func (f *FlagSet) Complex128Var(p *complex128, name string, value complex128, usage string, opts ...Opt) {
-	f.Var(newComplex128Value(value, p), name, usage, opts...)
+func (fs *FlagSet) Complex128Var(p *complex128, name string, value complex128, usage string, opts ...Opt) {
+	fs.Var(newComplex128Value(value, p), name, usage, opts...)
 }
 
 // Complex128Var defines a complex128 flag with specified name, default value, and usage string.
@@ -69,9 +69,9 @@ func Complex128Var(p *complex128, name string, value complex128, usage string, o
 
 // Complex128 defines a complex128 flag with specified name, default value, and usage string.
 // The return value is the address of a complex128 variable that stores the value of the flag.
-func (f *FlagSet) Complex128(name string, value complex128, usage string, opts ...Opt) *complex128 {
+func (fs *FlagSet) Complex128(name string, value complex128, usage string, opts ...Opt) *complex128 {
 	var p complex128
-	f.Complex128Var(&p, name, value, usage, opts...)
+	fs.Complex128Var(&p, name, value, usage, opts...)
 	return &p
 }
 

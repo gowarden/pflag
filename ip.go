@@ -44,8 +44,8 @@ func (i *ipValue) Type() string {
 }
 
 // GetIP return the net.IP value of a flag with the given name
-func (f *FlagSet) GetIP(name string) (net.IP, error) {
-	val, err := f.getFlagValue(name, "ip")
+func (fs *FlagSet) GetIP(name string) (net.IP, error) {
+	val, err := fs.getFlagValue(name, "ip")
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +53,8 @@ func (f *FlagSet) GetIP(name string) (net.IP, error) {
 }
 
 // MustGetIP is like GetIP, but panics on error.
-func (f *FlagSet) MustGetIP(name string) net.IP {
-	val, err := f.GetIP(name)
+func (fs *FlagSet) MustGetIP(name string) net.IP {
+	val, err := fs.GetIP(name)
 	if err != nil {
 		panic(err)
 	}
@@ -63,8 +63,8 @@ func (f *FlagSet) MustGetIP(name string) net.IP {
 
 // IPVar defines a net.IP flag with specified name, default value, and usage string.
 // The argument p points to a net.IP variable in which to store the value of the flag.
-func (f *FlagSet) IPVar(p *net.IP, name string, value net.IP, usage string, opts ...Opt) {
-	f.Var(newIPValue(value, p), name, usage, opts...)
+func (fs *FlagSet) IPVar(p *net.IP, name string, value net.IP, usage string, opts ...Opt) {
+	fs.Var(newIPValue(value, p), name, usage, opts...)
 }
 
 // IPVar defines a net.IP flag with specified name, default value, and usage string.
@@ -75,9 +75,9 @@ func IPVar(p *net.IP, name string, value net.IP, usage string, opts ...Opt) {
 
 // IP defines a net.IP flag with specified name, default value, and usage string.
 // The return value is the address of a net.IP variable that stores the value of the flag.
-func (f *FlagSet) IP(name string, value net.IP, usage string, opts ...Opt) *net.IP {
+func (fs *FlagSet) IP(name string, value net.IP, usage string, opts ...Opt) *net.IP {
 	var p net.IP
-	f.IPVar(&p, name, value, usage, opts...)
+	fs.IPVar(&p, name, value, usage, opts...)
 	return &p
 }
 

@@ -55,8 +55,8 @@ func (d *TimeValue) Type() string {
 func (d *TimeValue) String() string { return d.Time.Format(time.RFC3339Nano) }
 
 // GetTime return the time value of a flag with the given name
-func (f *FlagSet) GetTime(name string) (time.Time, error) {
-	val, err := f.getFlagValue(name, "time")
+func (fs *FlagSet) GetTime(name string) (time.Time, error) {
+	val, err := fs.getFlagValue(name, "time")
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -64,8 +64,8 @@ func (f *FlagSet) GetTime(name string) (time.Time, error) {
 }
 
 // MustGetTime is like GetTime, but panics on error.
-func (f *FlagSet) MustGetTime(name string) time.Time {
-	val, err := f.GetTime(name)
+func (fs *FlagSet) MustGetTime(name string) time.Time {
+	val, err := fs.GetTime(name)
 	if err != nil {
 		panic(err)
 	}
@@ -74,8 +74,8 @@ func (f *FlagSet) MustGetTime(name string) time.Time {
 
 // TimeVar defines a time.Time flag with specified name, default value, and usage string.
 // The argument p points to a time.Time variable in which to store the value of the flag.
-func (f *FlagSet) TimeVar(p *time.Time, name string, value time.Time, formats []string, usage string, opts ...Opt) {
-	f.Var(newTimeValue(value, p, formats), name, usage, opts...)
+func (fs *FlagSet) TimeVar(p *time.Time, name string, value time.Time, formats []string, usage string, opts ...Opt) {
+	fs.Var(newTimeValue(value, p, formats), name, usage, opts...)
 }
 
 // TimeVar defines a time.Time flag with specified name, default value, and usage string.
@@ -86,9 +86,9 @@ func TimeVar(p *time.Time, name string, value time.Time, formats []string, usage
 
 // Time defines a time.Time flag with specified name, default value, and usage string.
 // The return value is the address of a time.Time variable that stores the value of the flag.
-func (f *FlagSet) Time(name string, value time.Time, formats []string, usage string, opts ...Opt) *time.Time {
+func (fs *FlagSet) Time(name string, value time.Time, formats []string, usage string, opts ...Opt) *time.Time {
 	p := new(time.Time)
-	f.TimeVar(p, name, value, formats, usage, opts...)
+	fs.TimeVar(p, name, value, formats, usage, opts...)
 	return p
 }
 

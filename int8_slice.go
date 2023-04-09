@@ -102,8 +102,8 @@ func (s *int8SliceValue) GetSlice() []string {
 }
 
 // GetInt8Slice return the []int8 value of a flag with the given name
-func (f *FlagSet) GetInt8Slice(name string) ([]int8, error) {
-	val, err := f.getFlagValue(name, "int8Slice")
+func (fs *FlagSet) GetInt8Slice(name string) ([]int8, error) {
+	val, err := fs.getFlagValue(name, "int8Slice")
 	if err != nil {
 		return []int8{}, err
 	}
@@ -111,8 +111,8 @@ func (f *FlagSet) GetInt8Slice(name string) ([]int8, error) {
 }
 
 // MustGetInt8Slice is like GetInt8Slice, but panics on error.
-func (f *FlagSet) MustGetInt8Slice(name string) []int8 {
-	val, err := f.GetInt8Slice(name)
+func (fs *FlagSet) MustGetInt8Slice(name string) []int8 {
+	val, err := fs.GetInt8Slice(name)
 	if err != nil {
 		panic(err)
 	}
@@ -121,8 +121,8 @@ func (f *FlagSet) MustGetInt8Slice(name string) []int8 {
 
 // Int8SliceVar defines a []int8 flag with specified name, default value, and usage string.
 // The argument p points to a []int8 variable in which to store the value of the flag.
-func (f *FlagSet) Int8SliceVar(p *[]int8, name string, value []int8, usage string, opts ...Opt) {
-	f.Var(newInt8SliceValue(value, p), name, usage, opts...)
+func (fs *FlagSet) Int8SliceVar(p *[]int8, name string, value []int8, usage string, opts ...Opt) {
+	fs.Var(newInt8SliceValue(value, p), name, usage, opts...)
 }
 
 // Int8SliceVar defines a []int8 flag with specified name, default value, and usage string.
@@ -133,9 +133,9 @@ func Int8SliceVar(p *[]int8, name string, value []int8, usage string, opts ...Op
 
 // Int8Slice defines a []int8 flag with specified name, default value, and usage string.
 // The return value is the address of a []int8 variable that stores the value of the flag.
-func (f *FlagSet) Int8Slice(name string, value []int8, usage string, opts ...Opt) *[]int8 {
+func (fs *FlagSet) Int8Slice(name string, value []int8, usage string, opts ...Opt) *[]int8 {
 	var p []int8
-	f.Int8SliceVar(&p, name, value, usage, opts...)
+	fs.Int8SliceVar(&p, name, value, usage, opts...)
 	return &p
 }
 

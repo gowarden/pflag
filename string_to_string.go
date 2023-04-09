@@ -67,8 +67,8 @@ func (s *stringToStringValue) String() string {
 }
 
 // GetStringToString return the map[string]string value of a flag with the given name
-func (f *FlagSet) GetStringToString(name string) (map[string]string, error) {
-	val, err := f.getFlagValue(name, "stringToString")
+func (fs *FlagSet) GetStringToString(name string) (map[string]string, error) {
+	val, err := fs.getFlagValue(name, "stringToString")
 	if err != nil {
 		return map[string]string{}, err
 	}
@@ -76,8 +76,8 @@ func (f *FlagSet) GetStringToString(name string) (map[string]string, error) {
 }
 
 // MustGetStringToString is like GetStringToString, but panics on error.
-func (f *FlagSet) MustGetStringToString(name string) map[string]string {
-	val, err := f.GetStringToString(name)
+func (fs *FlagSet) MustGetStringToString(name string) map[string]string {
+	val, err := fs.GetStringToString(name)
 	if err != nil {
 		panic(err)
 	}
@@ -86,8 +86,8 @@ func (f *FlagSet) MustGetStringToString(name string) map[string]string {
 
 // StringToStringVar defines a map[string]string flag with specified name, default value, and usage string.
 // The argument p points to a map[string]string variable in which to store the values of multiple flags.
-func (f *FlagSet) StringToStringVar(p *map[string]string, name string, value map[string]string, usage string, opts ...Opt) {
-	f.Var(newStringToStringValue(value, p), name, usage, opts...)
+func (fs *FlagSet) StringToStringVar(p *map[string]string, name string, value map[string]string, usage string, opts ...Opt) {
+	fs.Var(newStringToStringValue(value, p), name, usage, opts...)
 }
 
 // StringToStringVar defines a map[string]string flag with specified name, default value, and usage string.
@@ -98,9 +98,9 @@ func StringToStringVar(p *map[string]string, name string, value map[string]strin
 
 // StringToString defines a map[string]string flag with specified name, default value, and usage string.
 // The return value is the address of a map[string]string variable that stores the values of multiple flags.
-func (f *FlagSet) StringToString(name string, value map[string]string, usage string, opts ...Opt) *map[string]string {
+func (fs *FlagSet) StringToString(name string, value map[string]string, usage string, opts ...Opt) *map[string]string {
 	var p map[string]string
-	f.StringToStringVar(&p, name, value, usage, opts...)
+	fs.StringToStringVar(&p, name, value, usage, opts...)
 	return &p
 }
 

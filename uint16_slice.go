@@ -102,8 +102,8 @@ func (s *uint16SliceValue) GetSlice() []string {
 }
 
 // GetUint16Slice return the []uint16 value of a flag with the given name
-func (f *FlagSet) GetUint16Slice(name string) ([]uint16, error) {
-	val, err := f.getFlagValue(name, "uint16Slice")
+func (fs *FlagSet) GetUint16Slice(name string) ([]uint16, error) {
+	val, err := fs.getFlagValue(name, "uint16Slice")
 	if err != nil {
 		return []uint16{}, err
 	}
@@ -111,8 +111,8 @@ func (f *FlagSet) GetUint16Slice(name string) ([]uint16, error) {
 }
 
 // MustGetUint16Slice is like GetUint16Slice, but panics on error.
-func (f *FlagSet) MustGetUint16Slice(name string) []uint16 {
-	val, err := f.GetUint16Slice(name)
+func (fs *FlagSet) MustGetUint16Slice(name string) []uint16 {
+	val, err := fs.GetUint16Slice(name)
 	if err != nil {
 		panic(err)
 	}
@@ -121,8 +121,8 @@ func (f *FlagSet) MustGetUint16Slice(name string) []uint16 {
 
 // Uint16SliceVar defines a []uint16 flag with specified name, default value, and usage string.
 // The argument p points to a []uint16 variable in which to store the value of the flag.
-func (f *FlagSet) Uint16SliceVar(p *[]uint16, name string, value []uint16, usage string, opts ...Opt) {
-	f.Var(newUint16SliceValue(value, p), name, usage, opts...)
+func (fs *FlagSet) Uint16SliceVar(p *[]uint16, name string, value []uint16, usage string, opts ...Opt) {
+	fs.Var(newUint16SliceValue(value, p), name, usage, opts...)
 }
 
 // Uint16SliceVar defines a []uint16 flag with specified name, default value, and usage string.
@@ -133,9 +133,9 @@ func Uint16SliceVar(p *[]uint16, name string, value []uint16, usage string, opts
 
 // Uint16Slice defines a []uint16 flag with specified name, default value, and usage string.
 // The return value is the address of a []uint16 variable that stores the value of the flag.
-func (f *FlagSet) Uint16Slice(name string, value []uint16, usage string, opts ...Opt) *[]uint16 {
+func (fs *FlagSet) Uint16Slice(name string, value []uint16, usage string, opts ...Opt) *[]uint16 {
 	var p []uint16
-	f.Uint16SliceVar(&p, name, value, usage, opts...)
+	fs.Uint16SliceVar(&p, name, value, usage, opts...)
 	return &p
 }
 

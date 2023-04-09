@@ -50,8 +50,8 @@ func newBytesHexValue(val []byte, p *[]byte) *bytesHexValue {
 }
 
 // GetBytesHex return the []byte value of a flag with the given name
-func (f *FlagSet) GetBytesHex(name string) ([]byte, error) {
-	val, err := f.getFlagValue(name, "bytesHex")
+func (fs *FlagSet) GetBytesHex(name string) ([]byte, error) {
+	val, err := fs.getFlagValue(name, "bytesHex")
 
 	if err != nil {
 		return []byte{}, err
@@ -61,8 +61,8 @@ func (f *FlagSet) GetBytesHex(name string) ([]byte, error) {
 }
 
 // MustGetBytesHex is like GetBytesHex, but panics on error.
-func (f *FlagSet) MustGetBytesHex(name string) []byte {
-	val, err := f.GetBytesHex(name)
+func (fs *FlagSet) MustGetBytesHex(name string) []byte {
+	val, err := fs.GetBytesHex(name)
 	if err != nil {
 		panic(err)
 	}
@@ -71,8 +71,8 @@ func (f *FlagSet) MustGetBytesHex(name string) []byte {
 
 // BytesHexVar defines an []byte flag with specified name, default value, and usage string.
 // The argument p points to an []byte variable in which to store the value of the flag.
-func (f *FlagSet) BytesHexVar(p *[]byte, name string, value []byte, usage string, opts ...Opt) {
-	f.Var(newBytesHexValue(value, p), name, usage, opts...)
+func (fs *FlagSet) BytesHexVar(p *[]byte, name string, value []byte, usage string, opts ...Opt) {
+	fs.Var(newBytesHexValue(value, p), name, usage, opts...)
 }
 
 // BytesHexVar defines an []byte flag with specified name, default value, and usage string.
@@ -83,9 +83,9 @@ func BytesHexVar(p *[]byte, name string, value []byte, usage string, opts ...Opt
 
 // BytesHex defines an []byte flag with specified name, default value, and usage string.
 // The return value is the address of an []byte variable that stores the value of the flag.
-func (f *FlagSet) BytesHex(name string, value []byte, usage string, opts ...Opt) *[]byte {
+func (fs *FlagSet) BytesHex(name string, value []byte, usage string, opts ...Opt) *[]byte {
 	var p []byte
-	f.BytesHexVar(&p, name, value, usage, opts...)
+	fs.BytesHexVar(&p, name, value, usage, opts...)
 	return &p
 }
 
@@ -134,8 +134,8 @@ func newBytesBase64Value(val []byte, p *[]byte) *bytesBase64Value {
 }
 
 // GetBytesBase64 return the []byte value of a flag with the given name
-func (f *FlagSet) GetBytesBase64(name string) ([]byte, error) {
-	val, err := f.getFlagValue(name, "bytesBase64")
+func (fs *FlagSet) GetBytesBase64(name string) ([]byte, error) {
+	val, err := fs.getFlagValue(name, "bytesBase64")
 	if err != nil {
 		return []byte{}, err
 	}
@@ -143,8 +143,8 @@ func (f *FlagSet) GetBytesBase64(name string) ([]byte, error) {
 }
 
 // MustGetBytesBase64 is like GetBytesBase64, but panics on error.
-func (f *FlagSet) MustGetBytesBase64(name string) []byte {
-	val, err := f.GetBytesBase64(name)
+func (fs *FlagSet) MustGetBytesBase64(name string) []byte {
+	val, err := fs.GetBytesBase64(name)
 	if err != nil {
 		panic(err)
 	}
@@ -153,8 +153,8 @@ func (f *FlagSet) MustGetBytesBase64(name string) []byte {
 
 // BytesBase64Var defines an []byte flag with specified name, default value, and usage string.
 // The argument p points to an []byte variable in which to store the value of the flag.
-func (f *FlagSet) BytesBase64Var(p *[]byte, name string, value []byte, usage string, opts ...Opt) {
-	f.Var(newBytesBase64Value(value, p), name, usage, opts...)
+func (fs *FlagSet) BytesBase64Var(p *[]byte, name string, value []byte, usage string, opts ...Opt) {
+	fs.Var(newBytesBase64Value(value, p), name, usage, opts...)
 }
 
 // BytesBase64Var defines an []byte flag with specified name, default value, and usage string.
@@ -165,9 +165,9 @@ func BytesBase64Var(p *[]byte, name string, value []byte, usage string, opts ...
 
 // BytesBase64 defines an []byte flag with specified name, default value, and usage string.
 // The return value is the address of an []byte variable that stores the value of the flag.
-func (f *FlagSet) BytesBase64(name string, value []byte, usage string, opts ...Opt) *[]byte {
+func (fs *FlagSet) BytesBase64(name string, value []byte, usage string, opts ...Opt) *[]byte {
 	var p []byte
-	f.BytesBase64Var(&p, name, value, usage, opts...)
+	fs.BytesBase64Var(&p, name, value, usage, opts...)
 	return &p
 }
 

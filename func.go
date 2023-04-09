@@ -27,8 +27,8 @@ func (i *funcValue) String() string { return "" }
 // Func defines a flag with specified name, and usage string.
 // Each time the flag is seen, fn is called with the value of the flag.
 // If fn returns a non-nil error, it will be treated as a flag value parsing error.
-func (f *FlagSet) Func(name string, usage string, fn func(string) error, opts ...Opt) {
-	f.Var(newFuncValue(fn), name, usage, opts...)
+func (fs *FlagSet) Func(name string, usage string, fn func(string) error, opts ...Opt) {
+	fs.Var(newFuncValue(fn), name, usage, opts...)
 }
 
 // Func defines a flag with specified name, and usage string.

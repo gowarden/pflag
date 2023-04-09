@@ -69,8 +69,8 @@ func (s *stringToIntValue) String() string {
 }
 
 // GetStringToInt return the map[string]int value of a flag with the given name
-func (f *FlagSet) GetStringToInt(name string) (map[string]int, error) {
-	val, err := f.getFlagValue(name, "stringToInt")
+func (fs *FlagSet) GetStringToInt(name string) (map[string]int, error) {
+	val, err := fs.getFlagValue(name, "stringToInt")
 	if err != nil {
 		return map[string]int{}, err
 	}
@@ -78,8 +78,8 @@ func (f *FlagSet) GetStringToInt(name string) (map[string]int, error) {
 }
 
 // MustGetStringToInt is like GetStringToInt, but panics on error.
-func (f *FlagSet) MustGetStringToInt(name string) map[string]int {
-	val, err := f.GetStringToInt(name)
+func (fs *FlagSet) MustGetStringToInt(name string) map[string]int {
+	val, err := fs.GetStringToInt(name)
 	if err != nil {
 		panic(err)
 	}
@@ -88,8 +88,8 @@ func (f *FlagSet) MustGetStringToInt(name string) map[string]int {
 
 // StringToIntVar defines a map[string]int flag with specified name, default value, and usage string.
 // The argument p points to a map[string]int variable in which to store the values of multiple flags.
-func (f *FlagSet) StringToIntVar(p *map[string]int, name string, value map[string]int, usage string, opts ...Opt) {
-	f.Var(newStringToIntValue(value, p), name, usage, opts...)
+func (fs *FlagSet) StringToIntVar(p *map[string]int, name string, value map[string]int, usage string, opts ...Opt) {
+	fs.Var(newStringToIntValue(value, p), name, usage, opts...)
 }
 
 // StringToIntVar defines a map[string]int flag with specified name, default value, and usage string.
@@ -100,9 +100,9 @@ func StringToIntVar(p *map[string]int, name string, value map[string]int, usage 
 
 // StringToInt defines a map[string]int flag with specified name, default value, and usage string.
 // The return value is the address of a map[string]int variable that stores the values of multiple flags.
-func (f *FlagSet) StringToInt(name string, value map[string]int, usage string, opts ...Opt) *map[string]int {
+func (fs *FlagSet) StringToInt(name string, value map[string]int, usage string, opts ...Opt) *map[string]int {
 	var p map[string]int
-	f.StringToIntVar(&p, name, value, usage, opts...)
+	fs.StringToIntVar(&p, name, value, usage, opts...)
 	return &p
 }
 

@@ -102,8 +102,8 @@ func (s *boolSliceValue) GetSlice() []string {
 }
 
 // GetBoolSlice returns the []bool value of a flag with the given name.
-func (f *FlagSet) GetBoolSlice(name string) ([]bool, error) {
-	val, err := f.getFlagValue(name, "boolSlice")
+func (fs *FlagSet) GetBoolSlice(name string) ([]bool, error) {
+	val, err := fs.getFlagValue(name, "boolSlice")
 	if err != nil {
 		return []bool{}, err
 	}
@@ -111,8 +111,8 @@ func (f *FlagSet) GetBoolSlice(name string) ([]bool, error) {
 }
 
 // MustGetBoolSlice is like GetBoolSlice, but panics on error.
-func (f *FlagSet) MustGetBoolSlice(name string) []bool {
-	val, err := f.GetBoolSlice(name)
+func (fs *FlagSet) MustGetBoolSlice(name string) []bool {
+	val, err := fs.GetBoolSlice(name)
 	if err != nil {
 		panic(err)
 	}
@@ -121,8 +121,8 @@ func (f *FlagSet) MustGetBoolSlice(name string) []bool {
 
 // BoolSliceVar defines a boolSlice flag with specified name, default value, and usage string.
 // The argument p points to a []bool variable in which to store the value of the flag.
-func (f *FlagSet) BoolSliceVar(p *[]bool, name string, value []bool, usage string, opts ...Opt) {
-	f.Var(newBoolSliceValue(value, p), name, usage, opts...)
+func (fs *FlagSet) BoolSliceVar(p *[]bool, name string, value []bool, usage string, opts ...Opt) {
+	fs.Var(newBoolSliceValue(value, p), name, usage, opts...)
 }
 
 // BoolSliceVar defines a []bool flag with specified name, default value, and usage string.
@@ -133,9 +133,9 @@ func BoolSliceVar(p *[]bool, name string, value []bool, usage string, opts ...Op
 
 // BoolSlice defines a []bool flag with specified name, default value, and usage string.
 // The return value is the address of a []bool variable that stores the value of the flag.
-func (f *FlagSet) BoolSlice(name string, value []bool, usage string, opts ...Opt) *[]bool {
+func (fs *FlagSet) BoolSlice(name string, value []bool, usage string, opts ...Opt) *[]bool {
 	var p []bool
-	f.BoolSliceVar(&p, name, value, usage, opts...)
+	fs.BoolSliceVar(&p, name, value, usage, opts...)
 	return &p
 }
 

@@ -102,8 +102,8 @@ func (s *int32SliceValue) GetSlice() []string {
 }
 
 // GetInt32Slice return the []int32 value of a flag with the given name
-func (f *FlagSet) GetInt32Slice(name string) ([]int32, error) {
-	val, err := f.getFlagValue(name, "int32Slice")
+func (fs *FlagSet) GetInt32Slice(name string) ([]int32, error) {
+	val, err := fs.getFlagValue(name, "int32Slice")
 	if err != nil {
 		return []int32{}, err
 	}
@@ -111,8 +111,8 @@ func (f *FlagSet) GetInt32Slice(name string) ([]int32, error) {
 }
 
 // MustGetInt32Slice is like GetInt32Slice, but panics on error.
-func (f *FlagSet) MustGetInt32Slice(name string) []int32 {
-	val, err := f.GetInt32Slice(name)
+func (fs *FlagSet) MustGetInt32Slice(name string) []int32 {
+	val, err := fs.GetInt32Slice(name)
 	if err != nil {
 		panic(err)
 	}
@@ -121,8 +121,8 @@ func (f *FlagSet) MustGetInt32Slice(name string) []int32 {
 
 // Int32SliceVar defines a []int32 flag with specified name, default value, and usage string.
 // The argument p points to a []int32 variable in which to store the value of the flag.
-func (f *FlagSet) Int32SliceVar(p *[]int32, name string, value []int32, usage string, opts ...Opt) {
-	f.Var(newInt32SliceValue(value, p), name, usage, opts...)
+func (fs *FlagSet) Int32SliceVar(p *[]int32, name string, value []int32, usage string, opts ...Opt) {
+	fs.Var(newInt32SliceValue(value, p), name, usage, opts...)
 }
 
 // Int32SliceVar defines a []int32 flag with specified name, default value, and usage string.
@@ -133,9 +133,9 @@ func Int32SliceVar(p *[]int32, name string, value []int32, usage string, opts ..
 
 // Int32Slice defines a []int32 flag with specified name, default value, and usage string.
 // The return value is the address of a []int32 variable that stores the value of the flag.
-func (f *FlagSet) Int32Slice(name string, value []int32, usage string, opts ...Opt) *[]int32 {
+func (fs *FlagSet) Int32Slice(name string, value []int32, usage string, opts ...Opt) *[]int32 {
 	var p []int32
-	f.Int32SliceVar(&p, name, value, usage, opts...)
+	fs.Int32SliceVar(&p, name, value, usage, opts...)
 	return &p
 }
 

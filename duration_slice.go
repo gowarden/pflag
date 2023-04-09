@@ -98,8 +98,8 @@ func (s *durationSliceValue) GetSlice() []string {
 }
 
 // GetDurationSlice returns the []time.Duration value of a flag with the given name
-func (f *FlagSet) GetDurationSlice(name string) ([]time.Duration, error) {
-	val, err := f.getFlagValue(name, "durationSlice")
+func (fs *FlagSet) GetDurationSlice(name string) ([]time.Duration, error) {
+	val, err := fs.getFlagValue(name, "durationSlice")
 	if err != nil {
 		return []time.Duration{}, err
 	}
@@ -107,8 +107,8 @@ func (f *FlagSet) GetDurationSlice(name string) ([]time.Duration, error) {
 }
 
 // MustGetDurationSlice is like GetDurationSlice, but panics on error.
-func (f *FlagSet) MustGetDurationSlice(name string) []time.Duration {
-	val, err := f.GetDurationSlice(name)
+func (fs *FlagSet) MustGetDurationSlice(name string) []time.Duration {
+	val, err := fs.GetDurationSlice(name)
 	if err != nil {
 		panic(err)
 	}
@@ -117,8 +117,8 @@ func (f *FlagSet) MustGetDurationSlice(name string) []time.Duration {
 
 // DurationSliceVar defines a durationSlice flag with specified name, default value, and usage string.
 // The argument p points to a []time.Duration variable in which to store the value of the flag.
-func (f *FlagSet) DurationSliceVar(p *[]time.Duration, name string, value []time.Duration, usage string, opts ...Opt) {
-	f.Var(newDurationSliceValue(value, p), name, usage, opts...)
+func (fs *FlagSet) DurationSliceVar(p *[]time.Duration, name string, value []time.Duration, usage string, opts ...Opt) {
+	fs.Var(newDurationSliceValue(value, p), name, usage, opts...)
 }
 
 // DurationSliceVar defines a duration[] flag with specified name, default value, and usage string.
@@ -129,9 +129,9 @@ func DurationSliceVar(p *[]time.Duration, name string, value []time.Duration, us
 
 // DurationSlice defines a []time.Duration flag with specified name, default value, and usage string.
 // The return value is the address of a []time.Duration variable that stores the value of the flag.
-func (f *FlagSet) DurationSlice(name string, value []time.Duration, usage string, opts ...Opt) *[]time.Duration {
+func (fs *FlagSet) DurationSlice(name string, value []time.Duration, usage string, opts ...Opt) *[]time.Duration {
 	var p []time.Duration
-	f.DurationSliceVar(&p, name, value, usage, opts...)
+	fs.DurationSliceVar(&p, name, value, usage, opts...)
 	return &p
 }
 

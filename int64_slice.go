@@ -98,8 +98,8 @@ func (s *int64SliceValue) GetSlice() []string {
 }
 
 // GetInt64Slice return the []int64 value of a flag with the given name
-func (f *FlagSet) GetInt64Slice(name string) ([]int64, error) {
-	val, err := f.getFlagValue(name, "int64Slice")
+func (fs *FlagSet) GetInt64Slice(name string) ([]int64, error) {
+	val, err := fs.getFlagValue(name, "int64Slice")
 	if err != nil {
 		return []int64{}, err
 	}
@@ -107,8 +107,8 @@ func (f *FlagSet) GetInt64Slice(name string) ([]int64, error) {
 }
 
 // MustGetInt64Slice is like GetInt64Slice, but panics on error.
-func (f *FlagSet) MustGetInt64Slice(name string) []int64 {
-	val, err := f.GetInt64Slice(name)
+func (fs *FlagSet) MustGetInt64Slice(name string) []int64 {
+	val, err := fs.GetInt64Slice(name)
 	if err != nil {
 		panic(err)
 	}
@@ -117,8 +117,8 @@ func (f *FlagSet) MustGetInt64Slice(name string) []int64 {
 
 // Int64SliceVar defines a []int64 flag with specified name, default value, and usage string.
 // The argument p points to a []int64 variable in which to store the value of the flag.
-func (f *FlagSet) Int64SliceVar(p *[]int64, name string, value []int64, usage string, opts ...Opt) {
-	f.Var(newInt64SliceValue(value, p), name, usage, opts...)
+func (fs *FlagSet) Int64SliceVar(p *[]int64, name string, value []int64, usage string, opts ...Opt) {
+	fs.Var(newInt64SliceValue(value, p), name, usage, opts...)
 }
 
 // Int64SliceVar defines a []int64 flag with specified name, default value, and usage string.
@@ -129,9 +129,9 @@ func Int64SliceVar(p *[]int64, name string, value []int64, usage string, opts ..
 
 // Int64Slice defines a []int64 flag with specified name, default value, and usage string.
 // The return value is the address of a []int64 variable that stores the value of the flag.
-func (f *FlagSet) Int64Slice(name string, value []int64, usage string, opts ...Opt) *[]int64 {
+func (fs *FlagSet) Int64Slice(name string, value []int64, usage string, opts ...Opt) *[]int64 {
 	var p []int64
-	f.Int64SliceVar(&p, name, value, usage, opts...)
+	fs.Int64SliceVar(&p, name, value, usage, opts...)
 	return &p
 }
 

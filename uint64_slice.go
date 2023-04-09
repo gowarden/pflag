@@ -98,8 +98,8 @@ func (s *uint64SliceValue) GetSlice() []string {
 }
 
 // GetUint64Slice return the []uint64 value of a flag with the given name
-func (f *FlagSet) GetUint64Slice(name string) ([]uint64, error) {
-	val, err := f.getFlagValue(name, "uint64Slice")
+func (fs *FlagSet) GetUint64Slice(name string) ([]uint64, error) {
+	val, err := fs.getFlagValue(name, "uint64Slice")
 	if err != nil {
 		return []uint64{}, err
 	}
@@ -107,8 +107,8 @@ func (f *FlagSet) GetUint64Slice(name string) ([]uint64, error) {
 }
 
 // MustGetUint64Slice is like GetUint64Slice, but panics on error.
-func (f *FlagSet) MustGetUint64Slice(name string) []uint64 {
-	val, err := f.GetUint64Slice(name)
+func (fs *FlagSet) MustGetUint64Slice(name string) []uint64 {
+	val, err := fs.GetUint64Slice(name)
 	if err != nil {
 		panic(err)
 	}
@@ -117,8 +117,8 @@ func (f *FlagSet) MustGetUint64Slice(name string) []uint64 {
 
 // Uint64SliceVar defines a []uint64 flag with specified name, default value, and usage string.
 // The argument p points to a []uint64 variable in which to store the value of the flag.
-func (f *FlagSet) Uint64SliceVar(p *[]uint64, name string, value []uint64, usage string, opts ...Opt) {
-	f.Var(newUint64SliceValue(value, p), name, usage, opts...)
+func (fs *FlagSet) Uint64SliceVar(p *[]uint64, name string, value []uint64, usage string, opts ...Opt) {
+	fs.Var(newUint64SliceValue(value, p), name, usage, opts...)
 }
 
 // Uint64SliceVar defines a []uint64 flag with specified name, default value, and usage string.
@@ -129,9 +129,9 @@ func Uint64SliceVar(p *[]uint64, name string, value []uint64, usage string, opts
 
 // Uint64Slice defines a []uint64 flag with specified name, default value, and usage string.
 // The return value is the address of a []uint64 variable that stores the value of the flag.
-func (f *FlagSet) Uint64Slice(name string, value []uint64, usage string, opts ...Opt) *[]uint64 {
+func (fs *FlagSet) Uint64Slice(name string, value []uint64, usage string, opts ...Opt) *[]uint64 {
 	var p []uint64
-	f.Uint64SliceVar(&p, name, value, usage, opts...)
+	fs.Uint64SliceVar(&p, name, value, usage, opts...)
 	return &p
 }
 

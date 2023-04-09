@@ -85,24 +85,24 @@ func FromGoFlag(goflag *goflag.Flag) *Flag {
 }
 
 // AddGoFlag will add the given *flag.Flag to the zflag.FlagSet
-func (f *FlagSet) AddGoFlag(goflag *goflag.Flag) {
-	if f.Lookup(goflag.Name) != nil {
+func (fs *FlagSet) AddGoFlag(goflag *goflag.Flag) {
+	if fs.Lookup(goflag.Name) != nil {
 		return
 	}
 	newflag := FromGoFlag(goflag)
-	f.AddFlag(newflag)
+	fs.AddFlag(newflag)
 }
 
 // AddGoFlagSet will add the given *flag.FlagSet to the zflag.FlagSet
-func (f *FlagSet) AddGoFlagSet(newSet *goflag.FlagSet) {
+func (fs *FlagSet) AddGoFlagSet(newSet *goflag.FlagSet) {
 	if newSet == nil {
 		return
 	}
 	newSet.VisitAll(func(goflag *goflag.Flag) {
-		f.AddGoFlag(goflag)
+		fs.AddGoFlag(goflag)
 	})
-	if f.addedGoFlagSets == nil {
-		f.addedGoFlagSets = make([]*goflag.FlagSet, 0)
+	if fs.addedGoFlagSets == nil {
+		fs.addedGoFlagSets = make([]*goflag.FlagSet, 0)
 	}
-	f.addedGoFlagSets = append(f.addedGoFlagSets, newSet)
+	fs.addedGoFlagSets = append(fs.addedGoFlagSets, newSet)
 }

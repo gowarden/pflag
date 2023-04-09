@@ -38,8 +38,8 @@ func (f *float32Value) Type() string {
 func (f *float32Value) String() string { return strconv.FormatFloat(float64(*f), 'g', -1, 32) }
 
 // GetFloat32 return the float32 value of a flag with the given name
-func (f *FlagSet) GetFloat32(name string) (float32, error) {
-	val, err := f.getFlagValue(name, "float32")
+func (fs *FlagSet) GetFloat32(name string) (float32, error) {
+	val, err := fs.getFlagValue(name, "float32")
 	if err != nil {
 		return 0, err
 	}
@@ -47,8 +47,8 @@ func (f *FlagSet) GetFloat32(name string) (float32, error) {
 }
 
 // MustGetFloat32 is like GetFloat32, but panics on error.
-func (f *FlagSet) MustGetFloat32(name string) float32 {
-	val, err := f.GetFloat32(name)
+func (fs *FlagSet) MustGetFloat32(name string) float32 {
+	val, err := fs.GetFloat32(name)
 	if err != nil {
 		panic(err)
 	}
@@ -57,8 +57,8 @@ func (f *FlagSet) MustGetFloat32(name string) float32 {
 
 // Float32Var defines a float32 flag with specified name, default value, and usage string.
 // The argument p points to a float32 variable in which to store the value of the flag.
-func (f *FlagSet) Float32Var(p *float32, name string, value float32, usage string, opts ...Opt) {
-	f.Var(newFloat32Value(value, p), name, usage, opts...)
+func (fs *FlagSet) Float32Var(p *float32, name string, value float32, usage string, opts ...Opt) {
+	fs.Var(newFloat32Value(value, p), name, usage, opts...)
 }
 
 // Float32Var defines a float32 flag with specified name, default value, and usage string.
@@ -69,9 +69,9 @@ func Float32Var(p *float32, name string, value float32, usage string, opts ...Op
 
 // Float32 defines a float32 flag with specified name, default value, and usage string.
 // The return value is the address of a float32 variable that stores the value of the flag.
-func (f *FlagSet) Float32(name string, value float32, usage string, opts ...Opt) *float32 {
+func (fs *FlagSet) Float32(name string, value float32, usage string, opts ...Opt) *float32 {
 	var p float32
-	f.Float32Var(&p, name, value, usage, opts...)
+	fs.Float32Var(&p, name, value, usage, opts...)
 	return &p
 }
 

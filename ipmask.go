@@ -70,8 +70,8 @@ func ParseIPv4Mask(s string) net.IPMask {
 }
 
 // GetIPMask return the net.IPv4Mask value of a flag with the given name
-func (f *FlagSet) GetIPMask(name string) (net.IPMask, error) {
-	val, err := f.getFlagValue(name, "ipMask")
+func (fs *FlagSet) GetIPMask(name string) (net.IPMask, error) {
+	val, err := fs.getFlagValue(name, "ipMask")
 	if err != nil {
 		return nil, err
 	}
@@ -79,8 +79,8 @@ func (f *FlagSet) GetIPMask(name string) (net.IPMask, error) {
 }
 
 // MustGetIPMask is like GetIPMask, but panics on error.
-func (f *FlagSet) MustGetIPMask(name string) net.IPMask {
-	val, err := f.GetIPMask(name)
+func (fs *FlagSet) MustGetIPMask(name string) net.IPMask {
+	val, err := fs.GetIPMask(name)
 	if err != nil {
 		panic(err)
 	}
@@ -89,8 +89,8 @@ func (f *FlagSet) MustGetIPMask(name string) net.IPMask {
 
 // IPMaskVar defines a net.IPMask flag with specified name, default value, and usage string.
 // The argument p points to a net.IPMask variable in which to store the value of the flag.
-func (f *FlagSet) IPMaskVar(p *net.IPMask, name string, value net.IPMask, usage string, opts ...Opt) {
-	f.Var(newIPMaskValue(value, p), name, usage, opts...)
+func (fs *FlagSet) IPMaskVar(p *net.IPMask, name string, value net.IPMask, usage string, opts ...Opt) {
+	fs.Var(newIPMaskValue(value, p), name, usage, opts...)
 }
 
 // IPMaskVar defines a net.IPMask flag with specified name, default value, and usage string.
@@ -101,9 +101,9 @@ func IPMaskVar(p *net.IPMask, name string, value net.IPMask, usage string, opts 
 
 // IPMask defines a net.IPMask flag with specified name, default value, and usage string.
 // The return value is the address of a net.IPMask variable that stores the value of the flag.
-func (f *FlagSet) IPMask(name string, value net.IPMask, usage string, opts ...Opt) *net.IPMask {
+func (fs *FlagSet) IPMask(name string, value net.IPMask, usage string, opts ...Opt) *net.IPMask {
 	var p net.IPMask
-	f.IPMaskVar(&p, name, value, usage, opts...)
+	fs.IPMaskVar(&p, name, value, usage, opts...)
 	return &p
 }
 

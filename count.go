@@ -45,8 +45,8 @@ func (i *countValue) String() string { return strconv.Itoa(int(*i)) }
 func (i *countValue) IsOptional() bool { return true }
 
 // GetCount return the int value of a flag with the given name
-func (f *FlagSet) GetCount(name string) (int, error) {
-	val, err := f.getFlagValue(name, "count")
+func (fs *FlagSet) GetCount(name string) (int, error) {
+	val, err := fs.getFlagValue(name, "count")
 	if err != nil {
 		return 0, err
 	}
@@ -54,8 +54,8 @@ func (f *FlagSet) GetCount(name string) (int, error) {
 }
 
 // MustGetCount is like GetCount, but panics on error.
-func (f *FlagSet) MustGetCount(name string) int {
-	val, err := f.GetCount(name)
+func (fs *FlagSet) MustGetCount(name string) int {
+	val, err := fs.GetCount(name)
 	if err != nil {
 		panic(err)
 	}
@@ -65,8 +65,8 @@ func (f *FlagSet) MustGetCount(name string) int {
 // CountVar defines a count flag with specified name, and usage string.
 // The argument p points to an int variable in which to store the value of the flag.
 // A count flag will add 1 to its value every time it is found on the command line
-func (f *FlagSet) CountVar(p *int, name string, usage string, opts ...Opt) {
-	f.Var(newCountValue(0, p), name, usage, opts...)
+func (fs *FlagSet) CountVar(p *int, name string, usage string, opts ...Opt) {
+	fs.Var(newCountValue(0, p), name, usage, opts...)
 }
 
 // CountVar like CountVar only the flag is placed on the CommandLine instead of a given flag set
@@ -77,9 +77,9 @@ func CountVar(p *int, name string, usage string, opts ...Opt) {
 // Count defines a count flag with specified name, and usage string.
 // The return value is the address of an int variable that stores the value of the flag.
 // A count flag will add 1 to its value every time it is found on the command line
-func (f *FlagSet) Count(name string, usage string, opts ...Opt) *int {
+func (fs *FlagSet) Count(name string, usage string, opts ...Opt) *int {
 	var p int
-	f.CountVar(&p, name, usage, opts...)
+	fs.CountVar(&p, name, usage, opts...)
 	return &p
 }
 
