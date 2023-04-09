@@ -35,7 +35,7 @@ func setUpZFlagSet(buf io.Writer) *zflag.FlagSet {
 }
 
 func TestPrintUsage(t *testing.T) {
-	buf := bytes.Buffer{}
+	var buf bytes.Buffer
 	f := setUpZFlagSet(&buf)
 	f.PrintDefaults()
 	res := buf.String()
@@ -75,7 +75,7 @@ const expectedOutput2 = `      --[no-]long-form               Some description
 `
 
 func TestPrintUsage_2(t *testing.T) {
-	buf := bytes.Buffer{}
+	var buf bytes.Buffer
 	f := setUpZFlagSet2(&buf)
 	res := f.FlagUsagesWrapped(80)
 	if res != expectedOutput2 {
