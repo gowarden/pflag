@@ -484,7 +484,7 @@ func testParse(f *zflag.FlagSet, t *testing.T) {
 	if maskFlag.String() != zflag.ParseIPv4Mask("255.255.255.0").String() {
 		t.Error("mask flag should be 255.255.255.0, is ", maskFlag.String())
 	}
-	if v, err := f.GetIPv4Mask("mask"); err != nil || v.String() != maskFlag.String() {
+	if v, err := f.GetIPMask("mask"); err != nil || v.String() != maskFlag.String() {
 		t.Errorf("GetIP returned %v maskFlag was %v error was %v", v, *maskFlag, err)
 	}
 	if v, err := f.Get("mask"); err != nil || v.(net.IPMask).String() != maskFlag.String() {

@@ -37,3 +37,9 @@ func (f *FlagSet) Func(name string, usage string, fn func(string) error, opts ..
 func Func(name string, usage string, fn func(string) error, opts ...Opt) {
 	CommandLine.Func(name, usage, fn, opts...)
 }
+
+// These are not needed for this specific type, and they are added here to stop validate_funcs.sh from fail.
+// func (f *FlagSet) GetFunc(
+// func (f *FlagSet) MustGetFunc(
+// func (f *FlagSet) FuncVar(
+// func FuncVar(

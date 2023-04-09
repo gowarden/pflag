@@ -40,11 +40,6 @@ func (b *boolValue) Set(val string) error {
 	return nil
 }
 
-func isBool(v string) bool {
-	_, err := strconv.ParseBool(v)
-	return err == nil
-}
-
 func (b *boolValue) Type() string {
 	return "bool"
 }

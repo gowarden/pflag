@@ -39,3 +39,9 @@ repos:
         language: system
         entry: bash -euxc 'mdtocw() { if command -v mdtoc >/dev/null; then command mdtoc "$@"; else go run sigs.k8s.io/mdtoc@latest "$@"; fi; }; mdtocw --inplace "$@"' _
         files: ^README.md$
+      - id: assertiface
+        name: Validate Interface Assertions
+        language: system
+        entry: ./scripts/validate_types.sh
+        files: (?<!_test)\.go$
+        exclude: ^flag\.go$

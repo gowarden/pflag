@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 )
@@ -103,7 +104,7 @@ type Flag struct {
 	Required            bool                // Required ensures that a flag must be changed.
 	ShorthandDeprecated string              // ShorthandDeprecated is a string printed for a deprecation notice of the Shorthand.
 	Group               string              // Group contains the flag group.
-	Annotations         map[string][]string // Annotation is used to annotate this specific flag for your application; e.g. it is used by zulu.Command bash completion code.
+	Annotations         map[string][]string // Annotations are used to annotate this specific flag for your application; e.g. it is used by zulu.Command bash completion code.
 }
 
 // Value is the interface to the dynamic value stored in a flag.
@@ -1047,6 +1048,11 @@ func (f *FlagSet) parseLongArg(s string, args []string, fn parseFunc) (outArgs [
 		err = f.failf(err.Error())
 	}
 	return
+}
+
+func isBool(v string) bool {
+	_, err := strconv.ParseBool(v)
+	return err == nil
 }
 
 //nolint:funlen
