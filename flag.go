@@ -904,6 +904,15 @@ func (fs *FlagSet) AddFlag(flag *Flag) {
 	fs.shorthands[flag.Shorthand] = flag
 }
 
+// RemoveFlag will remove the flag from the FlagSet
+func (fs *FlagSet) RemoveFlag(name string) {
+	normalizedFlagName := fs.normalizeFlagName(name)
+	_, exists := fs.formal[normalizedFlagName]
+	if exists {
+		delete(fs.formal, normalizedFlagName)
+	}
+}
+
 // AddFlagSet adds one FlagSet to another. If a flag is already present in f
 // the flag from newSet will be ignored.
 func (fs *FlagSet) AddFlagSet(newSet *FlagSet) {

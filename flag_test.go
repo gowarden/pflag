@@ -194,6 +194,37 @@ func TestAddFlagSet(t *testing.T) {
 	}
 }
 
+func TestAddFlag(t *testing.T) {
+	fs := zflag.NewFlagSet("adding-flags", zflag.ContinueOnError)
+	fs.AddFlag(&zflag.Flag{
+		Name:      "a-flag",
+		Shorthand: 'a',
+		Usage:     "the usage",
+	})
+
+	if len(zflag.GetFlagFormalField(fs)) != 1 {
+		t.Errorf("Unexpected result adding a Flag to a FlagSet %v", fs)
+	}
+}
+
+func TestRemoveFlag(t *testing.T) {
+	fs := zflag.NewFlagSet("removing-flags", zflag.ContinueOnError)
+	fs.String("string1", "a", "enter a string1")
+	fs.String("string2", "b", "enter a string2")
+
+	fs.RemoveFlag("string1")
+
+	formal := zflag.GetFlagFormalField(fs)
+	if len(formal) != 1 {
+		t.Errorf("Flagset %v should only have 1 formal flag now, but has %d.", fs, len(formal))
+	}
+	fs.VisitAll(func(f *zflag.Flag) {
+		if f.Name == "string1" {
+			t.Errorf("Flag string1 was not removed from %v formal flags.", fs)
+		}
+	})
+}
+
 func TestAnnotation(t *testing.T) {
 	f := zflag.NewFlagSet("shorthand", zflag.ContinueOnError)
 
