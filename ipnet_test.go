@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zflag/v2"
 )
 
 func TestIPNet(t *testing.T) {

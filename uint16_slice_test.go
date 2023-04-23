@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zflag/v2"
 )
 
 func TestUint16Slice(t *testing.T) {

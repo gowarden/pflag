@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zflag/v2"
 )
 
 func TestBytesHex(t *testing.T) {

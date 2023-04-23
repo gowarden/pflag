@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zflag/v2"
 )
 
 func TestStringToInt64(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zflag/v2"
 )
 
 // Copyright 2020 The Go Authors. All rights reserved.

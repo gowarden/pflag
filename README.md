@@ -34,7 +34,7 @@ zflag is available using the standard `go get` command.
 Install by running:
 
 ```bash
-go get github.com/zulucmd/zflag
+go get github.com/zulucmd/zflag/v2
 ```
 
 ## Supported Syntax
@@ -310,7 +310,7 @@ third-party dependencies (e.g. `golang/glog`).
 ```go
 import (
 	goflag "flag"
-	flag "github.com/zulucmd/zflag"
+	flag "github.com/zulucmd/zflag/v2"
 )
 
 var ip *int = flag.Int("flagname", 1234, "help message for flagname")
